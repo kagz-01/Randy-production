@@ -1,0 +1,20 @@
+.vercel
+.tanstack
+
+# Local env — commit .env.example only, never secrets
+.env
+.env.*
+!.env.example
+
+node_modules/
+.screenshots-tmp/
+*.log
+screenshots/
+.grok/preview.pid
+
+# Exclude AI agent cache and deployment artifacts
+.agent/
+.vercel/output/
+artifacts/
+attachments/
+.tanstack/tmp/node_modules.lock
