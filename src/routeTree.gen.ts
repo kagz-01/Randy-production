@@ -22,13 +22,19 @@ import { Route as LiveProjectIdRouteImport } from './routes/live.$projectId'
 import { Route as PortalIndexRouteImport } from './routes/portal/index'
 import { Route as PortalProjectIdRouteImport } from './routes/portal/$projectId'
 import { Route as StudioIndexRouteImport } from './routes/studio/index'
+import { Route as StudioAdminRouteImport } from './routes/studio/admin'
+import { Route as StudioBriefsRouteImport } from './routes/studio/briefs'
 import { Route as StudioCrewRouteImport } from './routes/studio/crew'
 import { Route as StudioGearRouteImport } from './routes/studio/gear'
 import { Route as StudioMarketingRouteImport } from './routes/studio/marketing'
+import { Route as StudioMerchRouteImport } from './routes/studio/merch'
 import { Route as StudioPipelineRouteImport } from './routes/studio/pipeline'
+import { Route as StudioReceiptsRouteImport } from './routes/studio/receipts'
+import { Route as StudioRunsheetRouteImport } from './routes/studio/runsheet'
 import { Route as StudioVendorsRouteImport } from './routes/studio/vendors'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as StudioLiveProjectIdRouteImport } from './routes/studio/live.$projectId'
+import { Route as PortalProjectIdReceiptsReceiptIdRouteImport } from './routes/portal/$projectId/receipts/$receiptId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -95,6 +101,16 @@ const StudioIndexRoute = StudioIndexRouteImport.update({
   path: '/',
   getParentRoute: () => StudioRoute,
 } as any)
+const StudioAdminRoute = StudioAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => StudioRoute,
+} as any)
+const StudioBriefsRoute = StudioBriefsRouteImport.update({
+  id: '/briefs',
+  path: '/briefs',
+  getParentRoute: () => StudioRoute,
+} as any)
 const StudioCrewRoute = StudioCrewRouteImport.update({
   id: '/crew',
   path: '/crew',
@@ -110,9 +126,24 @@ const StudioMarketingRoute = StudioMarketingRouteImport.update({
   path: '/marketing',
   getParentRoute: () => StudioRoute,
 } as any)
+const StudioMerchRoute = StudioMerchRouteImport.update({
+  id: '/merch',
+  path: '/merch',
+  getParentRoute: () => StudioRoute,
+} as any)
 const StudioPipelineRoute = StudioPipelineRouteImport.update({
   id: '/pipeline',
   path: '/pipeline',
+  getParentRoute: () => StudioRoute,
+} as any)
+const StudioReceiptsRoute = StudioReceiptsRouteImport.update({
+  id: '/receipts',
+  path: '/receipts',
+  getParentRoute: () => StudioRoute,
+} as any)
+const StudioRunsheetRoute = StudioRunsheetRouteImport.update({
+  id: '/runsheet',
+  path: '/runsheet',
   getParentRoute: () => StudioRoute,
 } as any)
 const StudioVendorsRoute = StudioVendorsRouteImport.update({
@@ -130,6 +161,12 @@ const StudioLiveProjectIdRoute = StudioLiveProjectIdRouteImport.update({
   path: '/live/$projectId',
   getParentRoute: () => StudioRoute,
 } as any)
+const PortalProjectIdReceiptsReceiptIdRoute =
+  PortalProjectIdReceiptsReceiptIdRouteImport.update({
+    id: '/receipts/$receiptId',
+    path: '/receipts/$receiptId',
+    getParentRoute: () => PortalProjectIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -142,16 +179,22 @@ export interface FileRoutesByFullPath {
   '/book/$quoteId': typeof BookQuoteIdRoute
   '/cases/$slug': typeof CasesSlugRoute
   '/live/$projectId': typeof LiveProjectIdRoute
-  '/portal/$projectId': typeof PortalProjectIdRoute
+  '/portal/$projectId': typeof PortalProjectIdRouteWithChildren
+  '/studio/admin': typeof StudioAdminRoute
+  '/studio/briefs': typeof StudioBriefsRoute
   '/studio/crew': typeof StudioCrewRoute
   '/studio/gear': typeof StudioGearRoute
   '/studio/marketing': typeof StudioMarketingRoute
+  '/studio/merch': typeof StudioMerchRoute
   '/studio/pipeline': typeof StudioPipelineRoute
+  '/studio/receipts': typeof StudioReceiptsRoute
+  '/studio/runsheet': typeof StudioRunsheetRoute
   '/studio/vendors': typeof StudioVendorsRoute
   '/portal/': typeof PortalIndexRoute
   '/studio/': typeof StudioIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/studio/live/$projectId': typeof StudioLiveProjectIdRoute
+  '/portal/$projectId/receipts/$receiptId': typeof PortalProjectIdReceiptsReceiptIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -163,16 +206,22 @@ export interface FileRoutesByTo {
   '/book/$quoteId': typeof BookQuoteIdRoute
   '/cases/$slug': typeof CasesSlugRoute
   '/live/$projectId': typeof LiveProjectIdRoute
-  '/portal/$projectId': typeof PortalProjectIdRoute
+  '/portal/$projectId': typeof PortalProjectIdRouteWithChildren
+  '/studio/admin': typeof StudioAdminRoute
+  '/studio/briefs': typeof StudioBriefsRoute
   '/studio/crew': typeof StudioCrewRoute
   '/studio/gear': typeof StudioGearRoute
   '/studio/marketing': typeof StudioMarketingRoute
+  '/studio/merch': typeof StudioMerchRoute
   '/studio/pipeline': typeof StudioPipelineRoute
+  '/studio/receipts': typeof StudioReceiptsRoute
+  '/studio/runsheet': typeof StudioRunsheetRoute
   '/studio/vendors': typeof StudioVendorsRoute
   '/portal': typeof PortalIndexRoute
   '/studio': typeof StudioIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/studio/live/$projectId': typeof StudioLiveProjectIdRoute
+  '/portal/$projectId/receipts/$receiptId': typeof PortalProjectIdReceiptsReceiptIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -186,16 +235,22 @@ export interface FileRoutesById {
   '/book/$quoteId': typeof BookQuoteIdRoute
   '/cases/$slug': typeof CasesSlugRoute
   '/live/$projectId': typeof LiveProjectIdRoute
-  '/portal/$projectId': typeof PortalProjectIdRoute
+  '/portal/$projectId': typeof PortalProjectIdRouteWithChildren
+  '/studio/admin': typeof StudioAdminRoute
+  '/studio/briefs': typeof StudioBriefsRoute
   '/studio/crew': typeof StudioCrewRoute
   '/studio/gear': typeof StudioGearRoute
   '/studio/marketing': typeof StudioMarketingRoute
+  '/studio/merch': typeof StudioMerchRoute
   '/studio/pipeline': typeof StudioPipelineRoute
+  '/studio/receipts': typeof StudioReceiptsRoute
+  '/studio/runsheet': typeof StudioRunsheetRoute
   '/studio/vendors': typeof StudioVendorsRoute
   '/portal/': typeof PortalIndexRoute
   '/studio/': typeof StudioIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/studio/live/$projectId': typeof StudioLiveProjectIdRoute
+  '/portal/$projectId/receipts/$receiptId': typeof PortalProjectIdReceiptsReceiptIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -211,15 +266,21 @@ export interface FileRouteTypes {
     | '/cases/$slug'
     | '/live/$projectId'
     | '/portal/$projectId'
+    | '/studio/admin'
+    | '/studio/briefs'
     | '/studio/crew'
     | '/studio/gear'
     | '/studio/marketing'
+    | '/studio/merch'
     | '/studio/pipeline'
+    | '/studio/receipts'
+    | '/studio/runsheet'
     | '/studio/vendors'
     | '/portal/'
     | '/studio/'
     | '/api/auth/$'
     | '/studio/live/$projectId'
+    | '/portal/$projectId/receipts/$receiptId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -232,15 +293,21 @@ export interface FileRouteTypes {
     | '/cases/$slug'
     | '/live/$projectId'
     | '/portal/$projectId'
+    | '/studio/admin'
+    | '/studio/briefs'
     | '/studio/crew'
     | '/studio/gear'
     | '/studio/marketing'
+    | '/studio/merch'
     | '/studio/pipeline'
+    | '/studio/receipts'
+    | '/studio/runsheet'
     | '/studio/vendors'
     | '/portal'
     | '/studio'
     | '/api/auth/$'
     | '/studio/live/$projectId'
+    | '/portal/$projectId/receipts/$receiptId'
   id:
     | '__root__'
     | '/'
@@ -254,15 +321,21 @@ export interface FileRouteTypes {
     | '/cases/$slug'
     | '/live/$projectId'
     | '/portal/$projectId'
+    | '/studio/admin'
+    | '/studio/briefs'
     | '/studio/crew'
     | '/studio/gear'
     | '/studio/marketing'
+    | '/studio/merch'
     | '/studio/pipeline'
+    | '/studio/receipts'
+    | '/studio/runsheet'
     | '/studio/vendors'
     | '/portal/'
     | '/studio/'
     | '/api/auth/$'
     | '/studio/live/$projectId'
+    | '/portal/$projectId/receipts/$receiptId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -276,7 +349,7 @@ export interface RootRouteChildren {
   BookQuoteIdRoute: typeof BookQuoteIdRoute
   CasesSlugRoute: typeof CasesSlugRoute
   LiveProjectIdRoute: typeof LiveProjectIdRoute
-  PortalProjectIdRoute: typeof PortalProjectIdRoute
+  PortalProjectIdRoute: typeof PortalProjectIdRouteWithChildren
   PortalIndexRoute: typeof PortalIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
@@ -374,6 +447,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StudioIndexRouteImport
       parentRoute: typeof StudioRoute
     }
+    '/studio/admin': {
+      id: '/studio/admin'
+      path: '/admin'
+      fullPath: '/studio/admin'
+      preLoaderRoute: typeof StudioAdminRouteImport
+      parentRoute: typeof StudioRoute
+    }
+    '/studio/briefs': {
+      id: '/studio/briefs'
+      path: '/briefs'
+      fullPath: '/studio/briefs'
+      preLoaderRoute: typeof StudioBriefsRouteImport
+      parentRoute: typeof StudioRoute
+    }
     '/studio/crew': {
       id: '/studio/crew'
       path: '/crew'
@@ -395,11 +482,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StudioMarketingRouteImport
       parentRoute: typeof StudioRoute
     }
+    '/studio/merch': {
+      id: '/studio/merch'
+      path: '/merch'
+      fullPath: '/studio/merch'
+      preLoaderRoute: typeof StudioMerchRouteImport
+      parentRoute: typeof StudioRoute
+    }
     '/studio/pipeline': {
       id: '/studio/pipeline'
       path: '/pipeline'
       fullPath: '/studio/pipeline'
       preLoaderRoute: typeof StudioPipelineRouteImport
+      parentRoute: typeof StudioRoute
+    }
+    '/studio/receipts': {
+      id: '/studio/receipts'
+      path: '/receipts'
+      fullPath: '/studio/receipts'
+      preLoaderRoute: typeof StudioReceiptsRouteImport
+      parentRoute: typeof StudioRoute
+    }
+    '/studio/runsheet': {
+      id: '/studio/runsheet'
+      path: '/runsheet'
+      fullPath: '/studio/runsheet'
+      preLoaderRoute: typeof StudioRunsheetRouteImport
       parentRoute: typeof StudioRoute
     }
     '/studio/vendors': {
@@ -423,24 +531,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StudioLiveProjectIdRouteImport
       parentRoute: typeof StudioRoute
     }
+    '/portal/$projectId/receipts/$receiptId': {
+      id: '/portal/$projectId/receipts/$receiptId'
+      path: '/receipts/$receiptId'
+      fullPath: '/portal/$projectId/receipts/$receiptId'
+      preLoaderRoute: typeof PortalProjectIdReceiptsReceiptIdRouteImport
+      parentRoute: typeof PortalProjectIdRoute
+    }
   }
 }
 
 interface StudioRouteChildren {
+  StudioAdminRoute: typeof StudioAdminRoute
+  StudioBriefsRoute: typeof StudioBriefsRoute
   StudioCrewRoute: typeof StudioCrewRoute
   StudioGearRoute: typeof StudioGearRoute
   StudioMarketingRoute: typeof StudioMarketingRoute
+  StudioMerchRoute: typeof StudioMerchRoute
   StudioPipelineRoute: typeof StudioPipelineRoute
+  StudioReceiptsRoute: typeof StudioReceiptsRoute
+  StudioRunsheetRoute: typeof StudioRunsheetRoute
   StudioVendorsRoute: typeof StudioVendorsRoute
   StudioIndexRoute: typeof StudioIndexRoute
   StudioLiveProjectIdRoute: typeof StudioLiveProjectIdRoute
 }
 
 const StudioRouteChildren: StudioRouteChildren = {
+  StudioAdminRoute: StudioAdminRoute,
+  StudioBriefsRoute: StudioBriefsRoute,
   StudioCrewRoute: StudioCrewRoute,
   StudioGearRoute: StudioGearRoute,
   StudioMarketingRoute: StudioMarketingRoute,
+  StudioMerchRoute: StudioMerchRoute,
   StudioPipelineRoute: StudioPipelineRoute,
+  StudioReceiptsRoute: StudioReceiptsRoute,
+  StudioRunsheetRoute: StudioRunsheetRoute,
   StudioVendorsRoute: StudioVendorsRoute,
   StudioIndexRoute: StudioIndexRoute,
   StudioLiveProjectIdRoute: StudioLiveProjectIdRoute,
@@ -448,6 +573,18 @@ const StudioRouteChildren: StudioRouteChildren = {
 
 const StudioRouteWithChildren =
   StudioRoute._addFileChildren(StudioRouteChildren)
+
+interface PortalProjectIdRouteChildren {
+  PortalProjectIdReceiptsReceiptIdRoute: typeof PortalProjectIdReceiptsReceiptIdRoute
+}
+
+const PortalProjectIdRouteChildren: PortalProjectIdRouteChildren = {
+  PortalProjectIdReceiptsReceiptIdRoute: PortalProjectIdReceiptsReceiptIdRoute,
+}
+
+const PortalProjectIdRouteWithChildren = PortalProjectIdRoute._addFileChildren(
+  PortalProjectIdRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -460,7 +597,7 @@ const rootRouteChildren: RootRouteChildren = {
   BookQuoteIdRoute: BookQuoteIdRoute,
   CasesSlugRoute: CasesSlugRoute,
   LiveProjectIdRoute: LiveProjectIdRoute,
-  PortalProjectIdRoute: PortalProjectIdRoute,
+  PortalProjectIdRoute: PortalProjectIdRouteWithChildren,
   PortalIndexRoute: PortalIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
 }

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { RedirectToSignIn } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { listMyJobs, type JobRow } from "@/lib/server/studio";
+import { eventLabel } from "@/data/catalog";
 import { formatMoney } from "@/lib/utils";
 
 export const Route = createFileRoute("/portal/")({ component: PortalHome });
@@ -24,17 +25,17 @@ function PortalHome() {
   return (
     <div className="min-h-dvh bg-void">
       <SiteNav />
-      <main className="mx-auto max-w-5xl px-5 pt-28 pb-20">
-        <p className="text-[11px] uppercase tracking-[0.32em] text-blue-2">Client portal</p>
-        <h1 className="mt-3 font-serif text-5xl">Your floor.</h1>
-        <p className="mt-3 text-mist">Timeline, drafts, invoices — one job at a time.</p>
+      <main className="shell pt-28 pb-20">
+        <p className="text-[10px] uppercase tracking-[0.28em] text-blue-2">Client portal</p>
+        <h1 className="mt-3 text-4xl md:text-5xl">Your floor.</h1>
+        <p className="mt-3 text-base text-mist md:text-lg">Timeline, drafts, invoices — one job at a time.</p>
 
         {jobs.length === 0 ? (
           <div className="glass mt-12 rounded-lg p-8">
-            <p className="font-serif text-2xl">No bookings yet.</p>
+            <p className="text-2xl leading-tight text-paper">No bookings yet.</p>
             <p className="mt-2 text-sm text-mist">Lock a quote and it lands here.</p>
             <Link to="/quote" className="mt-6 inline-block">
-              <Button>Build a quote</Button>
+              <Button>Start a project</Button>
             </Link>
           </div>
         ) : (
@@ -48,10 +49,12 @@ function PortalHome() {
               >
                 <div>
                   <p className="text-[11px] uppercase tracking-[0.2em] text-blue-2">{j.status}</p>
-                  <p className="font-serif text-2xl">{j.title}</p>
-                  <p className="text-sm text-mist">{j.venue || j.event_type}</p>
+                  <p className="text-2xl leading-tight text-paper">{j.title}</p>
+                  <p className="text-sm text-mist">
+                    {j.venue ? `${j.venue} · ${eventLabel(j.event_type)}` : eventLabel(j.event_type)}
+                  </p>
                 </div>
-                <p className="font-serif text-2xl tabular-nums">{formatMoney(j.ballpark)}</p>
+                <p className="text-2xl leading-tight tabular-nums text-paper">{formatMoney(j.ballpark)}</p>
               </Link>
             ))}
           </div>

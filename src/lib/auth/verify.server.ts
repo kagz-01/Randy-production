@@ -95,3 +95,12 @@ export async function requireUserId(bearerToken?: string): Promise<string> {
   if (!user) throw new UnauthorizedError();
   return user.id;
 }
+
+export async function optionalUserId(bearerToken?: string): Promise<string | null> {
+  if (!authConfigured && !gateIdentityEnabled()) {
+    if (databaseConfigured) return null;
+    return DEV_USER_ID;
+  }
+  const user = await getSessionUser(bearerToken);
+  return user?.id ?? null;
+}

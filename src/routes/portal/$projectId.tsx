@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { SiteNav } from "@/components/site/nav";
 import { Button } from "@/components/ui/button";
 import { RedirectToSignIn } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { approveDraft, getMyJob } from "@/lib/server/studio";
+import { eventLabel } from "@/data/catalog";
 import { cn, formatMoney } from "@/lib/utils";
 
 export const Route = createFileRoute("/portal/$projectId")({ component: ProjectPortal });
@@ -13,18 +14,18 @@ export const Route = createFileRoute("/portal/$projectId")({ component: ProjectP
 function ProjectPortal() {
   const { projectId } = Route.useParams();
   const { user, isPending } = useCurrentUserState();
-  const [tab, setTab] = useState<"timeline" | "drafts" | "invoices" | "pulse">("timeline");
+  const [tab, setTab] = useState<"timeline" | "drafts" | "invoices" | "receipts" | "pulse">("timeline");
   const [data, setData] = useState<Awaited<ReturnType<typeof getMyJob>>>(null);
 
-  async function refresh() {
+  const refresh = useCallback(async () => {
     const next = await getMyJob({ data: { id: projectId } });
     setData(next);
-  }
+  }, [projectId]);
 
   useEffect(() => {
     if (!user) return;
     refresh().catch(() => setData(null));
-  }, [user, projectId]);
+  }, [user, refresh]);
 
   if (isPending) return <div className="min-h-dvh bg-void" />;
   if (!user) return <RedirectToSignIn />;
@@ -32,20 +33,20 @@ function ProjectPortal() {
     return (
       <div className="min-h-dvh bg-void">
         <SiteNav />
-        <p className="px-5 pt-32 text-mist">Project not on this account.</p>
+        <p className="shell pt-32 text-mist">Project not on this account.</p>
       </div>
     );
   }
 
-  const { job, invoices, drafts, cues } = data;
+  const { job, invoices, receipts, drafts, cues } = data;
   const steps = ["inquiry", "quoted", "booked", "production", "delivered"];
   const idx = Math.max(0, steps.indexOf(job.status));
 
   return (
     <div className="min-h-dvh bg-void">
       <SiteNav />
-      <main className="mx-auto max-w-5xl px-5 pt-28 pb-20">
-        <p className="text-[11px] uppercase tracking-[0.32em] text-blue-2">{job.event_type}</p>
+      <main className="shell pt-28 pb-20">
+        <p className="text-[11px] uppercase tracking-[0.32em] text-blue-2">{eventLabel(job.event_type)}</p>
         <h1 className="mt-2 font-serif text-5xl">{job.title}</h1>
         <p className="mt-2 text-mist">
           {job.venue} · {job.event_date ?? "date TBC"}
@@ -66,6 +67,7 @@ function ProjectPortal() {
               ["timeline", "Timeline"],
               ["drafts", "Drafts"],
               ["invoices", "Invoices"],
+              ["receipts", "Receipts"],
               ["pulse", "Pulse"],
             ] as const
           ).map(([k, l]) => (
@@ -95,6 +97,30 @@ function ProjectPortal() {
                 <li>Look-Through + draft approvals</li>
                 <li>Show day Pulse</li>
               </ol>
+            </div>
+          ) : null}
+
+          {tab === "receipts" ? (
+            <div className="grid gap-3">
+              {receipts.length === 0 ? (
+                <p className="text-mist">No receipts yet. Deposit payment will issue the first one automatically.</p>
+              ) : (
+                receipts.map((receipt) => (
+                  <Link
+                    key={receipt.id}
+                    to="/portal/$projectId/receipts/$receiptId"
+                    params={{ projectId: job.id, receiptId: receipt.id }}
+                    className="glass flex flex-wrap items-end justify-between gap-3 rounded-lg p-5 hover:glow-blue"
+                  >
+                    <div>
+                      <p className="text-[11px] uppercase tracking-[0.16em] text-blue-2">{receipt.receipt_no}</p>
+                      <p className="font-serif text-2xl">{receipt.kind} receipt</p>
+                      <p className="text-sm text-mist">Issued {new Date(receipt.issued_at).toLocaleDateString()}</p>
+                    </div>
+                    <p className="font-serif text-2xl tabular-nums">{formatMoney(receipt.amount)}</p>
+                  </Link>
+                ))
+              )}
             </div>
           ) : null}
 

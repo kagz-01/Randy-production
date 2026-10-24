@@ -228,7 +228,22 @@ export function grokXCreatorHeadTags(creator = readXCreator(), creatorId = readX
 }
 
 /** Platform "Created with Grok" banner — injected into every HTML document. */
-export function grokExtensionsHeadTags(projectId = readGrokProjectId()) {
+export function isLocalPreviewHost(hostHeader = "") {
+  const host = String(hostHeader ?? "")
+    .split(",")[0]
+    .trim()
+    .split(":")[0]
+    .toLowerCase();
+  if (!host) return false;
+  if (host === "localhost" || host.endsWith(".localhost")) return true;
+  if (["127.0.0.1", "0.0.0.0", "::1", "[::1]"].includes(host)) return true;
+  if (/^\d{1,3}(?:\.\d{1,3}){3}$/.test(host)) return true;
+  if (host.endsWith(".grok-sandbox.com") || host.endsWith(".grok-sandbox.local")) return true;
+  return false;
+}
+
+export function grokExtensionsHeadTags(projectId = readGrokProjectId(), host = "") {
+  if (isLocalPreviewHost(host)) return [];
   const id = escapeHtml(projectId);
   const tags = [];
   if (projectId) {
@@ -448,7 +463,7 @@ export function injectGrokPwaHead(html, ctx = {}) {
   );
 
   if (!next.includes("/grok-app-builder/extensions.js")) {
-    missing.push(...grokExtensionsHeadTags(projectId));
+    missing.push(...grokExtensionsHeadTags(projectId, host));
   } else if (projectId && !next.includes('name="grok-project-id"')) {
     missing.push(`<meta name="grok-project-id" content="${escapeHtml(projectId)}">`);
   }

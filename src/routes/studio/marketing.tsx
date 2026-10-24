@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { summarizeCaseForge } from "@/lib/case-forge";
 import { listPipeline, listTestimonials, captureTestimonial, type JobRow } from "@/lib/server/studio";
 import { WORK } from "@/data/catalog";
 
@@ -27,13 +28,14 @@ function MarketingPage() {
   const pending = tms.filter((t) => t.requested && !t.body);
 
   return (
-    <main className="mx-auto max-w-6xl px-5 py-8 md:px-8">
+    <main className="shell py-8">
       <section>
         <h2 className="font-serif text-3xl">Case Forge</h2>
         <p className="mt-1 text-sm text-mist">Every delivered night mints a shareable page.</p>
         <div className="mt-6 grid gap-3 md:grid-cols-2">
           {delivered.map((j) => {
             const work = WORK.find((w) => j.title.toLowerCase().includes(w.title.split(" ")[0].toLowerCase()));
+            const summary = summarizeCaseForge(j);
             return (
               <Link
                 key={j.id}
@@ -43,14 +45,22 @@ function MarketingPage() {
               >
                 <div className="relative aspect-[16/9]">
                   <img
-                    src={work?.image ?? "/images/hero-gala.jpg"}
+                    src={work?.image ?? "/catalog/wedding/GRA08375.webp"}
                     alt=""
                     className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-void to-transparent" />
-                  <div className="absolute bottom-3 left-4">
-                    <p className="font-serif text-2xl">{j.title}</p>
-                    <p className="text-xs uppercase tracking-[0.16em] text-blue-2">{j.client_name}</p>
+                  <div className="absolute inset-x-0 bottom-0 p-4">
+                    <p className="text-[10px] uppercase tracking-[0.18em] text-blue-2">{summary.result}</p>
+                    <p className="mt-2 font-serif text-2xl">{j.title}</p>
+                    <p className="mt-1 text-xs uppercase tracking-[0.16em] text-paper/80">{j.client_name}</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {summary.tags.slice(0, 2).map((tag) => (
+                        <span key={tag} className="rounded-full border border-paper/15 bg-paper/5 px-2 py-1 text-[10px] uppercase tracking-[0.14em] text-mist">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </Link>
