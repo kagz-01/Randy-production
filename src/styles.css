@@ -465,3 +465,29 @@
 .no-scrollbar {
   scrollbar-width: none;
 }
+
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+
+  #crew-call-sheet,
+  #crew-call-sheet * {
+    visibility: visible !important;
+  }
+
+  #crew-call-sheet {
+    position: absolute !important;
+    inset: 0 auto auto 0;
+    width: 100%;
+    margin: 0;
+    border: 0 !important;
+    background: #fff !important;
+    box-shadow: none !important;
+    color: #111 !important;
+  }
+
+  #crew-call-sheet * {
+    color: #111 !important;
+  }
+}
