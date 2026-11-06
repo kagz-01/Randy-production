@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-import { readFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
@@ -12,7 +11,6 @@ if (!databaseUrl) {
 }
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const schemaPath = join(root, "migrations", "schema.sql");
 const pool = new pg.Pool({ connectionString: databaseUrl, max: 1 });
 
 async function main() {
@@ -32,22 +30,12 @@ async function main() {
         `Refusing to bootstrap non-empty schema "${existing.rows[0].relname}". Use npm run db:migrate for an existing database.`,
       );
     }
-
-    const schema = await readFile(schemaPath, "utf8");
-    await client.query("BEGIN");
-    try {
-      await client.query(schema);
-      await client.query("COMMIT");
-    } catch (error) {
-      await client.query("ROLLBACK");
-      throw error;
-    }
-    console.log("[bootstrap] Current schema baseline applied.");
   } finally {
     client?.release();
     await pool.end();
   }
 
+  console.log("[bootstrap] Empty schema confirmed; applying the canonical baseline.");
   const migration = spawnSync(process.execPath, [join(root, "scripts", "migrate.mjs")], {
     cwd: root,
     env: process.env,

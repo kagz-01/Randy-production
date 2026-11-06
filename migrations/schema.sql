@@ -1,16 +1,12 @@
 -- Randy Production fresh-database schema baseline.
 --
--- This is a snapshot of the current table and index structure, not the
--- incremental migration history. Bootstrap an EMPTY database with
--- `npm run db:bootstrap`; that command applies this file and then runs
--- migrations/*.sql to seed reference data and record each migration.
+-- This file is the canonical schema and bootstrap-safe reference data. Apply it
+-- to an EMPTY database with `npm run db:bootstrap`, or once to an existing
+-- database with `npm run db:migrate`. All DDL and seed inserts are idempotent.
 --
--- For an existing database, do NOT apply this snapshot. Use `npm run db:migrate`
--- so the ordered, data-preserving migration history is applied instead.
---
--- Keep this baseline aligned with migrations/0001_*.sql through 0016_*.sql.
--- It intentionally contains no fixture cleanup, historical receipt backfill,
--- or seeded knowledge content; the normal migrations apply those safely.
+-- Keep historical/destructive cleanup and one-time receipt backfills out of this
+-- baseline. Add future incremental changes as ordered migrations/*.sql files
+-- and fold their final schema into this baseline.
 
 create table if not exists "user" (
   "id" text not null primary key,
@@ -335,6 +331,10 @@ create unique index if not exists studio_channels_job_idx
   on studio_channels (job_id)
   where job_id is not null;
 
+insert into studio_channels (id, title, job_id)
+values ('general', 'Studio floor', null)
+on conflict do nothing;
+
 create table if not exists studio_messages (
   id text primary key,
   channel_id text not null references studio_channels(id) on delete cascade,
@@ -427,6 +427,96 @@ create index if not exists knowledge_entries_updated_idx
 
 create index if not exists knowledge_entries_search_idx
   on knowledge_entries using gin (search_vector);
+
+insert into knowledge_entries (
+  id, title, content, tags, source_name, source_url, jurisdiction,
+  evidence_type, visibility, status, reviewed_by, reviewed_at
+) values
+(
+  'kb-kmd-outdoor-weather',
+  'Outdoor events: use current county weather forecasts and warnings',
+  'The Kenya Meteorological Department provides daily forecasts, 5-day and 7-day outlooks, county-level forecasts, and warnings for hazards including heavy rainfall, flooding, and strong winds. For an outdoor event, check the relevant county forecast during planning and again close to event day. Agree a wet-weather decision point, covered alternative, safe equipment protection, and a clear way to communicate any change. Forecasts are time-sensitive; this entry is planning guidance, not a forecast.',
+  'outdoor,weather,forecast,rain,flooding,wind,garden,venue,event-day,contingency',
+  'Kenya Meteorological Department — Weather Forecasting',
+  'https://meteo.go.ke/Services/weather-forecasting/',
+  'Kenya',
+  'official_guidance',
+  'public',
+  'approved',
+  'system-curated',
+  now()
+),
+(
+  'kb-kmd-weather-alerts',
+  'Outdoor production: monitor official severe-weather alerts',
+  'KMD publishes weather warnings and alerts. For outdoor production, assign someone to monitor official updates and agree in advance who can pause setup, protect equipment, move guests, or activate the covered alternative. Do not treat an old alert or forecast as current; check the official warning page and its issue time.',
+  'outdoor,weather,alerts,rain,flooding,wind,production,safety,contingency',
+  'Kenya Meteorological Department — Weather Warnings',
+  'https://meteo.go.ke/weather-warnings/',
+  'Kenya',
+  'official_guidance',
+  'public',
+  'approved',
+  'system-curated',
+  now()
+),
+(
+  'kb-who-all-hazards',
+  'Larger gatherings: use an all-hazards planning approach',
+  'WHO describes mass-gathering readiness in terms of risk assessment, surveillance and response, emergency and mass-casualty planning, transport procedures, and current health advice. For a larger or higher-complexity event, identify credible hazards before event day, name the people responsible for decisions, confirm how emergency services can reach the venue, and make attendee-facing emergency information easy to find. Scale the plan to the event; this is general public-health guidance, not a substitute for local authority direction.',
+  'large-event,high-complexity,risk-assessment,emergency,medical,transport,attendees,health,all-hazards',
+  'World Health Organization — Managing health risks during mass gatherings',
+  'https://www.who.int/activities/managing-health-risks-during-mass-gatherings',
+  'International',
+  'official_guidance',
+  'public',
+  'approved',
+  'system-curated',
+  now()
+),
+(
+  'kb-hse-event-safety-reference',
+  'Event planning: identify the organiser, venue, contractor, and supervisor roles',
+  'The UK Health and Safety Executive event-safety resource identifies organisers, contractors, volunteers, venue owners, and supervisors as distinct audiences for event-safety guidance. Use this as a prompt to name responsibilities and handoffs in the production plan. This is UK reference material, not Kenyan law or a statement of Kenyan permit requirements; verify local obligations with the relevant Kenyan authority.',
+  'roles,organiser,venue,contractor,supervisor,volunteer,operations,responsibility',
+  'UK Health and Safety Executive — Event Safety',
+  'https://www.hse.gov.uk/event-safety/',
+  'United Kingdom — reference only',
+  'practice_reference',
+  'public',
+  'approved',
+  'system-curated',
+  now()
+),
+(
+  'kb-studio-venue-survey',
+  'Studio checklist: capture venue constraints before locking production scope',
+  'Before confirming production scope, record venue access and loading windows, setup and strike timings, available power and its location, permitted rigging or fixing points, service routes, and any restrictions that affect sound, lighting, décor, or guest movement. Confirm the details with the venue rather than assuming them from photos. This is a Randy Production checklist for staff review and should be adapted to the specific venue.',
+  'venue,site-survey,access,power,rigging,loading,setup,strike,sound,lighting,decor',
+  'Randy Production — proposed venue survey checklist',
+  null,
+  'Randy Production',
+  'company_practice',
+  'internal',
+  'draft',
+  null,
+  null
+),
+(
+  'kb-nema-noise-regulations',
+  'Amplified sound and social events: NEMA-hosted 2009 noise regulations',
+  'The NEMA-hosted Environmental Management and Co-ordination (Noise and Excessive Vibration Pollution) (Control) Regulations, 2009 includes provisions on sound-amplifying equipment (Regulation 8), parties and social events (Regulation 9), and licensing (Regulation 16). The text addresses noise affecting the public and describes licensing conditions for certain sound sources, including some public-address use outside buildings and some sound audible outside buildings at night. This is a pointer to the source text, not a decision that a particular event needs a licence or is compliant. The available copy is dated 2009; confirm whether it has been amended or superseded, check the event and venue circumstances with NEMA and the relevant local authority, and obtain qualified Kenyan legal advice before relying on it.',
+  'Kenya,NEMA,noise,amplified-sound,public-address,parties,social-events,licensing,legal',
+  'National Environment Management Authority — Environmental Management and Co-ordination (Noise and Excessive Vibration Pollution) (Control) Regulations, 2009',
+  'https://nema.go.ke/wp-content/uploads/2024/10/Noise-Regulations.pdf',
+  'Kenya — verify amendments and current applicability',
+  'legislation',
+  'internal',
+  'draft',
+  null,
+  null
+)
+on conflict (id) do nothing;
 
 create table if not exists knowledge_ai_usage (
   subject_hash text not null,

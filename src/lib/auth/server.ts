@@ -83,8 +83,7 @@ const googleOAuthConfigured = Boolean(googleClientId && googleClientSecret);
 
 /** True when Google or the live-preview broker can provide real sign-in. */
 export const authConfigured =
-  !authDisabled &&
-  (googleOAuthConfigured || Boolean(grokClientId && grokClientSecret));
+  !authDisabled && (googleOAuthConfigured || Boolean(grokClientId && grokClientSecret));
 
 // This app's own Better Auth origin. When deployed the deployer injects the
 // public URL. In the sandbox live preview there's no fixed URL (each preview gets
@@ -136,9 +135,8 @@ const grokUserInfoUrl = `${issuerBase}/api/auth/oauth2/userinfo`;
 
 // Real Postgres when `DATABASE_URL` is set (deployed apps), else the app's
 // embedded PGLite (preview) via a Kysely dialect — so Better Auth persists to the
-// SAME DB as app data, including email/password users. Both use the Better Auth
-// schema from `migrations/auth/0001_auth.sql`, copied into `migrations/` when
-// the app turns sign-in on.
+// SAME DB as app data, including email/password users. The Better Auth schema
+// is part of the canonical `migrations/schema.sql`.
 const database = databaseUrl
   ? new Pool({ connectionString: databaseUrl })
   : { dialect: pgliteDialect(() => getPglite()), type: "postgres" as const };

@@ -1,2 +1,0 @@
--- Sample showcase rows were removed in migration 0008.
--- Production jobs, crew, vendors, inventory, and testimonials are entered by the team.
