@@ -22,7 +22,7 @@ describe("summarizeShowDayBrief", () => {
 
   it("moves an event to watch when the venue or approvals are still open", () => {
     const summary = summarizeShowDayBrief({
-      title: "Meridian Gala",
+      title: "Sample Gala",
       status: "booked",
       event_date: "2027-03-15T18:00:00.000Z",
       venue: null,

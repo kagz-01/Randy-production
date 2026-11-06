@@ -4,23 +4,20 @@ import {
   Aperture,
   ArrowRight,
   ArrowDown,
-  AudioLines,
   Clapperboard,
   Layers3,
-  Radar,
 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { SiteFooter, SiteNav } from "@/components/site/nav";
-import { BeforeAfter } from "@/components/site/before-after";
-import { GlassCard, ParallaxImage, Reveal } from "@/components/site/fx";
+import { GlassCard, Reveal } from "@/components/site/fx";
 import { Button } from "@/components/ui/button";
-import { AGENCY_PILLARS, OUTCOMES, PILLAR_LINE, STATS, TEAM, TIMELINE, WORK } from "@/data/catalog";
-import { getLivePulse, getPublicStats } from "@/lib/server/studio";
+import { PILLAR_LINE, SERVICES, WORK } from "@/data/catalog";
+import { getLivePulse } from "@/lib/server/studio";
 
 export const Route = createFileRoute("/")({ component: Home });
 
-const HERO_VIDEO_URL = "/videos/hero.mp4?v=2026-10-06";
-const HERO_POSTER_URL = "/catalog/concert/GRA00269.webp?v=2026-10-06";
+const HERO_VIDEO_URL = "/videos/hero.mp4?v=2026-10-29";
+const HERO_POSTER_URL = "/images/hero-poster.webp";
 
 const STORY = [
   {
@@ -30,22 +27,27 @@ const STORY = [
   },
   {
     step: "02",
-    title: "One floor builds it",
-    body: "Media, events, branding, digital, and PR under one roof. No hand-offs that lose the plot between agencies.",
+    title: "Plan the production",
+    body: "Agree on the venue, schedule, services and responsibilities before the event day.",
   },
   {
     step: "03",
-    title: "Show day, we run it",
-    body: "Call sheets, sound, stage, décor, capture — Pulse live so the programme does not drift while guests arrive.",
+    title: "Coordinate the event",
+    body: "Bring the production plan, crew and suppliers together around the agreed schedule.",
   },
   {
     step: "04",
-    title: "Proof ships after",
-    body: "Film, stills, recap, results. Work people remember — and numbers you can point at next quarter.",
+    title: "Hand over the work",
+    body: "Deliver the agreed film, photographs or other project materials after the event.",
   },
 ] as const;
 
 function Home() {
+  const featuredWork = WORK[0];
+  const portfolioServices = SERVICES.flatMap((service) => {
+    const stories = WORK.filter((story) => story.service === service.key);
+    return stories.length > 0 ? [{ ...service, stories }] : [];
+  });
   const heroRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: heroRef,
@@ -55,8 +57,7 @@ function Home() {
   const opacity = useTransform(scrollYProgress, [0, 0.75], [1, 0]);
   const scale = useTransform(scrollYProgress, [0, 1], [1, 1.08]);
   const [pulseId, setPulseId] = useState<string | null>(null);
-  const [activeMember, setActiveMember] = useState<(typeof TEAM)[number] | null>(null);
-  const modalVideoRef = useRef<HTMLVideoElement | null>(null);
+  const [pulseLoadError, setPulseLoadError] = useState(false);
 
   useEffect(() => {
     let on = true;
@@ -65,43 +66,15 @@ function Home() {
         if (on) setPulseId(r?.id ?? null);
       })
       .catch(() => {
-        if (on) setPulseId(null);
+        if (on) {
+          setPulseId(null);
+          setPulseLoadError(true);
+        }
       });
     return () => {
       on = false;
     };
   }, []);
-
-  useEffect(() => {
-    if (!activeMember) {
-      document.body.style.overflow = "";
-      return;
-    }
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setActiveMember(null);
-      }
-    };
-
-    document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      document.body.style.overflow = "";
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [activeMember]);
-
-  useEffect(() => {
-    if (!activeMember) return;
-    const video = modalVideoRef.current;
-    if (!video) return;
-    video.currentTime = 0;
-    video.play().catch(() => {
-      // Some browsers block autoplay without user interaction; the modal still opens and remains usable.
-    });
-  }, [activeMember]);
 
   return (
     <div className="relative min-h-dvh overflow-x-hidden pt-16 md:pt-20">
@@ -115,13 +88,15 @@ function Home() {
           <video
             key={HERO_VIDEO_URL}
             className="size-full object-cover ken-burn"
-            src={HERO_VIDEO_URL}
-            poster={HERO_POSTER_URL}
             autoPlay
             muted
             loop
             playsInline
-          />
+            preload="auto"
+            poster={HERO_POSTER_URL}
+          >
+            <source src={HERO_VIDEO_URL} type="video/mp4" />
+          </video>
           <div className="absolute inset-0 bg-linear-to-t from-void via-void/45 to-void/30" />
         </motion.div>
 
@@ -143,7 +118,7 @@ function Home() {
           <div className="mt-6 flex flex-wrap items-center gap-3 md:mt-8">
             <Link to="/quote">
               <Button variant="primary" size="lg">
-                Start a project
+                Get a Quote
                 <ArrowRight className="size-4" />
               </Button>
             </Link>
@@ -164,6 +139,47 @@ function Home() {
       </section>
 
       <StatsTicker />
+
+      <section className="shell relative z-1 py-12 md:py-16" aria-labelledby="start-heading">
+        <Reveal>
+          <p className="eyebrow">Your next step</p>
+          <h2 id="start-heading" className="mt-3 font-serif text-3xl tracking-[-0.05em] text-paper md:text-5xl">
+            Start with what you know.
+          </h2>
+        </Reveal>
+        <div className="mt-6 grid gap-3 md:grid-cols-3">
+          <Reveal className="h-full">
+            <StartPathCard
+              to="/quote"
+              icon={<Clapperboard className="size-5 text-blue-2" aria-hidden />}
+              context="Ready to price"
+              title="Get a Quote"
+              description="Build your production scope and see the estimate."
+              action="Build your quote"
+            />
+          </Reveal>
+          <Reveal delay={0.06} className="h-full">
+            <StartPathCard
+              to="/match"
+              icon={<Aperture className="size-5 text-blue-2" aria-hidden />}
+              context="Need a recommendation"
+              title="Help Me Choose"
+              description="Find a package that fits your event and priorities."
+              action="Find my package"
+            />
+          </Reveal>
+          <Reveal delay={0.12} className="h-full">
+            <StartPathCard
+              to="/look"
+              icon={<Layers3 className="size-5 text-blue-2" aria-hidden />}
+              context="Have a vision"
+              title="Plan Your Event"
+              description="Shape the room and share your creative brief."
+              action="Create a room concept"
+            />
+          </Reveal>
+        </div>
+      </section>
 
       <section id="story" className="shell relative z-1 scroll-mt-24 py-16 md:py-28">
         <Reveal>
@@ -187,13 +203,28 @@ function Home() {
             </p>
           </Reveal>
         </div>
-        <div className="mt-8 grid gap-3 grid-cols-2 sm:grid-cols-2 lg:grid-cols-5">
-          {AGENCY_PILLARS.map((p, i) => (
-            <Reveal key={p.key} delay={i * 0.05} className="h-full">
-              <GlassCard className="h-full min-h-[150px] rounded-[1rem] p-3 md:p-4">
-                <p className="text-[9px] uppercase tracking-[0.2em] text-blue-2 md:text-[10px]">{p.label}</p>
-                <p className="mt-2 text-[0.72rem] leading-relaxed text-mist md:text-[0.82rem]">{p.line}</p>
-              </GlassCard>
+        <div className="mt-8 grid gap-3 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
+          {portfolioServices.map((service, i) => (
+            <Reveal key={service.key} delay={i * 0.05} className="h-full">
+              <Link
+                to="/work"
+                search={{ service: service.key }}
+                className="group grid h-full grid-cols-[7rem_minmax(0,1fr)] overflow-hidden rounded-xl border border-paper/10 bg-ink/60 transition-colors hover:border-blue/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-2 sm:grid-cols-[8rem_minmax(0,1fr)]"
+              >
+                <img
+                  src={service.stories[0].image}
+                  alt=""
+                  loading="lazy"
+                  className="size-full min-h-32 object-contain transition-transform duration-500 group-hover:scale-[1.03]"
+                />
+                <span className="flex flex-col justify-center p-4">
+                  <span className="text-[10px] uppercase tracking-[0.18em] text-blue-2">{service.label}</span>
+                  <span className="mt-2 font-serif text-xl text-paper">
+                    {service.stories.length} {service.stories.length === 1 ? "project story" : "project stories"}
+                  </span>
+                  <span className="mt-3 text-xs text-mist group-hover:text-paper">Browse this work →</span>
+                </span>
+              </Link>
             </Reveal>
           ))}
         </div>
@@ -202,7 +233,7 @@ function Home() {
       <section className="relative z-1 border-y border-paper/10 bg-ink/70 py-20 backdrop-blur-sm md:py-28">
         <div className="shell">
           <Reveal>
-            <Header title="Four moments. One team. No missing cue." />
+            <Header title="From the first brief to the final hand-off." />
           </Reveal>
           <ol className="mt-8 grid gap-3 grid-cols-2 md:grid-cols-2 lg:grid-cols-4">
             {STORY.map((s, i) => (
@@ -222,39 +253,44 @@ function Home() {
 
       <section className="shell relative z-1 py-20 md:py-28">
         <Reveal>
-          <Header title="Recent work from Nairobi and beyond." />
+          <Header title="Stories from the full catalog." />
         </Reveal>
         <div className="mt-8 grid gap-4 grid-cols-1 md:grid-cols-12">
-          <Reveal className="md:col-span-7">
-            <Link to="/work" className="group relative block">
-              <div className="relative aspect-16/11 overflow-hidden rounded-lg">
-                <ParallaxImage
-                  src="/catalog/concert/GRA00269.webp"
-                  alt="Meridian Gala"
-                  className="size-full"
-                  strength={28}
-                />
-                <div className="absolute inset-0 bg-linear-to-t from-void via-transparent to-transparent" />
-                <div className="glass-chip absolute right-4 bottom-4 left-4 rounded-md px-4 py-3">
-                  <p className="text-[11px] uppercase tracking-[0.22em] text-blue-2">Gala production · 2026</p>
-                  <p className="font-serif text-3xl">Meridian Gala</p>
+          {featuredWork ? (
+            <Reveal className="md:col-span-7">
+              <Link
+                to="/cases/$slug"
+                params={{ slug: featuredWork.id }}
+                className="group relative block"
+              >
+                <div className="relative aspect-16/11 overflow-hidden rounded-lg bg-[#071119]">
+                  <img
+                    src={featuredWork.image}
+                    alt={`${featuredWork.title} — ${featuredWork.event}`}
+                    className="size-full object-contain transition-transform duration-700 group-hover:scale-[1.01]"
+                  />
+                  <div className="absolute inset-0 bg-linear-to-t from-void/85 via-transparent to-transparent" />
+                  <div className="glass-chip absolute right-4 bottom-4 left-4 rounded-md px-4 py-3">
+                    <p className="text-[11px] uppercase tracking-[0.22em] text-blue-2">{featuredWork.event}</p>
+                    <p className="font-serif text-3xl">{featuredWork.title}</p>
+                  </div>
                 </div>
-              </div>
-            </Link>
-          </Reveal>
+              </Link>
+            </Reveal>
+          ) : null}
           <div className="grid gap-4 md:col-span-5">
-            {WORK.slice(0, 2).map((w, i) => (
+            {WORK.slice(1, 3).map((w, i) => (
               <Reveal key={w.id} delay={0.08 + i * 0.06}>
-                <Link to="/work" className="group relative block overflow-hidden rounded-lg">
-                  <div className="relative aspect-16/8">
+                <Link to="/cases/$slug" params={{ slug: w.id }} className="group relative block overflow-hidden rounded-lg">
+                  <div className="relative aspect-16/8 bg-[#071119]">
                     <img
                       src={w.image}
-                      alt={w.title}
-                      className="size-full object-cover transition-transform duration-700 group-hover:scale-105"
+                      alt={`${w.title} — ${w.event}`}
+                      className="size-full object-contain transition-transform duration-700 group-hover:scale-[1.01]"
                     />
                     <div className="absolute inset-0 bg-linear-to-t from-void via-void/20 to-transparent" />
                     <div className="glass-chip absolute right-4 bottom-3 left-4 rounded-md px-3 py-2">
-                      <p className="text-[11px] uppercase tracking-[0.2em] text-blue-2">{w.event ?? w.service}</p>
+                      <p className="text-[11px] uppercase tracking-[0.2em] text-blue-2">{w.event}</p>
                       <p className="font-serif text-xl">{w.title}</p>
                     </div>
                   </div>
@@ -265,192 +301,38 @@ function Home() {
         </div>
         <div className="mt-8">
           <Link to="/work" className="text-sm text-blue-2 underline-offset-4 hover:underline">
-            More rooms in the archive →
+            Explore all catalog stories →
           </Link>
         </div>
       </section>
 
-      <section className="shell relative z-1 pb-8">
-        <Reveal>
-          <Header title="From raw venue to dressed room." />
-          <p className="mt-3 max-w-xl text-mist">
-            We help clients see the room before the build begins — the layout, the texture, the mood, and the flow
-            that will shape the entire guest experience.
-          </p>
-        </Reveal>
-        <Reveal delay={0.1} className="mt-8">
-          <BeforeAfter before="/catalog/decor/IMG_0953.webp" after="/catalog/wedding/GRA08375.webp" />
-        </Reveal>
-        <div className="mt-6">
-          <Link to="/look">
-            <Button variant="line">
-              Overlay your venue
-              <ArrowRight className="size-4" />
-            </Button>
+      {pulseLoadError ? (
+        <p role="status" className="shell mt-4 text-sm text-mist">
+          Live event status could not be loaded. Please try again later.
+        </p>
+      ) : null}
+      {pulseId ? (
+        <div className="shell relative z-1 pb-8">
+          <Link
+            to="/live/$projectId"
+            params={{ projectId: pulseId }}
+            className="inline-flex min-h-11 items-center gap-2 text-sm text-blue-2 underline-offset-4 hover:underline"
+          >
+            View the live event <ArrowRight className="size-4" aria-hidden />
           </Link>
         </div>
-      </section>
-
-      <section className="relative z-1 mt-16 border-y border-paper/10 bg-ink/70 py-20 backdrop-blur-sm md:py-24">
-        <div className="shell">
-          <Reveal>
-            <Header title="Logos are cheap. Numbers stay." />
-          </Reveal>
-          <div className="mt-8 grid gap-px bg-paper/10 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-            {OUTCOMES.map((o, i) => (
-              <Reveal key={o.client} delay={i * 0.05} className="bg-ink/80">
-                <div className="h-full p-6">
-                  <p className="text-[11px] uppercase tracking-[0.22em] text-blue-2">{o.client}</p>
-                  <p className="mt-3 font-serif text-2xl text-paper">{o.line}</p>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="shell relative z-1 py-20 md:py-28">
-        <Reveal>
-          <Header title="Faces first. Then the instruments." />
-        </Reveal>
-        <div className="mt-8 grid gap-3 grid-cols-2 mobile-2up sm:grid-cols-2 lg:grid-cols-4">
-          {TEAM.map((t, i) => (
-            <Reveal key={t.id} delay={i * 0.06}>
-              <article className="group relative overflow-hidden rounded-lg">
-                <button
-                  type="button"
-                  onClick={() => setActiveMember(t)}
-                  className="relative block w-full overflow-hidden text-left"
-                  aria-label={`Open video for ${t.name}`}
-                >
-                  <div className="relative aspect-4/5">
-                    <img
-                      src={t.image}
-                      alt={t.name}
-                      className="size-full object-cover transition-transform duration-700 group-hover:scale-105"
-                    />
-                    <video
-                      key={`${t.id}-video`}
-                      src={t.video}
-                      autoPlay
-                      muted
-                      loop
-                      playsInline
-                      className="absolute inset-0 size-full object-cover opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-                    />
-                    <div className="absolute inset-0 bg-linear-to-t from-void via-void/25 to-transparent" />
-                    <div className="glass-chip absolute inset-x-3 bottom-3 max-w-[calc(100%-1.5rem)] rounded-md border border-paper/10 bg-void/45 px-2.5 py-2 shadow-[0_12px_30px_rgba(0,0,0,0.18)] backdrop-blur-[2px] transition-transform duration-300 group-hover:-translate-y-0.5">
-                      <p className="text-[7px] uppercase tracking-[0.22em] text-blue-2">{t.role}</p>
-                      <p className="mt-1 font-serif text-[1rem] leading-[1] tracking-[-0.04em] text-paper sm:text-[1.15rem]">
-                        {t.name}
-                      </p>
-                      <p className="mt-2 max-h-0 overflow-hidden text-[10px] leading-relaxed text-paper/75 transition-all duration-300 group-hover:max-h-20">
-                        {t.line}
-                      </p>
-                    </div>
-                    <span className="absolute left-3 top-3 inline-flex items-center gap-2 rounded-full border border-paper/15 bg-void/55 px-2 py-1 text-[7px] uppercase tracking-[0.18em] text-paper/85 backdrop-blur-sm">
-                      Play intro
-                    </span>
-                  </div>
-                </button>
-              </article>
-            </Reveal>
-          ))}
-        </div>
-
-        {activeMember ? (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-void/80 p-4 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
-            <div className="relative w-full max-w-5xl overflow-hidden rounded-2xl border border-paper/10 bg-ink shadow-[0_30px_80px_rgba(0,0,0,0.6)]">
-              <button
-                type="button"
-                onClick={() => setActiveMember(null)}
-                className="absolute right-3 top-3 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full border border-paper/10 bg-void/70 text-xl text-paper transition-colors hover:bg-void"
-                aria-label="Close video"
-              >
-                ×
-              </button>
-              <div className="relative overflow-hidden bg-black">
-                <video
-                  ref={modalVideoRef}
-                  key={`${activeMember.id}-modal`}
-                  src={activeMember.video}
-                  autoPlay
-                  muted
-                  playsInline
-                  controls
-                  className="aspect-video w-full object-cover"
-                />
-              </div>
-              <div className="flex flex-col gap-3 border-t border-paper/10 bg-void/80 px-4 py-4 sm:flex-row sm:items-end sm:justify-between sm:px-5">
-                <div>
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-blue-2">{activeMember.role}</p>
-                  <p className="font-serif text-2xl text-paper sm:text-3xl">{activeMember.name}</p>
-                </div>
-                <p className="max-w-xl text-sm leading-relaxed text-mist">{activeMember.line}</p>
-              </div>
-            </div>
-          </div>
-        ) : null}
-
-        <div className="mt-10 grid gap-3 grid-cols-2 mobile-2up md:grid-cols-3">
-          <Reveal className="h-full">
-            <ToolCard
-              to="/look"
-              icon={<Layers3 className="size-5 text-blue" />}
-              title="Look-Through"
-              body="Drop a venue photo. Overlay the dress. Approve the room before we truck a drape."
-            />
-          </Reveal>
-          <Reveal delay={0.06} className="h-full">
-            <ToolCard
-              to="/match"
-              icon={<Aperture className="size-5 text-blue" />}
-              title="Match"
-              body="A mood or goal in. A package out — so the quote is not a guess."
-            />
-          </Reveal>
-          <Reveal delay={0.12} className="h-full">
-            <ToolCard
-              to={pulseId ? `/live/${pulseId}` : "/look"}
-              icon={<Radar className="size-5 text-blue" />}
-              title="Pulse"
-              body="Run-of-show, sound check, setup — live with the client. No PDF from this morning."
-            />
-          </Reveal>
-        </div>
-        <div className="mt-4 grid gap-3 grid-cols-2 mobile-2up md:grid-cols-2">
-          <Reveal className="h-full">
-            <ToolCard
-              to="/quote"
-              icon={<Clapperboard className="size-5 text-blue" />}
-              title="Quote → sign → deposit"
-              body="Ballpark in seconds, contract on the same screen, 30% to lock the date."
-            />
-          </Reveal>
-          <Reveal delay={0.06} className="h-full">
-            <ToolCard
-              to="/studio"
-              icon={<AudioLines className="size-5 text-blue" />}
-              title="Studio desk"
-              body="Pipeline, gear, call sheets, vendors — the part most pretty sites skip."
-            />
-          </Reveal>
-        </div>
-      </section>
+      ) : null}
 
       <section className="relative z-1 border-t border-paper/10 bg-ink/70 backdrop-blur-sm">
-        <div className="shell py-20 text-center md:py-28">
+        <div className="shell py-12 text-center md:py-16">
           <Reveal>
             <h2 className="mx-auto max-w-4xl font-serif text-4xl text-paper md:text-5xl lg:text-6xl">
-              Tell us the moment. We will build the story around it.
+              Make the next one unforgettable.
             </h2>
-            <p className="section-lead mx-auto mt-5 max-w-xl">
-              Wedding, brand launch, gala, private sherehe, live stage, or campaign — one clear brief is where the real experience begins.
-            </p>
-            <div className="mt-8 flex flex-wrap justify-center gap-3">
+            <div className="mt-6 flex flex-wrap justify-center gap-3">
               <Link to="/quote">
                 <Button variant="primary" size="lg">
-                  Start a project
+                  Get a Quote
                   <ArrowRight className="size-4" />
                 </Button>
               </Link>
@@ -464,8 +346,6 @@ function Home() {
         </div>
       </section>
 
-      <ArchiveStrip />
-
       <SiteFooter />
     </div>
   );
@@ -478,26 +358,16 @@ function Header({ title }: { title: string }) {
 }
 
 function StatsTicker() {
-  const [items, setItems] = useState(() => [...STATS, ...STATS, ...STATS]);
-
-  useEffect(() => {
-    let on = true;
-    getPublicStats()
-      .then((s) => {
-        if (!on) return;
-        const real = [
-          { value: s.delivered || STATS[0].value, label: "events delivered", suffix: "" },
-          { value: STATS[1].value, label: STATS[1].label, suffix: STATS[1].suffix },
-          { value: s.campaigns || STATS[2].value, label: "brand campaigns shipped", suffix: "" },
-          { value: STATS[3].value, label: STATS[3].label, suffix: STATS[3].suffix },
-        ];
-        setItems([...real, ...real, ...real]);
-      })
-      .catch(() => undefined);
-    return () => {
-      on = false;
-    };
-  }, []);
+  const portfolioFacts = [
+    {
+      value: WORK.reduce((count, story) => count + story.stills.length + 1, 0),
+      label: "catalog photographs",
+      suffix: "",
+    },
+    { value: WORK.length, label: "curated stories", suffix: "" },
+    { value: new Set(WORK.map((story) => story.service)).size, label: "services represented", suffix: "" },
+  ];
+  const items = [...portfolioFacts, ...portfolioFacts, ...portfolioFacts];
 
   return (
     <div className="relative overflow-hidden border-y border-paper/10 bg-ink/80 py-4 backdrop-blur-sm md:py-5">
@@ -518,60 +388,38 @@ function StatsTicker() {
   );
 }
 
-function ArchiveStrip() {
-  return (
-    <section className="shell relative z-1 py-16 md:py-20">
-      <Reveal>
-        <Header title="A living timeline. Just scroll the years." />
-      </Reveal>
-      <ol className="mt-10 space-y-0">
-        {TIMELINE.map((t, i) => (
-          <li
-            key={t.title}
-            className="grid grid-cols-1 items-start gap-3 py-4 md:grid-cols-[140px_16px_1fr] md:gap-4 xl:grid-cols-[160px_20px_1fr]"
-          >
-            <p className="pt-1 text-xs uppercase tracking-[0.16em] text-mist">{t.date}</p>
-            <div className="relative flex justify-center">
-              <span className="mt-2 size-2 rounded-full bg-blue" />
-              {i < TIMELINE.length - 1 ? (
-                <span className="absolute top-4 -bottom-9 w-px bg-paper/15" />
-              ) : null}
-            </div>
-            <Reveal delay={Math.min(i, 5) * 0.04}>
-              <GlassCard className="p-5">
-                <p className="eyebrow text-blue-2">{t.service}</p>
-                <p className="feature-title">{t.title}</p>
-                <p className="mt-1 text-sm text-mist">{t.stat}</p>
-              </GlassCard>
-            </Reveal>
-          </li>
-        ))}
-      </ol>
-    </section>
-  );
-}
-
-function ToolCard({
+function StartPathCard({
   to,
   icon,
+  context,
   title,
-  body,
+  description,
+  action,
 }: {
   to: string;
   icon: ReactNode;
+  context: string;
   title: string;
-  body: string;
+  description: string;
+  action: string;
 }) {
   return (
-    <Link to={to} className="glass glass-lift group relative block h-full overflow-hidden rounded-lg p-4 md:p-6">
+    <Link
+      to={to}
+      className="glass glass-lift group relative flex h-full min-h-52 flex-col overflow-hidden rounded-lg p-5 md:p-6"
+    >
       <span aria-hidden className="glass-sheen" />
-      <div className="relative">
-        <div className="mb-5 flex items-center justify-between">
+      <div className="relative flex h-full flex-col">
+        <div className="flex items-center justify-between">
           {icon}
-          <ArrowRight className="size-4 text-mist transition-transform duration-200 group-hover:translate-x-1 group-hover:text-paper" />
+          <span className="text-[9px] uppercase tracking-[0.18em] text-mist">{context}</span>
         </div>
-        <h3 className="feature-title">{title}</h3>
-        <p className="mt-2 text-sm leading-relaxed text-mist">{body}</p>
+        <h3 className="mt-7 font-serif text-2xl tracking-[-0.035em] text-paper md:text-3xl">{title}</h3>
+        <p className="mt-2 max-w-[28ch] text-sm leading-relaxed text-mist">{description}</p>
+        <span className="mt-auto inline-flex items-center gap-2 pt-6 text-xs font-medium text-blue-2">
+          {action}
+          <ArrowRight className="size-3.5 transition-transform duration-200 group-hover:translate-x-1" aria-hidden />
+        </span>
       </div>
     </Link>
   );

@@ -38,11 +38,11 @@ export interface Sql {
 }
 
 /**
- * Init state lives on globalThis as promises: dev HMR creates new instances of
- * this module, and two instances racing module-level state would open a second
- * pool or run two concurrent PGLite migration passes (whose duplicate
- * `_migrations` insert rejects — and would get memoized, poisoning every later
- * `getSql()`). A failed init clears its slot so the next call retries.
+ * The Neon pool and PGLite instance live on globalThis so dev HMR does not
+ * create duplicates. The PGLite SQL facade stays module-local so a refreshed
+ * module checks for newly added migrations; migration passes are serialized on
+ * a global chain. A failed initialization clears its slot so the next call can
+ * retry.
  */
 const globalRef = globalThis as typeof globalThis & {
   __pgSqlPromise__?: Promise<Sql>;
@@ -187,8 +187,16 @@ async function createSql(): Promise<Sql> {
  * both backends — define tables there, never inline in server functions.
  */
 export function getSql(): Promise<Sql> {
+  if (dbSource === "neon") {
+    globalRef.__pgSqlPromise__ ??= createSql().catch((err) => {
+      globalRef.__pgSqlPromise__ = undefined;
+      throw err;
+    });
+    return globalRef.__pgSqlPromise__;
+  }
+
   sqlPromise ??= createSql().catch((err) => {
-    sqlPromise = null; // don't memoize failures — let the next call retry
+    sqlPromise = null;
     throw err;
   });
   return sqlPromise;

@@ -7,7 +7,7 @@ import {
   MapPin,
   Sparkles,
 } from "lucide-react";
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { SiteNav } from "@/components/site/nav";
 import { Button } from "@/components/ui/button";
@@ -24,11 +24,59 @@ import {
   type VenueType,
 } from "@/data/catalog";
 import { buildProposalSheet, buildProposalSummary, priceQuote } from "@/lib/pricing";
+import {
+  EVENT_PLAN_HANDOFF_STORAGE_KEY,
+  isValidEventDate,
+  parseEventPlanHandoff,
+} from "@/lib/event-plan";
 import { refineQuote, saveQuote } from "@/lib/server/studio";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { cn, formatMoney } from "@/lib/utils";
 
-export const Route = createFileRoute("/quote")({ component: QuotePage });
+type QuoteSearch = {
+  eventType?: EventType;
+  guests?: number;
+  tier?: TierKey;
+  venueType?: VenueType;
+  services?: string;
+  title?: string;
+  venue?: string;
+  date?: string;
+  message?: string;
+  plannerHandoff?: "1";
+};
+
+export const Route = createFileRoute("/quote")({
+  validateSearch: (search: Record<string, unknown>): QuoteSearch => {
+    const rawGuests =
+      typeof search.guests === "number"
+        ? search.guests
+        : typeof search.guests === "string"
+          ? Number(search.guests)
+          : NaN;
+    const rawServices = typeof search.services === "string" ? search.services.split(",") : [];
+    const services = rawServices
+      .map((key) => ADDONS.find((item) => item.key === key)?.key)
+      .filter((key): key is ServiceKey => key !== undefined);
+    const optionalText = (value: unknown, limit: number) =>
+      typeof value === "string" ? value.trim().slice(0, limit) || undefined : undefined;
+    const date = optionalText(search.date, 10);
+
+    return {
+      eventType: EVENT_TYPES.find((item) => item.key === search.eventType)?.key,
+      guests: GUEST_BANDS.find((item) => item.key === rawGuests)?.key,
+      tier: TIERS.find((item) => item.key === search.tier)?.key,
+      venueType: VENUE_TYPES.find((item) => item.key === search.venueType)?.key,
+      services: services.length > 0 ? services.join(",") : undefined,
+      title: optionalText(search.title, 100),
+      venue: optionalText(search.venue, 140),
+      date: date && isValidEventDate(date) ? date : undefined,
+      message: optionalText(search.message, 2_000),
+      plannerHandoff: search.plannerHandoff === "1" ? "1" : undefined,
+    };
+  },
+  component: QuotePage,
+});
 
 const EVENT_GROUPS: { label: string; description: string; events: EventType[] }[] = [
   {
@@ -79,22 +127,68 @@ const SERVICE_DETAILS: Record<ServiceKey, string> = {
 
 function QuotePage() {
   const nav = useNavigate();
+  const search = Route.useSearch();
   const { user, isPending } = useCurrentUserState();
-  const [eventType, setEventType] = useState<EventType>("wedding");
-  const [eventGroupLabel, setEventGroupLabel] = useState(EVENT_GROUPS[0].label);
-  const [guests, setGuests] = useState(150);
-  const [tier, setTier] = useState<TierKey>("floor");
-  const [venueType, setVenueType] = useState<VenueType>("hall");
-  const [services, setServices] = useState<ServiceKey[]>(["stage", "sound", "decor"]);
-  const [venue, setVenue] = useState("");
-  const [date, setDate] = useState("");
-  const [title, setTitle] = useState("");
+  const initialEventType = search.eventType ?? "wedding";
+  const initialEventGroup = EVENT_GROUPS.find((group) => group.events.includes(initialEventType));
+  const initialServices: ServiceKey[] = search.services
+    ? search.services
+        .split(",")
+        .map((key) => ADDONS.find((addon) => addon.key === key)?.key)
+        .filter((key): key is ServiceKey => key !== undefined)
+    : ["stage", "sound", "decor"];
+  const [eventType, setEventType] = useState<EventType>(initialEventType);
+  const [eventGroupLabel, setEventGroupLabel] = useState(initialEventGroup?.label ?? EVENT_GROUPS[0].label);
+  const [guests, setGuests] = useState(search.guests ?? 150);
+  const [tier, setTier] = useState<TierKey>(search.tier ?? "floor");
+  const [venueType, setVenueType] = useState<VenueType>(search.venueType ?? "hall");
+  const [services, setServices] = useState<ServiceKey[]>(initialServices);
+  const [venue, setVenue] = useState(search.venue ?? "");
+  const [date, setDate] = useState(search.date ?? "");
+  const [title, setTitle] = useState(search.title ?? "");
   const [clientName, setClientName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(search.message ?? "");
+  const [plannerHandoffNotice, setPlannerHandoffNotice] = useState<"loaded" | "error" | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (search.plannerHandoff !== "1") return;
+    let serialized: string | null;
+    try {
+      serialized = window.sessionStorage.getItem(EVENT_PLAN_HANDOFF_STORAGE_KEY);
+    } catch (error) {
+      console.error("[quote-builder] Could not read the event planner handoff", error);
+      setPlannerHandoffNotice("error");
+      return;
+    }
+    const details = parseEventPlanHandoff(serialized);
+    if (!details) {
+      console.error("[quote-builder] The event planner handoff is missing or invalid.");
+      setPlannerHandoffNotice("error");
+      return;
+    }
+    setTitle(details.title ?? "");
+    setVenue(details.venue ?? "");
+    setDate(details.date ?? "");
+    setMessage(details.message);
+    setPlannerHandoffNotice("loaded");
+  }, [search.plannerHandoff]);
+
+  useEffect(() => {
+    if (plannerHandoffNotice !== "loaded") return;
+    try {
+      window.sessionStorage.setItem(
+        EVENT_PLAN_HANDOFF_STORAGE_KEY,
+        JSON.stringify({ title, venue, date, message }),
+      );
+    } catch (error) {
+      console.error("[quote-builder] Could not keep the event planner details in this session", error);
+      setPlannerHandoffNotice("error");
+    }
+  }, [date, message, plannerHandoffNotice, title, venue]);
 
   const selectedEvent = EVENT_TYPES.find((event) => event.key === eventType) ?? EVENT_TYPES[1];
   const activeEventGroup =
@@ -107,34 +201,24 @@ function QuotePage() {
     () => priceQuote({ eventType, guests, tier, services, venueType }),
     [eventType, guests, tier, services, venueType],
   );
-  const proposalInput = {
-    eventType,
-    guests,
-    tier,
-    services,
-    venueType,
-    title,
-    venue,
-    date,
-    clientName,
-    email,
-    phone,
-    message,
-  };
-  const proposalSheet = useMemo(() => buildProposalSheet(proposalInput), [
-    eventType,
-    guests,
-    tier,
-    services,
-    venueType,
-    title,
-    venue,
-    date,
-    clientName,
-    email,
-    phone,
-    message,
-  ]);
+  const proposalInput = useMemo(
+    () => ({
+      eventType,
+      guests,
+      tier,
+      services,
+      venueType,
+      title,
+      venue,
+      date,
+      clientName,
+      email,
+      phone,
+      message,
+    }),
+    [eventType, guests, tier, services, venueType, title, venue, date, clientName, email, phone, message],
+  );
+  const proposalSheet = useMemo(() => buildProposalSheet(proposalInput), [proposalInput]);
 
   function toggleService(key: ServiceKey) {
     setServices((current) =>
@@ -160,6 +244,7 @@ function QuotePage() {
           eventType,
           guests,
           tier,
+          venueType,
           services,
           venue,
           date,
@@ -170,6 +255,13 @@ function QuotePage() {
           message: message || undefined,
         },
       });
+      if (search.plannerHandoff === "1") {
+        try {
+          window.sessionStorage.removeItem(EVENT_PLAN_HANDOFF_STORAGE_KEY);
+        } catch (error) {
+          console.error("[quote-builder] Could not clear the completed planner handoff", error);
+        }
+      }
       toast.success("Your quote is ready");
       nav({ to: "/book/$quoteId", params: { quoteId: result.quoteId } });
     } catch {
@@ -208,7 +300,7 @@ function QuotePage() {
     anchor.click();
     anchor.remove();
     URL.revokeObjectURL(url);
-    toast.success("Proposal summary downloaded.");
+    toast.success("Estimate summary downloaded.");
   }
 
   function printProposal() {
@@ -238,19 +330,23 @@ function QuotePage() {
             </Link>
             <span className="inline-flex items-center gap-2 rounded-full border border-paper/10 px-3 py-2 text-[10px] uppercase tracking-[0.16em] text-mist">
               <span className="size-1.5 rounded-full bg-blue-2" />
-              Planning estimate · KES
+              Planning estimate · KES, VAT included
             </span>
           </div>
 
           <div className="mt-8 grid gap-8 border-b border-paper/10 pb-8 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,0.55fr)] lg:items-end">
             <div>
-              <p className="eyebrow">Randy Production · Quote studio</p>
+              <p className="eyebrow">Get a Quote · Randy Production</p>
               <h1 className="mt-4 max-w-[13ch] text-5xl leading-[0.92] md:text-7xl">
-                Make the moment feel like yours.
+                Build your production quote.
               </h1>
               <p className="section-lead mt-5 max-w-2xl">
-                Tell us what you’re planning. We’ll shape a production estimate around the
-                audience, venue and experience you want people to remember.
+                Choose the production scope, review a live itemised estimate, then share your
+                contact details to send the request. Need help choosing a package first?{" "}
+                <Link to="/match" className="text-blue-2 underline underline-offset-4">
+                  Help Me Choose
+                </Link>
+                .
               </p>
             </div>
             <div className="grid grid-cols-3 gap-2 self-end text-[10px] uppercase tracking-[0.12em] text-mist sm:gap-3">
@@ -260,6 +356,21 @@ function QuotePage() {
             </div>
           </div>
         </div>
+
+        {plannerHandoffNotice ? (
+          <p
+            role={plannerHandoffNotice === "error" ? "alert" : "status"}
+            className={`mt-4 rounded-lg border p-4 text-sm leading-relaxed ${
+              plannerHandoffNotice === "loaded"
+                ? "border-blue-2/20 bg-blue/5 text-paper/85"
+                : "border-amber-200/20 bg-amber-200/[0.05] text-amber-50/85"
+            }`}
+          >
+            {plannerHandoffNotice === "loaded"
+              ? "Your event plan is loaded. The venue, date and creative brief are ready to review below."
+              : "The private details from your event plan could not be restored. Your event and production selections remain; please add the missing details below."}
+          </p>
+        ) : null}
 
         <div className="sticky top-20 z-30 mt-4 flex items-center justify-between gap-3 rounded-lg border border-paper/10 bg-void/90 px-4 py-3 shadow-[0_12px_30px_rgb(0_0_0/0.2)] backdrop-blur-xl lg:hidden">
           <div>
@@ -598,7 +709,9 @@ function QuotePage() {
                   {formatMoney(priceSummary.amount)}
                 </p>
                 <p className="mt-2 text-xs leading-relaxed text-mist">
-                  Indicative production estimate in Kenyan shillings. Refined as you shape the brief.
+                  Indicative estimate in Kenyan shillings, including 16% VAT. The VAT line is
+                  extracted from the displayed prices, not added on top. Refined as you shape the
+                  brief.
                 </p>
                 <div className="mt-5 flex items-center justify-between gap-3 border-t border-paper/10 pt-4">
                   <div>
@@ -662,7 +775,7 @@ function QuotePage() {
 
                 <details className="group border-t border-paper/10 pt-4">
                   <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 text-xs font-medium text-paper marker:hidden">
-                    View estimate breakdown
+                    View estimate breakdown · line items before VAT
                     <ArrowDown className="size-4 text-mist transition-transform group-open:rotate-180" aria-hidden />
                   </summary>
                   <ul className="mt-2 space-y-3">
@@ -684,8 +797,9 @@ function QuotePage() {
                   <p className="text-xs font-medium text-paper">What the estimate covers</p>
                   <p className="mt-2 text-xs leading-relaxed text-mist">
                     Scope, guest range, venue complexity, crew logistics and estimated VAT are
-                    reflected in the breakdown. Venue hire, artist fees and specialist requests
-                    are confirmed separately.
+                    reflected in the breakdown. VAT assumes listed services and charges are
+                    standard-rated at 16%. Venue hire, artist fees and specialist requests are
+                    confirmed separately.
                   </p>
                 </div>
 
@@ -697,10 +811,10 @@ function QuotePage() {
 
                 <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
                   <Button variant="line" onClick={downloadProposal} className="min-h-11">
-                    Download proposal
+                    Download estimate summary
                   </Button>
                   <Button variant="ghost" onClick={printProposal} className="min-h-11">
-                    Print / save as PDF
+                    Print / save estimate as PDF
                   </Button>
                 </div>
                 <button

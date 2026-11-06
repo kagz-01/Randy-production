@@ -47,7 +47,7 @@ function escapeHtml(value: string): string {
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
-    .replace(/\"/g, "&quot;")
+    .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
 }
 
@@ -57,6 +57,10 @@ export function buildProposalSheet(input: ProposalSummaryInput): string {
   const selectedServices = input.services
     .map((key) => ADDONS.find((addon) => addon.key === key)?.label)
     .filter(Boolean) as string[];
+  const contact = [input.email, input.phone].filter(Boolean).join(" · ") || "Contact pending";
+  const briefNote = input.message
+    ? `<section class="brief"><strong>Organiser’s brief</strong><p>${escapeHtml(input.message).replace(/\n/g, "<br />")}</p></section>`
+    : "";
 
   const rows = quote.lines
     .map((line) => `<tr><td>${escapeHtml(line.label)}</td><td>${formatMoney(line.amount)}</td></tr>`)
@@ -70,8 +74,13 @@ export function buildProposalSheet(input: ProposalSummaryInput): string {
     <style>
       body { font-family: Arial, sans-serif; background: #f3efe9; color: #111827; margin: 0; padding: 32px; }
       .sheet { max-width: 900px; margin: 0 auto; background: #fff; border: 1px solid #e5e7eb; box-shadow: 0 16px 40px rgba(0,0,0,0.08); padding: 32px; }
+      .letterhead { display: flex; align-items: center; gap: 18px; border-bottom: 1px solid #e5e7eb; padding-bottom: 20px; margin-bottom: 24px; }
+      .logo { display: block; width: 76px; height: 76px; flex: 0 0 76px; object-fit: cover; background: #050505; }
+      .business { flex: 1; min-width: 0; }
+      .business strong { display: block; font-size: 15px; letter-spacing: 0.18em; text-transform: uppercase; }
+      .business p { margin: 5px 0 0; color: #4b5563; font-size: 12px; line-height: 1.45; }
+      .document-label { text-align: right; color: #4f46e5; font-size: 11px; font-weight: 700; letter-spacing: 0.14em; line-height: 1.5; text-transform: uppercase; }
       .top { display: flex; justify-content: space-between; gap: 20px; align-items: flex-end; border-bottom: 2px solid #111827; padding-bottom: 20px; margin-bottom: 24px; }
-      .eyebrow { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: #4f46e5; font-weight: 700; }
       h1 { margin: 10px 0 0; font-size: 36px; }
       .amount { text-align: right; }
       .amount span { display: block; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #6b7280; }
@@ -86,29 +95,41 @@ export function buildProposalSheet(input: ProposalSummaryInput): string {
       th, td { border-bottom: 1px solid #e5e7eb; padding: 10px 8px; text-align: left; }
       th { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #6b7280; }
       .total { text-align: right; padding-top: 18px; font-size: 24px; }
-      .approved { margin-top: 24px; border-top: 1px solid #e5e7eb; padding-top: 18px; }
-      .approved h3 { margin: 0 0 12px; font-size: 16px; }
-      .signature { display: flex; justify-content: space-between; gap: 20px; margin-top: 18px; }
-      .line { flex: 1; border-bottom: 1px solid #111827; min-height: 30px; }
+      .range { margin-top: 24px; border-top: 1px solid #e5e7eb; padding-top: 18px; }
+      .range h3 { margin: 0 0 12px; font-size: 16px; }
+      .scope { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 16px; margin-top: 24px; }
+      .scope section { border: 1px solid #e5e7eb; padding: 16px; }
+      .scope h3 { margin: 0 0 10px; font-size: 14px; }
+      .scope ul { margin: 0; padding-left: 18px; color: #4b5563; line-height: 1.6; }
+      .notice { margin-top: 24px; border-left: 3px solid #4f46e5; background: #f8fafc; padding: 14px 16px; color: #4b5563; line-height: 1.6; }
+      @media (max-width: 640px) { body { padding: 16px; } .sheet { padding: 20px; } .letterhead { align-items: flex-start; flex-wrap: wrap; } .logo { width: 64px; height: 64px; flex-basis: 64px; } .document-label { width: 100%; text-align: left; } .top { align-items: flex-start; flex-direction: column; } .amount { text-align: left; } .meta { grid-template-columns: repeat(2, minmax(0,1fr)); } .scope { grid-template-columns: 1fr; } }
       @media print { body { padding: 0; background: white; } .sheet { box-shadow: none; border: none; max-width: none; padding: 0; } }
     </style>
   </head>
   <body>
     <main class="sheet">
+      <header class="letterhead">
+        <img class="logo" src="/logo.png" alt="Randy Production logo" />
+        <div class="business">
+          <strong>Randy Production</strong>
+          <p><a href="tel:+254743567565">+254 743 567 565</a> · <a href="mailto:hello@randyproduction.co.ke">hello@randyproduction.co.ke</a></p>
+          <p>Business address: details to be confirmed · KRA PIN / VAT details: to be supplied</p>
+        </div>
+        <div class="document-label">Planning estimate<br />Not an invoice</div>
+      </header>
       <div class="top">
         <div>
-          <div class="eyebrow">RANDY PRODUCTION</div>
           <h1>${escapeHtml(input.title || `${event.label} production`)}</h1>
         </div>
         <div class="amount">
-          <span>Estimated investment</span>
+            <span>Estimated investment · VAT included</span>
           <strong>${formatMoney(quote.amount)}</strong>
         </div>
       </div>
 
       <section class="meta">
         <div><label>Client</label><p>${escapeHtml(input.clientName || "Client name pending")}</p></div>
-        <div><label>Contact</label><p>${escapeHtml(input.email || input.phone || "Contact pending")}</p></div>
+        <div><label>Contact</label><p>${escapeHtml(contact)}</p></div>
         <div><label>Venue</label><p>${escapeHtml(input.venue || "Venue to be confirmed")}</p></div>
         <div><label>Date</label><p>${escapeHtml(input.date || "To be confirmed")}</p></div>
       </section>
@@ -120,27 +141,46 @@ export function buildProposalSheet(input: ProposalSummaryInput): string {
         <strong>Venue type:</strong> ${escapeHtml(VENUE_TYPES.find((venue) => venue.key === input.venueType)?.label ?? "Hotel / ballroom")}<br />
         <strong>Service mix:</strong> ${escapeHtml(selectedServices.length ? selectedServices.join(", ") : "No add-ons selected")}</p>
       </section>
+      ${briefNote}
 
       <table>
         <thead>
-          <tr><th>Line item</th><th>Amount</th></tr>
+          <tr><th>Line item</th><th>Amount · before VAT</th></tr>
         </thead>
         <tbody>
           ${rows}
         </tbody>
       </table>
 
-      <div class="total"><strong>Total: ${formatMoney(quote.amount)}</strong></div>
+      <div class="total"><strong>Total · VAT included: ${formatMoney(quote.amount)}</strong></div>
 
-      <section class="approved">
-        <h3>Approved by client</h3>
+      <div class="scope">
+        <section>
+          <h3>Included in the estimate</h3>
+          <ul>
+            <li>Technical planning and site readiness</li>
+            <li>Production crew for build and show time</li>
+            <li>Power, rigging and floor coordination</li>
+            <li>Mood-led styling aligned to the chosen event</li>
+          </ul>
+        </section>
+        <section>
+          <h3>Confirmed separately</h3>
+          <ul>
+            <li>Venue hire, security and public liability cover</li>
+            <li>Artist fees, rider and hospitality</li>
+            <li>Live streaming and content retention unless quoted separately</li>
+            <li>Final availability and scope with the production team</li>
+          </ul>
+        </section>
+      </div>
+
+      <section class="range">
+        <h3>Planning range</h3>
         <p>Budget range: ${formatMoney(quote.budgetBand.min)} – ${formatMoney(quote.budgetBand.max)}</p>
         <p>${escapeHtml(quote.budgetBand.note)}</p>
-        <div class="signature">
-          <div class="line"></div>
-          <div class="line"></div>
-        </div>
       </section>
+      <p class="notice"><strong>Estimate only.</strong> Catalog prices are treated as VAT-inclusive. The breakdown shows the estimated VAT included in the total, assuming all listed services and charges are standard-rated at 16%. This is not an invoice or final confirmed price; final tax treatment, scope and availability are confirmed separately with Randy Production.</p>
     </main>
   </body>
 </html>`;
@@ -154,7 +194,8 @@ export function buildProposalSummary(input: ProposalSummaryInput): string {
     .filter(Boolean) as string[];
 
   const lines = [
-    "RANDY PRODUCTION — EVENT PROPOSAL",
+    "RANDY PRODUCTION — EVENT PLANNING ESTIMATE",
+    "PLANNING ESTIMATE ONLY — not an invoice or final confirmed price.",
     `Title: ${input.title || `${event.label} production`}`,
     `Client: ${input.clientName || "Client name pending"}`,
     `Contact: ${input.email || input.phone || "Contact pending"}`,
@@ -166,12 +207,13 @@ export function buildProposalSummary(input: ProposalSummaryInput): string {
     `Venue type: ${VENUE_TYPES.find((venue) => venue.key === input.venueType)?.label ?? "Hotel / ballroom"}`,
     `Service mix: ${selectedServices.length ? selectedServices.join(", ") : "No add-ons selected"}`,
     "",
-    `Estimated investment: ${formatMoney(quote.amount)}`,
+    `Estimated investment (VAT included): ${formatMoney(quote.amount)}`,
     `Budget range: ${formatMoney(quote.budgetBand.min)} – ${formatMoney(quote.budgetBand.max)}`,
     `Note: ${quote.budgetBand.note}`,
     "",
-    "Cost breakdown:",
+    "Cost breakdown (amounts before VAT):",
     ...quote.lines.map((line) => `- ${line.label}: ${formatMoney(line.amount)}`),
+    "",
     "",
     "Included:",
     "• Technical planning and site readiness",
@@ -223,16 +265,32 @@ export function priceQuote(input: QuoteInput): QuoteBreakdown {
   const travel = Math.round(subtotal * travelRate);
   const venuePower = Math.round(subtotal * venuePowerRate);
   const contingency = Math.round(subtotal * contingencyRate);
-  const vat = Math.round((subtotal + logistics + travel + venuePower + contingency) * vatRate);
-  const total = subtotal + logistics + travel + venuePower + contingency + vat;
-
-  lines.push(
+  const grossLines = [
+    ...lines,
     { label: "Crew logistics & technical movement", amount: logistics },
     { label: "Travel & crew accommodation", amount: travel },
     { label: "Venue / power & rigging", amount: venuePower },
     { label: "Production contingency", amount: contingency },
-    { label: "VAT (16%)", amount: vat },
-  );
+  ];
+  const total = grossLines.reduce((sum, line) => sum + line.amount, 0);
+  const vat = Math.round((total * vatRate) / (1 + vatRate));
+  const netTotal = total - vat;
+  const netAmounts = grossLines.map((line) => Math.floor(line.amount / (1 + vatRate)));
+  const unallocatedNet = netTotal - netAmounts.reduce((sum, amount) => sum + amount, 0);
+  const roundingOrder = grossLines
+    .map((line, index) => ({
+      index,
+      remainder: line.amount / (1 + vatRate) - netAmounts[index],
+    }))
+    .sort((left, right) => right.remainder - left.remainder);
+  for (let index = 0; index < unallocatedNet; index += 1) {
+    netAmounts[roundingOrder[index].index] += 1;
+  }
+  const itemizedLines = grossLines.map((line, index) => ({
+    ...line,
+    amount: netAmounts[index],
+  }));
+  itemizedLines.push({ label: "VAT included (16%)", amount: vat });
 
   let budgetBand: QuoteBreakdown["budgetBand"];
   if (total < 220000) {
@@ -265,5 +323,5 @@ export function priceQuote(input: QuoteInput): QuoteBreakdown {
     };
   }
 
-  return { amount: total, lines, budgetBand };
+  return { amount: total, lines: itemizedLines, budgetBand };
 }

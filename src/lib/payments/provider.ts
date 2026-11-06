@@ -20,14 +20,21 @@ function normalizeProviderName(value?: string): PaymentProviderStatus["provider"
   const normalized = value?.trim().toLowerCase();
   if (!normalized) return null;
 
-  if (normalized === "stripe" || normalized === "paystack" || normalized === "mpesa" || normalized === "custom") {
+  if (
+    normalized === "stripe" ||
+    normalized === "paystack" ||
+    normalized === "mpesa" ||
+    normalized === "custom"
+  ) {
     return normalized;
   }
 
   return null;
 }
 
-function detectProvider(env: Record<string, string | undefined>): PaymentProviderStatus["provider"] {
+function detectProvider(
+  env: Record<string, string | undefined>,
+): PaymentProviderStatus["provider"] {
   const explicitProvider = normalizeProviderName(env.PAYMENT_PROVIDER);
   if (explicitProvider) return explicitProvider;
   if (env.STRIPE_SECRET_KEY) return "stripe";
@@ -45,37 +52,32 @@ export function getPaymentProviderStatus(
     return {
       mode: "demo",
       provider: "demo",
-      ready: true,
-      reason: "Demo mode enabled for local testing.",
+      ready: false,
+      reason:
+        "Demo payments are disabled because they must never be recorded as real client payments.",
     };
   }
 
   if (mode === "live") {
     const provider = detectProvider(env);
-    const gatewayUrl = env.PAYMENT_PROVIDER_URL?.trim();
-    const apiKey =
-      env.PAYMENT_PROVIDER_API_KEY?.trim() ??
-      env.STRIPE_SECRET_KEY?.trim() ??
-      env.PAYSTACK_SECRET_KEY?.trim() ??
-      env.MPESA_CONSUMER_KEY?.trim();
-
-    if (provider === "custom" && !gatewayUrl) {
-      return {
-        mode: "disabled",
-        provider: "custom",
-        ready: false,
-        reason:
-          "No live payment provider is configured. Set PAYMENT_PROVIDER_MODE=demo for local testing or configure PAYMENT_PROVIDER_URL plus provider credentials.",
-      };
-    }
-
-    if (!gatewayUrl || !apiKey) {
+    if (provider !== "custom" || env.PAYMENT_PROVIDER?.trim().toLowerCase() !== "custom") {
       return {
         mode: "disabled",
         provider,
         ready: false,
-        reason:
-          "Payment gateway credentials are missing. Configure PAYMENT_PROVIDER_URL and PAYMENT_PROVIDER_API_KEY or the relevant provider secret keys.",
+        reason: "A provider-specific payment integration has not been selected and configured.",
+      };
+    }
+
+    const gatewayUrl = env.PAYMENT_PROVIDER_URL?.trim();
+    const apiKey = env.PAYMENT_PROVIDER_API_KEY?.trim();
+
+    if (!gatewayUrl || !apiKey) {
+      return {
+        mode: "disabled",
+        provider: "custom",
+        ready: false,
+        reason: "The trusted payment adapter endpoint and its API key are not configured.",
       };
     }
 
@@ -88,22 +90,11 @@ export function getPaymentProviderStatus(
   }
 
   const provider = detectProvider(env);
-  if (provider !== "custom") {
-    return {
-      mode: "disabled",
-      provider,
-      ready: false,
-      reason:
-        "Payment provider credentials are present, but PAYMENT_PROVIDER_MODE is not enabled. Set PAYMENT_PROVIDER_MODE=live to accept real payments.",
-    };
-  }
-
   return {
     mode: "disabled",
-    provider: "custom",
+    provider,
     ready: false,
-    reason:
-      "No payment provider is configured. Set PAYMENT_PROVIDER_MODE=demo for local testing or configure live payment credentials before launch.",
+    reason: "No live payment integration is configured.",
   };
 }
 
@@ -114,41 +105,31 @@ export async function confirmInvoicePayment({
   customerName,
   customerEmail,
   env = process.env,
-}: ConfirmInvoicePaymentInput): Promise<{ ok: true; mode: PaymentProviderMode; providerReference: string }> {
+}: ConfirmInvoicePaymentInput): Promise<{
+  ok: true;
+  mode: "live";
+  provider: PaymentProviderStatus["provider"];
+  providerReference: string;
+}> {
   const status = getPaymentProviderStatus(env);
   if (!status.ready) {
-    throw new Error(
-      status.reason ||
-        "Payment provider not configured. Add PAYMENT_PROVIDER_MODE=demo for local testing or configure live payment credentials.",
-    );
-  }
-
-  const providerReference = `pay_${invoiceId}_${quoteId}`;
-
-  if (status.mode === "demo") {
-    return {
-      ok: true,
-      mode: "demo",
-      providerReference,
-    };
+    throw new Error(status.reason || "Payment provider is not configured.");
   }
 
   const providerUrl = env.PAYMENT_PROVIDER_URL?.trim();
-  const providerApiKey =
-    env.PAYMENT_PROVIDER_API_KEY?.trim() ??
-    env.STRIPE_SECRET_KEY?.trim() ??
-    env.PAYSTACK_SECRET_KEY?.trim() ??
-    env.MPESA_CONSUMER_KEY?.trim();
+  const providerApiKey = env.PAYMENT_PROVIDER_API_KEY?.trim();
 
   if (!providerUrl || !providerApiKey) {
-    throw new Error(
-      "Payment gateway credentials are missing. Configure PAYMENT_PROVIDER_URL and PAYMENT_PROVIDER_API_KEY or the relevant provider keys before starting live payments.",
-    );
+    throw new Error("The trusted payment adapter endpoint and its API key are not configured.");
   }
 
+  const currency = (env.PAYMENT_CURRENCY ?? "KES").trim().toUpperCase();
+  const idempotencyKey = `pay_${invoiceId}`;
   const response = await fetch(providerUrl, {
+    signal: AbortSignal.timeout(20_000),
     method: "POST",
     headers: {
+      "idempotency-key": idempotencyKey,
       "content-type": "application/json",
       authorization: `Bearer ${providerApiKey}`,
     },
@@ -156,11 +137,11 @@ export async function confirmInvoicePayment({
       invoiceId,
       quoteId,
       amount,
-      currency: env.PAYMENT_CURRENCY ?? "KES",
+      currency,
       customerName: customerName ?? "Client",
       customerEmail: customerEmail ?? null,
       provider: status.provider,
-      reference: providerReference,
+      reference: idempotencyKey,
     }),
   });
 
@@ -169,15 +150,35 @@ export async function confirmInvoicePayment({
     throw new Error(`Payment provider rejected the request: ${errorText || response.statusText}`);
   }
 
-  const payload = (await response.json().catch(() => ({}))) as { status?: string; reference?: string; id?: string };
-  const normalizedStatus = String(payload.status ?? "success").toLowerCase();
-  if (normalizedStatus && !["success", "succeeded", "paid", "approved"].includes(normalizedStatus)) {
-    throw new Error(`Payment provider reported a non-success status: ${payload.status ?? "unknown"}`);
+  let payload: { status?: unknown; reference?: unknown; amount?: unknown; currency?: unknown };
+  try {
+    payload = (await response.json()) as typeof payload;
+  } catch {
+    throw new Error("The payment adapter returned an invalid confirmation response.");
+  }
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    throw new Error("The payment adapter returned an invalid confirmation response.");
+  }
+  if (
+    typeof payload.status !== "string" ||
+    !["succeeded", "paid"].includes(payload.status.toLowerCase())
+  ) {
+    throw new Error("Payment has not been confirmed. The invoice remains due.");
+  }
+  if (typeof payload.reference !== "string" || !payload.reference.trim()) {
+    throw new Error("The payment adapter did not return a transaction reference.");
+  }
+  if (payload.amount !== amount) {
+    throw new Error("The confirmed payment amount does not match the invoice.");
+  }
+  if (typeof payload.currency !== "string" || payload.currency.trim().toUpperCase() !== currency) {
+    throw new Error("The confirmed payment currency does not match the invoice.");
   }
 
   return {
     ok: true,
     mode: "live",
-    providerReference: String(payload.reference ?? payload.id ?? providerReference),
+    provider: status.provider,
+    providerReference: payload.reference.trim(),
   };
 }

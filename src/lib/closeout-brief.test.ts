@@ -6,7 +6,7 @@ describe("summarizeCloseoutBrief", () => {
   it("prioritizes ready closeout items for active show work and flags final approvals", () => {
     const summary = summarizeCloseoutBrief([
       { id: "1", title: "Northwind Launch", status: "production", venue: "Sky Deck", event_date: "2026-11-12T18:00:00.000Z", ballpark: 850000 },
-      { id: "2", title: "Meridian Gala", status: "delivered", venue: "The Loft", event_date: "2026-11-01T18:00:00.000Z", ballpark: 1200000 },
+      { id: "2", title: "Sample Gala", status: "delivered", venue: "The Loft", event_date: "2026-11-01T18:00:00.000Z", ballpark: 1200000 },
       { id: "3", title: "Estate Wedding", status: "booked", venue: null, event_date: "2026-12-02T18:00:00.000Z", ballpark: 600000 },
     ], 500000);
 
@@ -24,5 +24,13 @@ describe("summarizeCloseoutBrief", () => {
     assert.equal(summary.watchCount, 2);
     assert.ok(summary.items.some((item) => item.label === "Venue confirmation"));
     assert.ok(summary.items.some((item) => item.label === "Budget sign-off"));
+  });
+
+  it("includes open leads in scope follow-up and identifies the related job", () => {
+    const summary = summarizeCloseoutBrief([
+      { id: "lead-1", title: "Brand Launch", status: "quoted", venue: null, event_date: null, ballpark: 420000 },
+    ]);
+
+    assert.ok(summary.items.some((item) => item.label === "Client scope confirmation" && item.jobId === "lead-1"));
   });
 });

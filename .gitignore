@@ -1,3 +1,4 @@
+.agent
 .vercel
 .tanstack
 
@@ -11,10 +12,10 @@ node_modules/
 *.log
 screenshots/
 .grok/preview.pid
+.grok/app-env.json
 
-# Exclude AI agent cache and deployment artifacts
-.agent/
-.vercel/output/
-artifacts/
-attachments/
-.tanstack/tmp/node_modules.lock
+# Keep original camera JPEGs locally; only optimized WebPs belong in the site.
+/public/catalog/football/FOOTBALL/*.jpg
+/public/catalog/langata/LANGATA/*.jpg
+/public/catalog/pinnovate/PINNOVATE/*.jpg
+/public/catalog/grand\ nairobi\ bike/GRAND\ NAIROBI\ BIKE\ RACE/*.jpg

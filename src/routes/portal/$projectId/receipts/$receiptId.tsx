@@ -103,6 +103,8 @@ function ReceiptPage() {
               <Field label="Client" value={receipt.payer_name} />
               <Field label="Amount" value={formatMoney(receipt.amount)} />
               <Field label="Payment method" value={receipt.payment_method} />
+              <Field label="Payment provider" value={receipt.provider ?? "Legacy / offline"} />
+              <Field label="Provider reference" value={receipt.provider_reference ?? "Not recorded"} />
               <Field label="Receipt status" value={receipt.status} />
               <Field label="Invoice kind" value={receipt.kind} />
               <Field label="Job ID" value={receipt.job_id} />

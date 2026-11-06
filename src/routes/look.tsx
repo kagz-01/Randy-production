@@ -1,286 +1,655 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useRef, useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import {
+  ArrowRight,
+  ImagePlus,
+  RotateCcw,
+  Trash2,
+} from "lucide-react";
+import { useEffect, useRef, useState, type ChangeEvent, type MouseEvent } from "react";
 import { SiteNav } from "@/components/site/nav";
-import { Reveal } from "@/components/site/fx";
 import { Button } from "@/components/ui/button";
-import { EVENT_TYPES, PACKAGES, type EventType, type ServiceKey } from "@/data/catalog";
-import { cn, formatMoney } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
+import {
+  EVENT_TYPES,
+  GUEST_BANDS,
+  type EventType,
+} from "@/data/catalog";
+import {
+  DEFAULT_EVENT_PLAN,
+  EVENT_PLAN_FOCAL_POINTS,
+  EVENT_PLAN_HANDOFF_STORAGE_KEY,
+  EVENT_PLAN_MOODS,
+  EVENT_PLAN_STORAGE_KEY,
+  buildEventPlanHandoff,
+  parseEventPlanDraft,
+  type EventPlanDraft,
+  type EventPlanFocalPointId,
+  type EventPlanMoodId,
+} from "@/lib/event-plan";
+import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/look")({ component: LookPage });
+export const Route = createFileRoute("/look")({ component: EventPlannerPage });
 
-const TREATMENTS = [
-  { id: "gala", label: "Black gala", overlay: "/catalog/concert/GRA00269.webp", blend: "soft-light" as const },
-  { id: "lounge", label: "Sable lounge · sherehe", overlay: "/catalog/decor/_MG_9907.webp", blend: "overlay" as const },
-  { id: "vows", label: "White wedding · rooftop", overlay: "/catalog/wedding/GRA08375.webp", blend: "soft-light" as const },
-  { id: "ruracio", label: "Ruracio · garden tents", overlay: "/catalog/decor/IMG_0953.webp", blend: "soft-light" as const },
-  { id: "stage", label: "Meridian stage · corporate", overlay: "/catalog/concert/GRA00392.webp", blend: "overlay" as const },
-];
+const INSPIRATION_IMAGE = "/catalog/decor/IMG_0953.webp";
+const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
+const MAX_FOCAL_POINTS = 8;
+const SELECT_CLASS =
+  "mt-2 h-12 w-full rounded-md border border-paper/15 bg-void px-3 text-sm text-paper outline-none transition focus-visible:border-blue-2 focus-visible:ring-2 focus-visible:ring-blue/30";
+const TEXTAREA_CLASS =
+  "mt-2 w-full resize-y rounded-md border border-paper/10 bg-void/60 p-4 text-sm text-paper outline-none transition-colors placeholder:text-mist/80 focus:border-blue-2/60 focus:ring-2 focus:ring-blue/20";
 
-const DEFAULT_EVENT = EVENT_TYPES[5];
-const DEFAULT_PACKAGE = PACKAGES[1];
+function localDateValue(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 
-function LookPage() {
-  const [base, setBase] = useState("/catalog/decor/IMG_0953.webp");
-  const [treatment, setTreatment] = useState(TREATMENTS[0]);
-  const [opacity, setOpacity] = useState(62);
-  const [eventKey, setEventKey] = useState<EventType>(DEFAULT_EVENT.key);
-  const [packageId, setPackageId] = useState(DEFAULT_PACKAGE.id);
-  const [guestCount, setGuestCount] = useState(220);
-  const [notes, setNotes] = useState("Warm lighting, neutral drape, soft blue glow, and a seated audience flow.");
-  const [lights, setLights] = useState<{ x: number; y: number }[]>([
-    { x: 22, y: 38 },
-    { x: 74, y: 42 },
-  ]);
-  const fileRef = useRef<HTMLInputElement>(null);
+function EventPlannerPage() {
+  const navigate = useNavigate();
+  const [plan, setPlan] = useState<EventPlanDraft>(DEFAULT_EVENT_PLAN);
+  const [draftLoaded, setDraftLoaded] = useState(false);
+  const [saveState, setSaveState] = useState<"loading" | "saving" | "saved" | "unavailable">("loading");
+  const [draftMessage, setDraftMessage] = useState<string | null>(null);
+  const [uploadUrl, setUploadUrl] = useState<string | null>(null);
+  const [uploadName, setUploadName] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [focalPointError, setFocalPointError] = useState<string | null>(null);
+  const [handoffError, setHandoffError] = useState<string | null>(null);
+  const [selectedPointKind, setSelectedPointKind] = useState<EventPlanFocalPointId>("stage");
+  const uploadUrlRef = useRef<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const storageUnavailableRef = useRef(false);
 
-  const selectedEvent = EVENT_TYPES.find((event) => event.key === eventKey) ?? DEFAULT_EVENT;
-  const selectedPackage = PACKAGES.find((pkg) => pkg.id === packageId) ?? DEFAULT_PACKAGE;
+  const selectedEvent = EVENT_TYPES.find((event) => event.key === plan.eventType) ?? EVENT_TYPES[1];
+  const selectedMood = EVENT_PLAN_MOODS.find((mood) => mood.id === plan.moodId) ?? EVENT_PLAN_MOODS[0];
+  const eventDateInvalid = Boolean(plan.eventDate && plan.eventDate < localDateValue(new Date()));
+  const canContinue = !eventDateInvalid;
 
-  const estimate = useMemo(() => {
-    const guestFactor =
-      guestCount <= 80 ? 0.7 : guestCount <= 180 ? 0.95 : guestCount <= 320 ? 1.15 : guestCount <= 600 ? 1.42 : 1.7;
-    const packageFactor =
-      selectedPackage.id === "pkg_look_decor"
-        ? 0.8
-        : selectedPackage.id === "pkg_floor_stage"
-          ? 1.2
-          : selectedPackage.id === "pkg_black_gala"
-            ? 1.55
-            : selectedPackage.id === "pkg_harusi"
-              ? 1.45
-              : selectedPackage.id === "pkg_brand_drop"
-                ? 1.5
-                : selectedPackage.id === "pkg_campaign"
-                  ? 1.18
-                  : 1.1;
-    const treatmentBoost =
-      treatment.id === "gala" ? 1.18 : treatment.id === "stage" ? 1.14 : treatment.id === "lounge" ? 1.08 : 1.05;
+  useEffect(() => {
+    let serialized: string | null;
+    try {
+      serialized = window.localStorage.getItem(EVENT_PLAN_STORAGE_KEY);
+    } catch (error) {
+      console.error("[event-planner] Could not read the local draft", error);
+      storageUnavailableRef.current = true;
+      setSaveState("unavailable");
+      setDraftLoaded(true);
+      return;
+    }
 
-    return Math.round(selectedEvent.base * guestFactor * packageFactor * treatmentBoost);
-  }, [guestCount, selectedEvent.base, selectedPackage.id, treatment.id]);
+    if (serialized) {
+      const restored = parseEventPlanDraft(serialized);
+      if (restored) {
+        setPlan(restored);
+        setSelectedPointKind(restored.focalPoints.at(-1)?.kind ?? "stage");
+        setDraftMessage("Your latest plan was restored from this browser.");
+      } else {
+        console.error("[event-planner] The saved local draft is invalid and was not restored.");
+        setDraftMessage("An older saved plan could not be read. You can start a fresh plan.");
+      }
+    }
+    setDraftLoaded(true);
+  }, []);
 
-  const packageServices = selectedPackage.services.join(" • ");
+  useEffect(() => {
+    if (!draftLoaded || storageUnavailableRef.current) return;
+    setSaveState("saving");
+    const timer = window.setTimeout(() => {
+      try {
+        window.localStorage.setItem(EVENT_PLAN_STORAGE_KEY, JSON.stringify(plan));
+        storageUnavailableRef.current = false;
+        setSaveState("saved");
+        setDraftMessage(null);
+      } catch (error) {
+        console.error("[event-planner] Could not save the local draft", error);
+        storageUnavailableRef.current = true;
+        setSaveState("unavailable");
+      }
+    }, 250);
+    return () => window.clearTimeout(timer);
+  }, [draftLoaded, plan]);
 
-  function onFile(file: File | undefined) {
-    if (!file) return;
-    const url = URL.createObjectURL(file);
-    setBase(url);
+  useEffect(
+    () => () => {
+      if (uploadUrlRef.current) URL.revokeObjectURL(uploadUrlRef.current);
+    },
+    [],
+  );
+
+  function updatePlan<K extends keyof EventPlanDraft>(key: K, value: EventPlanDraft[K]) {
+    setPlan((current) => ({ ...current, [key]: value }));
+    setHandoffError(null);
   }
+
+  function addFocalPoint(kind: EventPlanFocalPointId, x: number, y: number) {
+    if (plan.focalPoints.length >= MAX_FOCAL_POINTS) {
+      setFocalPointError(`Keep the room plan to ${MAX_FOCAL_POINTS} clear focal points.`);
+      return;
+    }
+    setPlan((current) => ({
+      ...current,
+      focalPoints: [...current.focalPoints, { kind, x, y }],
+    }));
+    setFocalPointError(null);
+  }
+
+  function placeFocalPoint(event: MouseEvent<HTMLButtonElement>) {
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const x = event.detail === 0 ? 50 : ((event.clientX - bounds.left) / bounds.width) * 100;
+    const y = event.detail === 0 ? 50 : ((event.clientY - bounds.top) / bounds.height) * 100;
+    addFocalPoint(selectedPointKind, Math.max(0, Math.min(100, x)), Math.max(0, Math.min(100, y)));
+  }
+
+  function handlePhotoChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setUploadError("Choose an image file to preview the venue.");
+      return;
+    }
+    if (file.size > MAX_UPLOAD_BYTES) {
+      setUploadError("Choose an image smaller than 8 MB.");
+      return;
+    }
+    const nextUrl = URL.createObjectURL(file);
+    if (uploadUrlRef.current) URL.revokeObjectURL(uploadUrlRef.current);
+    uploadUrlRef.current = nextUrl;
+    setUploadUrl(nextUrl);
+    setUploadName(file.name);
+    setUploadError(null);
+  }
+
+  function removePhoto() {
+    if (uploadUrlRef.current) URL.revokeObjectURL(uploadUrlRef.current);
+    uploadUrlRef.current = null;
+    setUploadUrl(null);
+    setUploadName(null);
+    setUploadError(null);
+  }
+
+  function startFreshPlan() {
+    if (!window.confirm("Start a fresh event plan? This clears the saved draft in this browser.")) return;
+    setPlan(DEFAULT_EVENT_PLAN);
+    removePhoto();
+    setFocalPointError(null);
+    setHandoffError(null);
+    setDraftMessage(null);
+    try {
+      window.localStorage.removeItem(EVENT_PLAN_STORAGE_KEY);
+    } catch (error) {
+      console.error("[event-planner] Could not clear the local draft", error);
+      storageUnavailableRef.current = true;
+      setSaveState("unavailable");
+    }
+  }
+
+  function continueToQuote() {
+    if (!canContinue) {
+      setHandoffError("Choose today or a future date, or clear the event date if it is not confirmed.");
+      return;
+    }
+    const handoff = buildEventPlanHandoff(plan);
+    try {
+      window.sessionStorage.setItem(EVENT_PLAN_HANDOFF_STORAGE_KEY, JSON.stringify(handoff.details));
+    } catch (error) {
+      console.error("[event-planner] Could not prepare the quote handoff", error);
+      setHandoffError("This browser could not carry your event details into the quote. Please try again or copy your brief into the quote form.");
+      return;
+    }
+    navigate({ to: "/quote", search: handoff.search });
+  }
+
+  const selectedFocalPoint = EVENT_PLAN_FOCAL_POINTS.find(
+    (point) => point.id === selectedPointKind,
+  ) ?? EVENT_PLAN_FOCAL_POINTS[0];
 
   return (
     <div className="min-h-dvh">
       <SiteNav />
-      <main className="shell pt-28 pb-20">
-        <Reveal>
-          <p className="text-[10px] uppercase tracking-[0.28em] text-blue-2">Look-Through</p>
-          <h1 className="mt-3 max-w-[12ch] text-4xl md:text-5xl">
-            Dress the room before we build it.
-          </h1>
-          <p className="mt-4 max-w-2xl text-base text-mist md:text-lg">
-            Upload a venue, choose the event type, and shape the concept. This is the practical pre-visualization step
-            before the floor plan, décor, and event production are confirmed.
-          </p>
-        </Reveal>
-
-        <div className="mt-10 grid gap-6 lg:grid-cols-[1.2fr_360px]">
-          <div
-            className="relative aspect-16/10 overflow-hidden rounded-lg bg-ink shadow-[0_0_0_1px_rgb(243_241_234/0.12),0_24px_48px_rgb(0_0_0/0.35)]"
-            onClick={(e) => {
-              const r = e.currentTarget.getBoundingClientRect();
-              setLights((ls) => [
-                ...ls,
-                { x: ((e.clientX - r.left) / r.width) * 100, y: ((e.clientY - r.top) / r.height) * 100 },
-              ]);
-            }}
-          >
-            <img src={base} alt="Venue" className="absolute inset-0 size-full object-cover" />
-            <img
-              src={treatment.overlay}
-              alt=""
-              className="absolute inset-0 size-full object-cover"
-              style={{ opacity: opacity / 100, mixBlendMode: treatment.blend }}
-            />
-            {lights.map((l, i) => (
-              <span
-                key={`${l.x}-${l.y}-${i}`}
-                className="pointer-events-none absolute size-24 -translate-x-1/2 -translate-y-1/2 rounded-full"
-                style={{
-                  left: `${l.x}%`,
-                  top: `${l.y}%`,
-                  background: "radial-gradient(circle, rgb(47 107 255 / 0.55), transparent 68%)",
-                }}
-              />
-            ))}
-            <div className="absolute inset-x-0 bottom-0 flex items-end justify-between bg-linear-to-t from-void via-void/30 to-transparent p-3">
-              <p className="glass-chip rounded-sm px-2 py-1 text-[10px] uppercase tracking-[0.16em]">
-                Tap to place a fixture
-              </p>
-              <p className="glass-chip rounded-sm px-2 py-1 text-[10px] uppercase tracking-[0.16em]">
-                {treatment.label}
-              </p>
-            </div>
+      <main className="shell pb-20 pt-28 md:pt-36">
+        <div className="flex flex-wrap items-start justify-between gap-5 border-b border-paper/10 pb-8">
+          <div className="max-w-3xl">
+            <p className="eyebrow">Plan Your Event · Randy Production</p>
+            <h1 className="mt-4 max-w-[13ch] text-5xl leading-[0.94] md:text-7xl">Shape the room before the quote.</h1>
+            <p className="section-lead mt-5 max-w-2xl">
+              Capture the event’s creative direction and mark the moments that matter in the room.
+              When you are ready, carry the brief into Get a Quote to choose production and see pricing.
+            </p>
           </div>
+          <div className="min-w-[220px] rounded-lg border border-paper/10 bg-ink/60 p-4">
+            <p className="text-[10px] uppercase tracking-[0.18em] text-mist">Your working draft</p>
+            <p className="mt-2 text-sm text-paper" aria-live="polite">
+              {saveState === "loading" || saveState === "saving"
+                ? "Saving in this browser…"
+                : saveState === "unavailable"
+                  ? "Browser storage is unavailable."
+                  : "Saved in this browser"}
+            </p>
+            {draftMessage ? <p className="mt-2 text-xs leading-relaxed text-mist">{draftMessage}</p> : null}
+            <button
+              type="button"
+              onClick={startFreshPlan}
+              className="mt-3 inline-flex min-h-9 items-center gap-2 text-xs text-mist underline decoration-paper/20 underline-offset-4 hover:text-paper"
+            >
+              <RotateCcw className="size-3.5" aria-hidden />
+              Start a fresh plan
+            </button>
+          </div>
+        </div>
 
-          <aside className="glass-rail h-fit">
-            <Reveal>
-              <div className="glass-strong relative overflow-hidden rounded-lg p-5">
-                <span aria-hidden className="glass-sheen" />
-                <div className="relative space-y-5">
-                  <div>
-                    <p className="text-[11px] uppercase tracking-[0.2em] text-mist">Concept setup</p>
-                    <div className="mt-3 grid gap-2">
-                      {TREATMENTS.map((t) => (
-                        <button
-                          key={t.id}
-                          type="button"
-                          onClick={() => setTreatment(t)}
-                          className={cn(
-                            "rounded-md px-3 py-3 text-left text-sm transition-colors",
-                            treatment.id === t.id ? "bg-paper text-void" : "glass-chip text-paper hover:bg-paper/10",
-                          )}
-                        >
-                          {t.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+        <nav aria-label="Planner sections" className="mt-5 grid grid-cols-3 gap-2 text-[10px] uppercase tracking-[0.14em] text-mist sm:max-w-xl">
+          <PlannerStep number="01" label="Event context" href="#event-details" />
+          <PlannerStep number="02" label="Room concept" href="#room-concept" />
+          <PlannerStep number="03" label="Creative brief" href="#event-intention" />
+        </nav>
 
-                  <div>
-                    <label className="block text-[11px] uppercase tracking-[0.2em] text-mist">Event type</label>
-                    <select
-                      value={eventKey}
-                      onChange={(e) => setEventKey(e.target.value as EventType)}
-                      className="mt-2 w-full rounded-md border border-paper/15 bg-void px-3 py-2.5 text-sm text-paper outline-none"
-                    >
-                      {EVENT_TYPES.map((event) => (
-                        <option key={event.key} value={event.key} className="bg-void text-paper">
-                          {event.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] uppercase tracking-[0.2em] text-mist">Guest count</label>
-                    <input
-                      type="range"
-                      min={50}
-                      max={900}
-                      step={10}
-                      value={guestCount}
-                      onChange={(e) => setGuestCount(Number(e.target.value))}
-                      className="mt-2 w-full accent-blue"
-                    />
-                    <div className="mt-2 flex items-center justify-between text-xs text-mist">
-                      <span>50</span>
-                      <span className="font-medium text-paper">{guestCount} guests</span>
-                      <span>900+</span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <p className="text-[11px] uppercase tracking-[0.2em] text-mist">Package</p>
-                    <div className="mt-3 grid gap-2">
-                      {PACKAGES.map((pkg) => (
-                        <button
-                          key={pkg.id}
-                          type="button"
-                          onClick={() => setPackageId(pkg.id)}
-                          className={cn(
-                            "rounded-md border px-3 py-2 text-left transition-colors",
-                            packageId === pkg.id
-                              ? "border-blue bg-blue/10 text-paper"
-                              : "border-paper/10 bg-void/40 text-mist hover:text-paper",
-                          )}
-                        >
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-sm font-medium">{pkg.name}</span>
-                          </div>
-                          <p className="mt-1 text-xs text-mist">{pkg.blurb}</p>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <label className="mt-6 block text-[11px] uppercase tracking-[0.2em] text-mist">
-                    Overlay {opacity}%
-                    <input
-                      type="range"
-                      min={10}
-                      max={90}
-                      value={opacity}
-                      onChange={(e) => setOpacity(Number(e.target.value))}
-                      className="mt-2 w-full accent-blue"
-                    />
-                  </label>
-
-                  <div className="rounded-md border border-paper/10 bg-void/40 p-4">
-                    <p className="text-[11px] uppercase tracking-[0.2em] text-mist">Estimated scope</p>
-                    <div className="mt-3 space-y-2 text-sm text-paper">
-                      <p>{selectedEvent.label}</p>
-                      <p>{selectedPackage.name}</p>
-                      <p>{packageServices}</p>
-                    </div>
-                  </div>
-
-                  <input
-                    ref={fileRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => onFile(e.target.files?.[0])}
+        <div className="mt-7 grid items-start gap-7 lg:grid-cols-[minmax(0,1.3fr)_minmax(19rem,0.7fr)] lg:gap-10">
+          <div className="min-w-0">
+            <section id="event-details" className="scroll-mt-28 border-b border-paper/10 pb-9 pt-2">
+              <SectionHeading
+                number="01"
+                title="Set the event context"
+                description="Just enough context to make the creative brief useful. Production choices and pricing come later."
+              />
+              <div className="mt-6 grid gap-5 sm:grid-cols-2">
+                <PlannerField label="What are we planning?">
+                  <select
+                    value={plan.eventType}
+                    onChange={(event) => updatePlan("eventType", event.target.value as EventType)}
+                    className={SELECT_CLASS}
+                    aria-label="What are we planning?"
+                  >
+                    {EVENT_TYPES.map((event) => (
+                      <option key={event.key} value={event.key} className="bg-void">
+                        {event.label}
+                      </option>
+                    ))}
+                  </select>
+                </PlannerField>
+                <PlannerField label="Working title" hint="Optional">
+                  <Input
+                    value={plan.title}
+                    maxLength={100}
+                    onChange={(event) => updatePlan("title", event.target.value)}
+                    placeholder="e.g. Njeri & Kairo’s wedding"
+                    aria-label="Working title"
+                    className="h-12"
                   />
+                </PlannerField>
+                <PlannerField label="Expected guests">
+                  <select
+                    value={plan.guests}
+                    onChange={(event) => updatePlan("guests", Number(event.target.value))}
+                    className={SELECT_CLASS}
+                    aria-label="Expected guests"
+                  >
+                    {GUEST_BANDS.map((band) => (
+                      <option key={band.key} value={band.key} className="bg-void">
+                        {band.label} guests
+                      </option>
+                    ))}
+                  </select>
+                </PlannerField>
+                <PlannerField label="Event date" hint="Optional until confirmed">
+                  <Input
+                    type="date"
+                    min={localDateValue(new Date())}
+                    value={plan.eventDate}
+                    onChange={(event) => updatePlan("eventDate", event.target.value)}
+                    aria-label="Event date"
+                    aria-invalid={eventDateInvalid}
+                    className="h-12"
+                  />
+                  {eventDateInvalid ? (
+                    <p className="mt-2 text-xs text-rose-200">Choose a future date or leave the date blank.</p>
+                  ) : null}
+                </PlannerField>
+                <PlannerField label="Venue or area" hint="Optional if not booked yet">
+                  <Input
+                    value={plan.venueName}
+                    maxLength={140}
+                    onChange={(event) => updatePlan("venueName", event.target.value)}
+                    placeholder="e.g. Nairobi Arboretum"
+                    aria-label="Venue or area"
+                    className="h-12"
+                  />
+                </PlannerField>
+              </div>
+            </section>
 
-                  <div className="grid gap-2">
-                    <Button variant="paper" onClick={() => fileRef.current?.click()}>
-                      Upload venue photo
-                    </Button>
-                    <Button variant="ghost" onClick={() => setLights([])}>
-                      Clear fixtures
-                    </Button>
-                    <Link to="/quote">
-                      <Button className="w-full">Request this concept</Button>
-                    </Link>
+            <section id="room-concept" className="scroll-mt-28 border-b border-paper/10 py-9">
+              <SectionHeading
+                number="02"
+                title="Shape the room direction"
+                description="Use a venue photo or a real project image as a visual reference. Place a few points the production team should notice."
+              />
+
+              <div className="mt-6 overflow-hidden rounded-xl border border-paper/10 bg-ink/70">
+                <button
+                  type="button"
+                  onClick={placeFocalPoint}
+                  aria-label={`Add ${selectedFocalPoint.label} to the room concept. Click or press Enter to place it.`}
+                  className="group relative block aspect-[16/10] w-full cursor-crosshair overflow-hidden bg-[#10141a] text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-blue-2"
+                >
+                  <img
+                    src={uploadUrl ?? INSPIRATION_IMAGE}
+                    alt={uploadName ? `Your venue photo: ${uploadName}` : "Randy Production room styling inspiration"}
+                    className="absolute inset-0 size-full object-cover"
+                  />
+                  <span
+                    aria-hidden="true"
+                    className="absolute inset-0"
+                    style={{
+                      background: `linear-gradient(180deg, ${selectedMood.overlay}, rgba(4, 8, 14, 0.06) 40%, rgba(4, 8, 14, 0.68)), rgba(4, 8, 14, ${plan.overlayStrength / 500})`,
+                    }}
+                  />
+                  {plan.focalPoints.map((point, index) => {
+                    const label = EVENT_PLAN_FOCAL_POINTS.find((item) => item.id === point.kind)?.label ?? "Focus";
+                    return (
+                      <span
+                        key={`${point.kind}-${index}`}
+                        aria-hidden="true"
+                        className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2"
+                        style={{ left: `${point.x}%`, top: `${point.y}%` }}
+                      >
+                        <span className="flex size-8 items-center justify-center rounded-full border border-white bg-blue text-xs font-semibold text-white shadow-[0_0_24px_rgba(47,107,255,0.8)]">
+                          {index + 1}
+                        </span>
+                        <span className="mt-1 block whitespace-nowrap rounded bg-void/85 px-2 py-1 text-[9px] text-paper">
+                          {label}
+                        </span>
+                      </span>
+                    );
+                  })}
+                  <span className="absolute inset-x-0 bottom-0 flex flex-wrap items-end justify-between gap-3 bg-gradient-to-t from-void/90 to-transparent p-4 sm:p-5">
+                    <span>
+                      <span className="block text-[10px] uppercase tracking-[0.18em] text-blue-2">
+                        {uploadName ? "Your local venue photo" : "Project image · visual reference"}
+                      </span>
+                      <span className="mt-1 block text-sm font-medium text-paper">
+                        {selectedMood.label}
+                      </span>
+                    </span>
+                    <span className="rounded-full border border-white/30 bg-void/55 px-3 py-2 text-[10px] text-paper">
+                      Click to place {selectedFocalPoint.label.toLowerCase()}
+                    </span>
+                  </span>
+                </button>
+
+                <div className="grid gap-5 p-4 sm:p-5">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-medium text-paper">Venue photo</p>
+                      <p className="mt-1 text-xs leading-relaxed text-mist">
+                        Upload a photo to preview the direction. Your image stays on this device and is not attached to the quote.
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handlePhotoChange}
+                        className="sr-only"
+                        aria-label="Upload a venue photo"
+                      />
+                      <Button variant="line" onClick={() => fileInputRef.current?.click()} className="min-h-11">
+                        <ImagePlus className="size-4" aria-hidden />
+                        {uploadName ? "Change photo" : "Upload a photo"}
+                      </Button>
+                      {uploadName ? (
+                        <Button variant="ghost" onClick={removePhoto} className="min-h-11">
+                          <Trash2 className="size-4" aria-hidden />
+                          Remove
+                        </Button>
+                      ) : null}
+                    </div>
+                  </div>
+                  {uploadName ? <p className="break-all text-xs text-mist">Selected: {uploadName}</p> : null}
+                  {uploadError ? <p role="alert" className="text-xs text-rose-200">{uploadError}</p> : null}
+
+                  <div>
+                    <p className="text-xs font-medium text-paper">Overall feeling</p>
+                    <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                      {EVENT_PLAN_MOODS.map((mood) => (
+                        <button
+                          key={mood.id}
+                          type="button"
+                          aria-pressed={plan.moodId === mood.id}
+                          onClick={() => updatePlan("moodId", mood.id as EventPlanMoodId)}
+                          className={cn(
+                            "min-h-11 rounded-md border px-3 py-2 text-left text-xs transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-2",
+                            plan.moodId === mood.id
+                              ? "border-blue-2/60 bg-blue/10 text-paper"
+                              : "border-paper/10 bg-paper/[0.025] text-mist hover:border-paper/25 hover:text-paper",
+                          )}
+                        >
+                          {mood.label}
+                        </button>
+                      ))}
+                    </div>
+                    <label className="mt-4 block text-xs text-mist">
+                      Colour treatment · {plan.overlayStrength}%
+                      <input
+                        type="range"
+                        min={20}
+                        max={80}
+                        value={plan.overlayStrength}
+                        onChange={(event) => updatePlan("overlayStrength", Number(event.target.value))}
+                        className="mt-2 block w-full accent-blue"
+                        aria-label="Colour treatment strength"
+                      />
+                    </label>
+                  </div>
+
+                  <div className="border-t border-paper/10 pt-4">
+                    <p className="text-xs font-medium text-paper">Room focal points</p>
+                    <p className="mt-1 text-xs text-mist">Choose a marker, then click where it belongs on the image.</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {EVENT_PLAN_FOCAL_POINTS.map((point) => (
+                        <button
+                          key={point.id}
+                          type="button"
+                          aria-pressed={selectedFocalPoint.id === point.id}
+                          onClick={() => setSelectedPointKind(point.id)}
+                          className={cn(
+                            "min-h-10 rounded-full border px-3 text-xs transition-colors",
+                            selectedFocalPoint.id === point.id
+                              ? "border-blue-2/60 bg-blue/10 text-paper"
+                              : "border-paper/10 text-mist hover:text-paper",
+                          )}
+                        >
+                          {point.label}
+                        </button>
+                      ))}
+                    </div>
+                    {plan.focalPoints.length ? (
+                      <ul className="mt-3 space-y-2">
+                        {plan.focalPoints.map((point, index) => {
+                          const label = EVENT_PLAN_FOCAL_POINTS.find((item) => item.id === point.kind)?.label ?? "Focus";
+                          return (
+                            <li key={`${point.kind}-${index}`} className="flex items-center justify-between gap-3 text-xs text-paper">
+                              <span>{index + 1}. {label} · {Math.round(point.x)}% across, {Math.round(point.y)}% down</span>
+                              <button
+                                type="button"
+                                onClick={() => updatePlan("focalPoints", plan.focalPoints.filter((_, itemIndex) => itemIndex !== index))}
+                                aria-label={`Remove ${label} focal point ${index + 1}`}
+                                className="inline-flex size-9 shrink-0 items-center justify-center rounded-md text-mist hover:bg-paper/5 hover:text-paper"
+                              >
+                                <Trash2 className="size-4" aria-hidden />
+                              </button>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    ) : null}
+                    {focalPointError ? <p role="status" className="mt-2 text-xs text-amber-100">{focalPointError}</p> : null}
+                    <button
+                      type="button"
+                      disabled={plan.focalPoints.length === 0}
+                      onClick={() => updatePlan("focalPoints", [])}
+                      className="mt-2 min-h-9 text-xs text-mist underline decoration-paper/20 underline-offset-4 hover:text-paper disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      Clear all focal points
+                    </button>
                   </div>
                 </div>
               </div>
-            </Reveal>
-          </aside>
-        </div>
+            </section>
 
-        <div className="mt-8 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-          <div className="rounded-lg border border-paper/10 bg-ink/50 p-5">
-            <p className="text-[11px] uppercase tracking-[0.22em] text-blue-2">Creative brief</p>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className="mt-3 h-32 w-full resize-none rounded-md border border-paper/10 bg-void/60 p-3 text-sm text-paper outline-none"
-            />
+            <section id="event-intention" className="scroll-mt-28 py-9">
+              <SectionHeading
+                number="03"
+                title="Give the team the why"
+                description="A useful brief says what success feels like, not just what the room looks like."
+              />
+              <div className="mt-6 grid gap-5">
+                <PlannerField
+                  label="What should guests or viewers feel, remember or do?"
+                  hint={`${plan.objective.length}/400`}
+                >
+                  <textarea
+                    value={plan.objective}
+                    maxLength={400}
+                    onChange={(event) => updatePlan("objective", event.target.value)}
+                    placeholder="For example: Make the launch feel confident and welcoming, and give guests one clear moment to remember."
+                    className={`${TEXTAREA_CLASS} min-h-24`}
+                    aria-label="Event goal"
+                  />
+                </PlannerField>
+                <PlannerField
+                  label="Creative direction and practical notes"
+                  hint={`${plan.creativeNotes.length}/1,200`}
+                >
+                  <textarea
+                    value={plan.creativeNotes}
+                    maxLength={1200}
+                    onChange={(event) => updatePlan("creativeNotes", event.target.value)}
+                    placeholder="Mood, colours, schedule constraints, access, power, accessibility, weather plan, must-haves or things to avoid."
+                    className={`${TEXTAREA_CLASS} min-h-36`}
+                    aria-label="Creative direction and practical notes"
+                  />
+                </PlannerField>
+              </div>
+            </section>
           </div>
 
-          <div className="rounded-lg border border-paper/10 bg-ink/50 p-5">
-            <p className="text-[11px] uppercase tracking-[0.22em] text-blue-2">Proposal summary</p>
-            <div className="mt-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-mist">Event</span>
-                <span className="text-paper">{selectedEvent.label}</span>
+          <aside id="plan-summary" className="min-w-0 scroll-mt-28 lg:sticky lg:top-28">
+            <div className="overflow-hidden rounded-xl border border-paper/12 bg-ink/80 shadow-[0_24px_70px_rgb(0_0_0/0.28)]">
+              <div className="border-b border-paper/10 p-5 sm:p-6">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-blue-2">Your creative brief</p>
+                  <ImagePlus className="size-4 text-blue-2" aria-hidden />
+                </div>
+                <p className="mt-4 font-serif text-2xl tracking-[-0.04em] text-paper">
+                  {plan.title || selectedEvent.label}
+                </p>
+                <p className="mt-2 text-xs leading-relaxed text-mist">
+                  A visual direction to discuss with the production team. No package is selected and no price is calculated here.
+                </p>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-mist">Guests</span>
-                <span className="text-paper">{guestCount}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-mist">Package</span>
-                <span className="text-paper">{selectedPackage.name}</span>
-              </div>
-              <div className="border-t border-paper/10 pt-3">
-                <p className="text-[11px] uppercase tracking-[0.2em] text-mist">Estimated investment</p>
-                <p className="mt-2 text-4xl font-serif text-paper">{formatMoney(estimate)}</p>
+
+              <div className="space-y-5 p-5 sm:p-6">
+                <section>
+                  <div className="mt-3 space-y-3">
+                    <SummaryRow label="Occasion" value={selectedEvent.label} />
+                    <SummaryRow label="Audience" value={`${GUEST_BANDS.find((band) => band.key === plan.guests)?.label ?? plan.guests} guests`} />
+                    {plan.eventDate ? <SummaryRow label="Date" value={plan.eventDate} /> : null}
+                    {plan.venueName ? <SummaryRow label="Venue / area" value={plan.venueName} /> : null}
+                    <SummaryRow label="Visual direction" value={selectedMood.label} />
+                    <SummaryRow label="Room focal points" value={`${plan.focalPoints.length}`} />
+                  </div>
+                </section>
+
+                <div className="rounded-lg border border-blue-2/20 bg-blue/5 p-4">
+                  <p className="text-xs font-medium text-paper">Ready to price the production?</p>
+                  <p className="mt-2 text-xs leading-relaxed text-mist">
+                    Get a Quote is where you choose package, services and production level, review the estimate,
+                    and send your request.
+                  </p>
+                </div>
+
+                {handoffError ? <p role="alert" className="text-xs leading-relaxed text-rose-200">{handoffError}</p> : null}
+                <Button
+                  variant="primary"
+                  onClick={continueToQuote}
+                  disabled={!draftLoaded}
+                  className="min-h-12 w-full"
+                >
+                  Use this brief in Get a Quote
+                  <ArrowRight className="size-4" aria-hidden />
+                </Button>
+                <p className="text-center text-[10px] leading-relaxed text-mist">
+                  Event context and notes carry over. Your uploaded photo stays on this device.
+                </p>
               </div>
             </div>
-          </div>
+          </aside>
         </div>
       </main>
+    </div>
+  );
+}
+
+function PlannerStep({ number, label, href }: { number: string; label: string; href: string }) {
+  return (
+    <a
+      href={href}
+      className="flex min-h-11 items-center gap-2 border-b border-paper/15 transition-colors hover:border-blue-2 hover:text-paper"
+    >
+      <span className="text-blue-2">{number}</span>
+      <span>{label}</span>
+    </a>
+  );
+}
+
+function SectionHeading({
+  number,
+  title,
+  description,
+}: {
+  number: string;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="flex gap-4">
+      <span className="mt-1 text-xs tabular-nums text-blue-2">{number}</span>
+      <div>
+        <h2 className="font-serif text-3xl tracking-[-0.045em] text-paper">{title}</h2>
+        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-mist">{description}</p>
+      </div>
+    </div>
+  );
+}
+
+function PlannerField({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+        <p className="text-xs font-medium text-paper">{label}</p>
+        {hint ? <p className="text-[10px] text-mist">{hint}</p> : null}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function SummaryRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-start justify-between gap-4 text-xs">
+      <span className="text-mist">{label}</span>
+      <span className="text-right text-paper">{value}</span>
     </div>
   );
 }

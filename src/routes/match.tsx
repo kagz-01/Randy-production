@@ -1,129 +1,348 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useRef, useState } from "react";
-import { toast } from "sonner";
+import { ArrowRight, Check, Compass, Info } from "lucide-react";
+import { useState } from "react";
 import { SiteNav } from "@/components/site/nav";
 import { GlassCard, Reveal } from "@/components/site/fx";
 import { Button } from "@/components/ui/button";
-import { PACKAGES } from "@/data/catalog";
-import { matchMood } from "@/lib/server/studio";
-import { useCurrentUserState } from "@/lib/auth/use-current-user";
+import {
+  ADDONS,
+  EVENT_TYPES,
+  GUEST_BANDS,
+  PACKAGES,
+  VENUE_TYPES,
+  type EventType,
+  type VenueType,
+} from "@/data/catalog";
+import {
+  recommendPackage,
+  type PackageFocus,
+  type PackageRecommendation,
+} from "@/lib/package-recommendation";
+import { getKnowledgeForMatch, type KnowledgeAssistantResult } from "@/lib/server/knowledge";
 
 export const Route = createFileRoute("/match")({ component: MatchPage });
 
+const FOCUS_OPTIONS: { key: PackageFocus; label: string; detail: string }[] = [
+  { key: "full-production", label: "A coordinated event", detail: "Stage, sound and room, managed together" },
+  { key: "room-design", label: "The room and its look", detail: "Décor, styling and guest experience" },
+  { key: "clear-sound", label: "Sound that works", detail: "A clean, reliable audio setup" },
+  { key: "brand-story", label: "Brand and content", detail: "A launch or story people can see and share" },
+];
+
 function MatchPage() {
-  const { user, isPending } = useCurrentUserState();
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [preview, setPreview] = useState<string | null>(null);
-  const [fileName, setFileName] = useState<string>("");
-  const [notes, setNotes] = useState(
-    "Ruracio garden, kitenge accents, blue as the signal, isukuti band for the entrance.",
-  );
-  const [busy, setBusy] = useState(false);
-  const [result, setResult] = useState<{
-    packageId: string;
-    summary: string;
-    rationale: string;
-    ai: boolean;
-  } | null>(null);
+  const [eventType, setEventType] = useState<EventType>("wedding");
+  const [guests, setGuests] = useState(150);
+  const [venueType, setVenueType] = useState<VenueType>("hall");
+  const [focus, setFocus] = useState<PackageFocus>("full-production");
+  const [weddingWeekend, setWeddingWeekend] = useState(false);
+  const [result, setResult] = useState<PackageRecommendation | null>(null);
+  const [knowledge, setKnowledge] = useState<KnowledgeAssistantResult | null>(null);
+  const [knowledgeLoading, setKnowledgeLoading] = useState(false);
+  const [knowledgeError, setKnowledgeError] = useState<string | null>(null);
 
-  function onFile(file: File | undefined) {
-    if (!file) return;
-    setFileName(file.name);
-    setPreview(URL.createObjectURL(file));
+  const event = EVENT_TYPES.find((item) => item.key === eventType) ?? EVENT_TYPES[0];
+  const guestBand = GUEST_BANDS.find((band) => band.key === guests)?.label ?? String(guests);
+  const packageDetails = result
+    ? PACKAGES.find((item) => item.id === result.packageId) ?? null
+    : null;
+
+  function clearRecommendation() {
+    setResult(null);
+    setKnowledge(null);
+    setKnowledgeError(null);
   }
 
-  async function run() {
-    if (!user) {
-      toast.message("Sign in so the desk can keep the match on your job.");
-      return;
-    }
-    setBusy(true);
+  async function updateRecommendation() {
+    setResult(recommendPackage({ eventType, guests, venueType, focus, weddingWeekend }));
+    setKnowledge(null);
+    setKnowledgeError(null);
+    setKnowledgeLoading(true);
     try {
-      const res = await matchMood({ data: { notes, imageName: fileName } });
-      setResult(res);
-    } catch {
-      toast.error("Match desk unavailable.");
+      setKnowledge(await getKnowledgeForMatch({ data: { eventType, guests, venueType, focus, weddingWeekend } }));
+    } catch (error) {
+      console.error("[package-match] Could not load sourced planning knowledge", error);
+      setKnowledgeError("The sourced planning notes could not be loaded. Your package recommendation is still available.");
     } finally {
-      setBusy(false);
+      setKnowledgeLoading(false);
     }
   }
-
-  const pkg = PACKAGES.find((p) => p.id === result?.packageId) ?? PACKAGES[1];
 
   return (
     <div className="min-h-dvh">
       <SiteNav />
-      <main className="shell pt-28 pb-20">
+      <main className="shell pb-20 pt-28">
         <Reveal>
-          <p className="text-[10px] uppercase tracking-[0.28em] text-blue-2">Match</p>
-          <h1 className="mt-3 max-w-[12ch] text-4xl md:text-5xl">Mood in. Package out.</h1>
-          <p className="mt-4 max-w-xl text-base text-mist md:text-lg">
-            Drop a reference or a goal. We read the room you already want — then land a package that solves it.
+          <p className="eyebrow">Help me choose · Production guide</p>
+          <h1 className="mt-3 max-w-[14ch] text-4xl leading-[0.98] md:text-6xl">
+            Find a sensible starting package.
+          </h1>
+          <p className="section-lead mt-4 max-w-2xl">
+            Not sure which production package fits? Tell us the event size and your main priority.
+            We’ll recommend a package and explain why. Pricing and quote requests happen in Get a Quote.
           </p>
         </Reveal>
 
-        <div className="mt-10 grid gap-6 lg:grid-cols-2">
-          <Reveal className="h-full">
-            <GlassCard strong={false} className="h-full p-5">
-              <button
-                type="button"
-                onClick={() => fileRef.current?.click()}
-                className="relative flex aspect-[16/10] w-full items-center justify-center overflow-hidden rounded-md bg-ink"
+        <div className="mt-9 grid items-start gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(20rem,0.95fr)]">
+          <Reveal>
+            <GlassCard strong={false} className="p-5 sm:p-7">
+              <p className="text-[10px] uppercase tracking-[0.2em] text-blue-2">A few quick details</p>
+
+              <label htmlFor="match-event" className="mt-6 block text-sm font-medium text-paper">
+                What are you planning?
+              </label>
+              <select
+                id="match-event"
+                value={eventType}
+                onChange={(e) => {
+                  const next = e.target.value as EventType;
+                  setEventType(next);
+                  if (!["wedding", "traditional"].includes(next)) setWeddingWeekend(false);
+                  clearRecommendation();
+                }}
+                className="mt-2 min-h-12 w-full rounded-md border border-paper/15 bg-void px-3 text-sm text-paper outline-none focus-visible:border-blue-2 focus-visible:ring-2 focus-visible:ring-blue/30"
               >
-                {preview ? (
-                  <img src={preview} alt="Mood board" className="size-full object-cover" />
-                ) : (
-                  <span className="text-sm text-mist">Drop a still, Pinterest board, or phone snap of the room</span>
-                )}
-              </button>
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => onFile(e.target.files?.[0])}
-              />
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                rows={4}
-                className="mt-4 w-full rounded-md bg-paper/5 p-3 text-sm text-paper outline-none shadow-[0_0_0_1px_rgb(243_241_234/0.12)] focus:shadow-[0_0_0_1px_var(--color-blue)]"
-              />
-              <Button className="mt-4 w-full" disabled={busy || isPending} onClick={run}>
-                {user ? "Match this room" : "Sign in to match"}
+                {EVENT_TYPES.map((item) => (
+                  <option key={item.key} value={item.key} className="bg-void">
+                    {item.label}
+                  </option>
+                ))}
+              </select>
+
+              <fieldset className="mt-6">
+                <legend className="text-sm font-medium text-paper">About how many guests?</legend>
+                <p className="mt-1 text-xs text-mist">Choose the closest size. We can refine it later.</p>
+                <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {GUEST_BANDS.map((band) => (
+                    <button
+                      key={band.key}
+                      type="button"
+                      aria-pressed={guests === band.key}
+                      onClick={() => {
+                        setGuests(band.key);
+                        clearRecommendation();
+                      }}
+                      className={`min-h-11 rounded-md border px-3 text-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-2 ${
+                        guests === band.key
+                          ? "border-blue-2/60 bg-blue/10 text-paper"
+                          : "border-paper/10 bg-paper/[0.025] text-mist hover:border-paper/25 hover:text-paper"
+                      }`}
+                    >
+                      {band.label}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+
+              <label htmlFor="match-venue" className="mt-6 block text-sm font-medium text-paper">
+                What kind of venue?
+              </label>
+              <select
+                id="match-venue"
+                value={venueType}
+                onChange={(e) => {
+                  setVenueType(e.target.value as VenueType);
+                  clearRecommendation();
+                }}
+                className="mt-2 min-h-12 w-full rounded-md border border-paper/15 bg-void px-3 text-sm text-paper outline-none focus-visible:border-blue-2 focus-visible:ring-2 focus-visible:ring-blue/30"
+              >
+                {VENUE_TYPES.map((venue) => (
+                  <option key={venue.key} value={venue.key} className="bg-void">
+                    {venue.label}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-mist">
+                {VENUE_TYPES.find((venue) => venue.key === venueType)?.note}
+              </p>
+
+              <fieldset className="mt-6">
+                <legend className="text-sm font-medium text-paper">What matters most to you?</legend>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  {FOCUS_OPTIONS.map((option) => (
+                    <button
+                      key={option.key}
+                      type="button"
+                      aria-pressed={focus === option.key}
+                      onClick={() => {
+                        setFocus(option.key);
+                        clearRecommendation();
+                      }}
+                      className={`min-h-[72px] rounded-md border p-3 text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-2 ${
+                        focus === option.key
+                          ? "border-blue-2/60 bg-blue/10"
+                          : "border-paper/10 bg-paper/[0.025] hover:border-paper/25"
+                      }`}
+                    >
+                      <span className="flex items-center justify-between gap-2 text-sm font-medium text-paper">
+                        {option.label}
+                        {focus === option.key ? <Check className="size-4 text-blue-2" aria-hidden /> : null}
+                      </span>
+                      <span className="mt-1 block text-xs leading-relaxed text-mist">{option.detail}</span>
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+
+              {["wedding", "traditional"].includes(eventType) ? (
+                <label className="mt-5 flex min-h-11 cursor-pointer items-start gap-3 text-sm text-paper">
+                  <input
+                    type="checkbox"
+                    checked={weddingWeekend}
+                    onChange={(e) => {
+                      setWeddingWeekend(e.target.checked);
+                      clearRecommendation();
+                    }}
+                    className="mt-0.5 size-4 accent-blue"
+                  />
+                  <span>
+                    We have two wedding events across the weekend
+                    <span className="mt-1 block text-xs text-mist">
+                      Select this only if both events should be planned as one joined production.
+                    </span>
+                  </span>
+                </label>
+              ) : null}
+
+              <Button className="mt-6 min-h-12 w-full" onClick={() => void updateRecommendation()} disabled={knowledgeLoading}>
+                {knowledgeLoading ? "Finding cited guidance…" : "Show my recommendation"}
+                <Compass className="size-4" aria-hidden />
               </Button>
             </GlassCard>
           </Reveal>
 
-          <Reveal delay={0.1} className="h-full">
-            <GlassCard strong className="h-full p-6">
-              {result ? (
+          <Reveal delay={0.08}>
+            <GlassCard strong className="p-5 sm:p-7">
+              {result && packageDetails ? (
                 <>
-                  <p className="text-[11px] uppercase tracking-[0.2em] text-blue-2">
-                    {result.ai ? "Desk read" : "House default"}
-                  </p>
-                  <h2 className="mt-2 text-3xl leading-tight text-paper">{pkg.name}</h2>
-                  <p className="mt-4 text-paper/80">{result.summary}</p>
-                  <p className="mt-4 text-sm leading-relaxed text-mist">{result.rationale}</p>
-                  <p className="mt-6 text-xs uppercase tracking-[0.16em] text-mist">
-                    {pkg.services.join(" · ")}
-                  </p>
-                  <Link to="/quote" className="mt-8 block">
-                    <Button className="w-full">Build the quote from this</Button>
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-blue-2">Recommended starting point</p>
+                  <h2 className="mt-3 font-serif text-3xl leading-tight text-paper">{packageDetails.name}</h2>
+                  <p className="mt-2 text-sm leading-relaxed text-mist">{packageDetails.blurb}</p>
+
+                  <div className="mt-4 border-y border-paper/10 py-4">
+                    <p className="text-xs leading-relaxed text-mist">
+                      Matched for {event.label} · {guestBand} guests ·{" "}
+                      {VENUE_TYPES.find((venue) => venue.key === venueType)?.label ?? "your venue"}
+                    </p>
+                  </div>
+
+                  <div className="mt-5">
+                    <h3 className="text-sm font-medium text-paper">Why this fits</h3>
+                    <ul className="mt-3 space-y-3">
+                      {result.reasons.map((reason) => (
+                        <li key={reason} className="flex gap-2 text-sm leading-relaxed text-mist">
+                          <Check className="mt-0.5 size-4 shrink-0 text-blue-2" aria-hidden />
+                          {reason}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="mt-5">
+                    <h3 className="text-sm font-medium text-paper">Included in this starting scope</h3>
+                    <ul className="mt-2 flex flex-wrap gap-2">
+                      {result.services.map((service) => (
+                        <li
+                          key={service}
+                          className="rounded-full border border-paper/10 bg-paper/[0.035] px-3 py-1.5 text-xs text-mist"
+                        >
+                          {ADDONS.find((addon) => addon.key === service)?.label ?? service}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="mt-5 flex gap-3 rounded-md border border-paper/10 bg-void/40 p-3">
+                    <Info className="mt-0.5 size-4 shrink-0 text-blue-2" aria-hidden />
+                    <p className="text-xs leading-relaxed text-mist">{result.planningNote}</p>
+                  </div>
+
+                  {knowledgeLoading ? (
+                    <p className="mt-5 text-xs text-mist" role="status">Checking approved planning references…</p>
+                  ) : null}
+                  {knowledgeError ? (
+                    <p className="mt-5 rounded-md border border-amber-300/20 bg-amber-300/5 p-3 text-xs leading-relaxed text-amber-100" role="status">
+                      {knowledgeError}
+                    </p>
+                  ) : null}
+                  {knowledge ? (
+                    <section className="mt-5 rounded-md border border-blue/20 bg-blue/5 p-4" aria-label="Sourced planning guidance">
+                      <p className="text-[10px] uppercase tracking-[0.16em] text-blue-2">Evidence from the knowledge base</p>
+                      {knowledge.insight ? (
+                        <div className="mt-3">
+                          <h3 className="text-sm font-medium text-paper">AI planning insight</h3>
+                          <p className="mt-1 text-sm leading-relaxed text-mist">{knowledge.insight}</p>
+                        </div>
+                      ) : null}
+                      {knowledge.aiMessage ? (
+                        <p className="mt-2 text-xs leading-relaxed text-mist">{knowledge.aiMessage}</p>
+                      ) : null}
+                      {knowledge.entries.length > 0 ? (
+                        <ul className="mt-4 space-y-3 border-t border-paper/10 pt-3">
+                          {knowledge.entries.map((entry) => (
+                            <li key={entry.id}>
+                              <h3 className="text-sm font-medium text-paper">{entry.title}</h3>
+                              <p className="mt-1 text-xs leading-relaxed text-mist">{entry.content}</p>
+                              <div className="mt-1 flex flex-wrap gap-x-2 text-[10px] text-mist">
+                                <span>{entry.source_name}</span>
+                                <span>·</span>
+                                <span>{entry.jurisdiction}</span>
+                                <span>·</span>
+                                <span>Checked {entry.source_checked_at}</span>
+                              </div>
+                              {entry.source_url ? (
+                                <a
+                                  href={entry.source_url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="mt-1 inline-block text-xs text-blue-2 underline-offset-2 hover:underline"
+                                >
+                                  View source
+                                </a>
+                              ) : null}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : null}
+                      <p className="mt-3 border-t border-paper/10 pt-3 text-[10px] leading-relaxed text-mist">
+                        Guidance is contextual, not a legal or venue-compliance determination. Verify current requirements with the venue and relevant local authorities.
+                      </p>
+                    </section>
+                  ) : null}
+
+                  <Link
+                    to="/quote"
+                    search={{
+                      eventType,
+                      guests,
+                      tier: result.tier,
+                      venueType,
+                      services: result.services.join(","),
+                    }}
+                    className="mt-6 block"
+                  >
+                    <Button className="min-h-12 w-full">
+                      Price this package in Get a Quote
+                      <ArrowRight className="size-4" aria-hidden />
+                    </Button>
                   </Link>
+                  <p className="mt-3 text-center text-xs text-mist">
+                    Your event details and recommended scope will be prefilled there.
+                  </p>
                 </>
               ) : (
                 <>
-                  <p className="text-[11px] uppercase tracking-[0.2em] text-mist">Waiting on a still</p>
-                  <h2 className="mt-2 text-3xl leading-tight text-paper">House packages.</h2>
-                  <ul className="mt-6 space-y-4">
-                    {PACKAGES.map((p) => (
-                      <li key={p.id}>
-                        <p className="font-serif text-xl">{p.name}</p>
-                        <p className="text-sm text-mist">{p.blurb}</p>
-                      </li>
-                    ))}
-                  </ul>
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-mist">How the guide works</p>
+                  <h2 className="mt-3 font-serif text-3xl leading-tight text-paper">
+                    Start with your production needs.
+                  </h2>
+                  <p className="mt-3 text-sm leading-relaxed text-mist">
+                    The guide uses your event format, guest count, venue and main priority to choose a
+                    starting package. It does not price or submit anything.
+                  </p>
+                  <p className="mt-6 border-t border-paper/10 pt-5 text-xs leading-relaxed text-mist">
+                    When you are ready, continue to Get a Quote to review the scope, see the estimate and
+                    send your brief to the production team.
+                  </p>
                 </>
               )}
             </GlassCard>

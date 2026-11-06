@@ -10,26 +10,35 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as ClientRouteImport } from './routes/client'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LookRouteImport } from './routes/look'
 import { Route as MatchRouteImport } from './routes/match'
 import { Route as QuoteRouteImport } from './routes/quote'
 import { Route as StudioRouteImport } from './routes/studio'
+import { Route as TransparencyRouteImport } from './routes/transparency'
 import { Route as WorkRouteImport } from './routes/work'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AdminReceiptsRouteImport } from './routes/admin/receipts'
 import { Route as BookQuoteIdRouteImport } from './routes/book.$quoteId'
 import { Route as CasesSlugRouteImport } from './routes/cases.$slug'
 import { Route as LiveProjectIdRouteImport } from './routes/live.$projectId'
 import { Route as PortalIndexRouteImport } from './routes/portal/index'
 import { Route as PortalProjectIdRouteImport } from './routes/portal/$projectId'
+import { Route as PortalProfileRouteImport } from './routes/portal/profile'
 import { Route as StudioIndexRouteImport } from './routes/studio/index'
 import { Route as StudioAdminRouteImport } from './routes/studio/admin'
 import { Route as StudioBriefsRouteImport } from './routes/studio/briefs'
+import { Route as StudioCollaborationRouteImport } from './routes/studio/collaboration'
 import { Route as StudioCrewRouteImport } from './routes/studio/crew'
 import { Route as StudioGearRouteImport } from './routes/studio/gear'
 import { Route as StudioMarketingRouteImport } from './routes/studio/marketing'
 import { Route as StudioMerchRouteImport } from './routes/studio/merch'
 import { Route as StudioPipelineRouteImport } from './routes/studio/pipeline'
+import { Route as StudioProfileRouteImport } from './routes/studio/profile'
 import { Route as StudioReceiptsRouteImport } from './routes/studio/receipts'
+import { Route as StudioReviewsRouteImport } from './routes/studio/reviews'
 import { Route as StudioRunsheetRouteImport } from './routes/studio/runsheet'
 import { Route as StudioVendorsRouteImport } from './routes/studio/vendors'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
@@ -39,6 +48,16 @@ import { Route as PortalProjectIdReceiptsReceiptIdRouteImport } from './routes/p
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ClientRoute = ClientRouteImport.update({
+  id: '/client',
+  path: '/client',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -66,10 +85,25 @@ const StudioRoute = StudioRouteImport.update({
   path: '/studio',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TransparencyRoute = TransparencyRouteImport.update({
+  id: '/transparency',
+  path: '/transparency',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WorkRoute = WorkRouteImport.update({
   id: '/work',
   path: '/work',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminReceiptsRoute = AdminReceiptsRouteImport.update({
+  id: '/receipts',
+  path: '/receipts',
+  getParentRoute: () => AdminRoute,
 } as any)
 const BookQuoteIdRoute = BookQuoteIdRouteImport.update({
   id: '/book/$quoteId',
@@ -96,6 +130,11 @@ const PortalProjectIdRoute = PortalProjectIdRouteImport.update({
   path: '/portal/$projectId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PortalProfileRoute = PortalProfileRouteImport.update({
+  id: '/portal/profile',
+  path: '/portal/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StudioIndexRoute = StudioIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -109,6 +148,11 @@ const StudioAdminRoute = StudioAdminRouteImport.update({
 const StudioBriefsRoute = StudioBriefsRouteImport.update({
   id: '/briefs',
   path: '/briefs',
+  getParentRoute: () => StudioRoute,
+} as any)
+const StudioCollaborationRoute = StudioCollaborationRouteImport.update({
+  id: '/collaboration',
+  path: '/collaboration',
   getParentRoute: () => StudioRoute,
 } as any)
 const StudioCrewRoute = StudioCrewRouteImport.update({
@@ -136,9 +180,19 @@ const StudioPipelineRoute = StudioPipelineRouteImport.update({
   path: '/pipeline',
   getParentRoute: () => StudioRoute,
 } as any)
+const StudioProfileRoute = StudioProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => StudioRoute,
+} as any)
 const StudioReceiptsRoute = StudioReceiptsRouteImport.update({
   id: '/receipts',
   path: '/receipts',
+  getParentRoute: () => StudioRoute,
+} as any)
+const StudioReviewsRoute = StudioReviewsRouteImport.update({
+  id: '/reviews',
+  path: '/reviews',
   getParentRoute: () => StudioRoute,
 } as any)
 const StudioRunsheetRoute = StudioRunsheetRouteImport.update({
@@ -170,26 +224,35 @@ const PortalProjectIdReceiptsReceiptIdRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
+  '/client': typeof ClientRoute
   '/login': typeof LoginRoute
   '/look': typeof LookRoute
   '/match': typeof MatchRoute
   '/quote': typeof QuoteRoute
   '/studio': typeof StudioRouteWithChildren
+  '/transparency': typeof TransparencyRoute
   '/work': typeof WorkRoute
+  '/admin/receipts': typeof AdminReceiptsRoute
   '/book/$quoteId': typeof BookQuoteIdRoute
   '/cases/$slug': typeof CasesSlugRoute
   '/live/$projectId': typeof LiveProjectIdRoute
   '/portal/$projectId': typeof PortalProjectIdRouteWithChildren
+  '/portal/profile': typeof PortalProfileRoute
   '/studio/admin': typeof StudioAdminRoute
   '/studio/briefs': typeof StudioBriefsRoute
+  '/studio/collaboration': typeof StudioCollaborationRoute
   '/studio/crew': typeof StudioCrewRoute
   '/studio/gear': typeof StudioGearRoute
   '/studio/marketing': typeof StudioMarketingRoute
   '/studio/merch': typeof StudioMerchRoute
   '/studio/pipeline': typeof StudioPipelineRoute
+  '/studio/profile': typeof StudioProfileRoute
   '/studio/receipts': typeof StudioReceiptsRoute
+  '/studio/reviews': typeof StudioReviewsRoute
   '/studio/runsheet': typeof StudioRunsheetRoute
   '/studio/vendors': typeof StudioVendorsRoute
+  '/admin/': typeof AdminIndexRoute
   '/portal/': typeof PortalIndexRoute
   '/studio/': typeof StudioIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -198,25 +261,33 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/client': typeof ClientRoute
   '/login': typeof LoginRoute
   '/look': typeof LookRoute
   '/match': typeof MatchRoute
   '/quote': typeof QuoteRoute
+  '/transparency': typeof TransparencyRoute
   '/work': typeof WorkRoute
+  '/admin/receipts': typeof AdminReceiptsRoute
   '/book/$quoteId': typeof BookQuoteIdRoute
   '/cases/$slug': typeof CasesSlugRoute
   '/live/$projectId': typeof LiveProjectIdRoute
   '/portal/$projectId': typeof PortalProjectIdRouteWithChildren
+  '/portal/profile': typeof PortalProfileRoute
   '/studio/admin': typeof StudioAdminRoute
   '/studio/briefs': typeof StudioBriefsRoute
+  '/studio/collaboration': typeof StudioCollaborationRoute
   '/studio/crew': typeof StudioCrewRoute
   '/studio/gear': typeof StudioGearRoute
   '/studio/marketing': typeof StudioMarketingRoute
   '/studio/merch': typeof StudioMerchRoute
   '/studio/pipeline': typeof StudioPipelineRoute
+  '/studio/profile': typeof StudioProfileRoute
   '/studio/receipts': typeof StudioReceiptsRoute
+  '/studio/reviews': typeof StudioReviewsRoute
   '/studio/runsheet': typeof StudioRunsheetRoute
   '/studio/vendors': typeof StudioVendorsRoute
+  '/admin': typeof AdminIndexRoute
   '/portal': typeof PortalIndexRoute
   '/studio': typeof StudioIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -226,26 +297,35 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
+  '/client': typeof ClientRoute
   '/login': typeof LoginRoute
   '/look': typeof LookRoute
   '/match': typeof MatchRoute
   '/quote': typeof QuoteRoute
   '/studio': typeof StudioRouteWithChildren
+  '/transparency': typeof TransparencyRoute
   '/work': typeof WorkRoute
+  '/admin/receipts': typeof AdminReceiptsRoute
   '/book/$quoteId': typeof BookQuoteIdRoute
   '/cases/$slug': typeof CasesSlugRoute
   '/live/$projectId': typeof LiveProjectIdRoute
   '/portal/$projectId': typeof PortalProjectIdRouteWithChildren
+  '/portal/profile': typeof PortalProfileRoute
   '/studio/admin': typeof StudioAdminRoute
   '/studio/briefs': typeof StudioBriefsRoute
+  '/studio/collaboration': typeof StudioCollaborationRoute
   '/studio/crew': typeof StudioCrewRoute
   '/studio/gear': typeof StudioGearRoute
   '/studio/marketing': typeof StudioMarketingRoute
   '/studio/merch': typeof StudioMerchRoute
   '/studio/pipeline': typeof StudioPipelineRoute
+  '/studio/profile': typeof StudioProfileRoute
   '/studio/receipts': typeof StudioReceiptsRoute
+  '/studio/reviews': typeof StudioReviewsRoute
   '/studio/runsheet': typeof StudioRunsheetRoute
   '/studio/vendors': typeof StudioVendorsRoute
+  '/admin/': typeof AdminIndexRoute
   '/portal/': typeof PortalIndexRoute
   '/studio/': typeof StudioIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -256,26 +336,35 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
+    | '/client'
     | '/login'
     | '/look'
     | '/match'
     | '/quote'
     | '/studio'
+    | '/transparency'
     | '/work'
+    | '/admin/receipts'
     | '/book/$quoteId'
     | '/cases/$slug'
     | '/live/$projectId'
     | '/portal/$projectId'
+    | '/portal/profile'
     | '/studio/admin'
     | '/studio/briefs'
+    | '/studio/collaboration'
     | '/studio/crew'
     | '/studio/gear'
     | '/studio/marketing'
     | '/studio/merch'
     | '/studio/pipeline'
+    | '/studio/profile'
     | '/studio/receipts'
+    | '/studio/reviews'
     | '/studio/runsheet'
     | '/studio/vendors'
+    | '/admin/'
     | '/portal/'
     | '/studio/'
     | '/api/auth/$'
@@ -284,25 +373,33 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/client'
     | '/login'
     | '/look'
     | '/match'
     | '/quote'
+    | '/transparency'
     | '/work'
+    | '/admin/receipts'
     | '/book/$quoteId'
     | '/cases/$slug'
     | '/live/$projectId'
     | '/portal/$projectId'
+    | '/portal/profile'
     | '/studio/admin'
     | '/studio/briefs'
+    | '/studio/collaboration'
     | '/studio/crew'
     | '/studio/gear'
     | '/studio/marketing'
     | '/studio/merch'
     | '/studio/pipeline'
+    | '/studio/profile'
     | '/studio/receipts'
+    | '/studio/reviews'
     | '/studio/runsheet'
     | '/studio/vendors'
+    | '/admin'
     | '/portal'
     | '/studio'
     | '/api/auth/$'
@@ -311,26 +408,35 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/admin'
+    | '/client'
     | '/login'
     | '/look'
     | '/match'
     | '/quote'
     | '/studio'
+    | '/transparency'
     | '/work'
+    | '/admin/receipts'
     | '/book/$quoteId'
     | '/cases/$slug'
     | '/live/$projectId'
     | '/portal/$projectId'
+    | '/portal/profile'
     | '/studio/admin'
     | '/studio/briefs'
+    | '/studio/collaboration'
     | '/studio/crew'
     | '/studio/gear'
     | '/studio/marketing'
     | '/studio/merch'
     | '/studio/pipeline'
+    | '/studio/profile'
     | '/studio/receipts'
+    | '/studio/reviews'
     | '/studio/runsheet'
     | '/studio/vendors'
+    | '/admin/'
     | '/portal/'
     | '/studio/'
     | '/api/auth/$'
@@ -340,16 +446,20 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRouteWithChildren
+  ClientRoute: typeof ClientRoute
   LoginRoute: typeof LoginRoute
   LookRoute: typeof LookRoute
   MatchRoute: typeof MatchRoute
   QuoteRoute: typeof QuoteRoute
   StudioRoute: typeof StudioRouteWithChildren
+  TransparencyRoute: typeof TransparencyRoute
   WorkRoute: typeof WorkRoute
   BookQuoteIdRoute: typeof BookQuoteIdRoute
   CasesSlugRoute: typeof CasesSlugRoute
   LiveProjectIdRoute: typeof LiveProjectIdRoute
   PortalProjectIdRoute: typeof PortalProjectIdRouteWithChildren
+  PortalProfileRoute: typeof PortalProfileRoute
   PortalIndexRoute: typeof PortalIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
@@ -361,6 +471,20 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/client': {
+      id: '/client'
+      path: '/client'
+      fullPath: '/client'
+      preLoaderRoute: typeof ClientRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -398,12 +522,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StudioRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/transparency': {
+      id: '/transparency'
+      path: '/transparency'
+      fullPath: '/transparency'
+      preLoaderRoute: typeof TransparencyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/work': {
       id: '/work'
       path: '/work'
       fullPath: '/work'
       preLoaderRoute: typeof WorkRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/receipts': {
+      id: '/admin/receipts'
+      path: '/receipts'
+      fullPath: '/admin/receipts'
+      preLoaderRoute: typeof AdminReceiptsRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/book/$quoteId': {
       id: '/book/$quoteId'
@@ -440,6 +585,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PortalProjectIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/portal/profile': {
+      id: '/portal/profile'
+      path: '/portal/profile'
+      fullPath: '/portal/profile'
+      preLoaderRoute: typeof PortalProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/studio/': {
       id: '/studio/'
       path: '/'
@@ -459,6 +611,13 @@ declare module '@tanstack/react-router' {
       path: '/briefs'
       fullPath: '/studio/briefs'
       preLoaderRoute: typeof StudioBriefsRouteImport
+      parentRoute: typeof StudioRoute
+    }
+    '/studio/collaboration': {
+      id: '/studio/collaboration'
+      path: '/collaboration'
+      fullPath: '/studio/collaboration'
+      preLoaderRoute: typeof StudioCollaborationRouteImport
       parentRoute: typeof StudioRoute
     }
     '/studio/crew': {
@@ -496,11 +655,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StudioPipelineRouteImport
       parentRoute: typeof StudioRoute
     }
+    '/studio/profile': {
+      id: '/studio/profile'
+      path: '/profile'
+      fullPath: '/studio/profile'
+      preLoaderRoute: typeof StudioProfileRouteImport
+      parentRoute: typeof StudioRoute
+    }
     '/studio/receipts': {
       id: '/studio/receipts'
       path: '/receipts'
       fullPath: '/studio/receipts'
       preLoaderRoute: typeof StudioReceiptsRouteImport
+      parentRoute: typeof StudioRoute
+    }
+    '/studio/reviews': {
+      id: '/studio/reviews'
+      path: '/reviews'
+      fullPath: '/studio/reviews'
+      preLoaderRoute: typeof StudioReviewsRouteImport
       parentRoute: typeof StudioRoute
     }
     '/studio/runsheet': {
@@ -541,15 +714,30 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminRouteChildren {
+  AdminReceiptsRoute: typeof AdminReceiptsRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminReceiptsRoute: AdminReceiptsRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 interface StudioRouteChildren {
   StudioAdminRoute: typeof StudioAdminRoute
   StudioBriefsRoute: typeof StudioBriefsRoute
+  StudioCollaborationRoute: typeof StudioCollaborationRoute
   StudioCrewRoute: typeof StudioCrewRoute
   StudioGearRoute: typeof StudioGearRoute
   StudioMarketingRoute: typeof StudioMarketingRoute
   StudioMerchRoute: typeof StudioMerchRoute
   StudioPipelineRoute: typeof StudioPipelineRoute
+  StudioProfileRoute: typeof StudioProfileRoute
   StudioReceiptsRoute: typeof StudioReceiptsRoute
+  StudioReviewsRoute: typeof StudioReviewsRoute
   StudioRunsheetRoute: typeof StudioRunsheetRoute
   StudioVendorsRoute: typeof StudioVendorsRoute
   StudioIndexRoute: typeof StudioIndexRoute
@@ -559,12 +747,15 @@ interface StudioRouteChildren {
 const StudioRouteChildren: StudioRouteChildren = {
   StudioAdminRoute: StudioAdminRoute,
   StudioBriefsRoute: StudioBriefsRoute,
+  StudioCollaborationRoute: StudioCollaborationRoute,
   StudioCrewRoute: StudioCrewRoute,
   StudioGearRoute: StudioGearRoute,
   StudioMarketingRoute: StudioMarketingRoute,
   StudioMerchRoute: StudioMerchRoute,
   StudioPipelineRoute: StudioPipelineRoute,
+  StudioProfileRoute: StudioProfileRoute,
   StudioReceiptsRoute: StudioReceiptsRoute,
+  StudioReviewsRoute: StudioReviewsRoute,
   StudioRunsheetRoute: StudioRunsheetRoute,
   StudioVendorsRoute: StudioVendorsRoute,
   StudioIndexRoute: StudioIndexRoute,
@@ -588,16 +779,20 @@ const PortalProjectIdRouteWithChildren = PortalProjectIdRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRouteWithChildren,
+  ClientRoute: ClientRoute,
   LoginRoute: LoginRoute,
   LookRoute: LookRoute,
   MatchRoute: MatchRoute,
   QuoteRoute: QuoteRoute,
   StudioRoute: StudioRouteWithChildren,
+  TransparencyRoute: TransparencyRoute,
   WorkRoute: WorkRoute,
   BookQuoteIdRoute: BookQuoteIdRoute,
   CasesSlugRoute: CasesSlugRoute,
   LiveProjectIdRoute: LiveProjectIdRoute,
   PortalProjectIdRoute: PortalProjectIdRouteWithChildren,
+  PortalProfileRoute: PortalProfileRoute,
   PortalIndexRoute: PortalIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
 }

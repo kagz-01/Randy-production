@@ -35,10 +35,32 @@ describe("priceQuote", () => {
     assert.ok(quote.amount > 0);
     const labels = quote.lines.map((line) => line.label);
     assert.ok(labels.includes("White wedding · 150 · Floor"));
-    assert.ok(labels.includes("VAT (16%)"));
+    assert.ok(labels.includes("VAT included (16%)"));
     assert.ok(labels.includes("Crew logistics & technical movement"));
     assert.ok(labels.includes("Venue / power & rigging"));
     assert.ok(labels.includes("Production contingency"));
+  });
+
+  it("extracts included VAT and reconciles every line to the VAT-inclusive total", () => {
+    const quote = priceQuote({
+      eventType: "wedding",
+      guests: 150,
+      tier: "floor",
+      services: ["stage", "sound", "decor"],
+      venueType: "garden",
+    });
+    const vat = quote.lines.find((line) => line.label === "VAT included (16%)");
+
+    assert.equal(quote.amount, 466830);
+    assert.equal(vat?.amount, 64390);
+    assert.equal(
+      quote.lines.reduce((sum, line) => sum + line.amount, 0),
+      quote.amount,
+    );
+    assert.equal(
+      Math.round((quote.amount * 16) / 116),
+      vat?.amount,
+    );
   });
 
   it("creates a client-ready proposal summary with the estimate", () => {
@@ -50,20 +72,20 @@ describe("priceQuote", () => {
       title: "Q3 Summit",
       venue: "KICC",
       date: "2026-11-15",
-      clientName: "Meridian Bank",
-      email: "ops@meridian.co.ke",
+      clientName: "Sample Client",
+      email: "ops@example.com",
       phone: "+254700123456",
       message: "Need a premium brand experience on the floor.",
     });
 
     assert.match(summary, /RANDY PRODUCTION/);
     assert.match(summary, /Q3 Summit/);
-    assert.match(summary, /Meridian Bank/);
+    assert.match(summary, /Sample Client/);
     assert.match(summary, /Estimated investment/);
     assert.match(summary, /Ksh|KES|KSh/i);
   });
 
-  it("creates a printable proposal sheet for client approvals", () => {
+  it("creates a printable planning estimate without implying client approval", () => {
     const sheet = buildProposalSheet({
       eventType: "wedding",
       guests: 150,
@@ -82,8 +104,19 @@ describe("priceQuote", () => {
     assert.match(sheet, /<html/i);
     assert.match(sheet, /Wedding Weekend/);
     assert.match(sheet, /Njeri.*Kairo/);
-    assert.match(sheet, /Estimated investment/);
-    assert.match(sheet, /Approved by client/i);
+    assert.match(sheet, /Estimated investment · VAT included/);
+    assert.match(sheet, /assuming all listed services and charges are standard-rated at 16%/);
+    assert.match(sheet, /Garden \/ outdoor/);
+    assert.match(sheet, /hello@wedding\.example/);
+    assert.match(sheet, /\+254712345678/);
+    assert.match(sheet, /src="\/logo\.png"/);
+    assert.match(sheet, /\+254 743 567 565/);
+    assert.match(sheet, /hello@randyproduction\.co\.ke/);
+    assert.match(sheet, /Business address: details to be confirmed/);
+    assert.match(sheet, /KRA PIN \/ VAT details: to be supplied/);
+    assert.match(sheet, /Outdoor ceremony with a warm, cinematic feel/);
+    assert.match(sheet, /not an invoice/i);
+    assert.doesNotMatch(sheet, /Approved by client/i);
   });
 
   it("creates a printable receipt sheet for client payment proof", () => {

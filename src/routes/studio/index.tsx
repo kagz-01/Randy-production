@@ -1,8 +1,18 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import {
+  ArrowUpRight,
+  CalendarDays,
+  Check,
+  CircleAlert,
+  Clock3,
+  RefreshCw,
+  Radio,
+} from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { summarizeStudioHome, type StudioActionItem } from "@/lib/studio-home-summary";
 import { getLivePulse, listPipeline, type JobRow } from "@/lib/server/studio";
-import { summarizeStudioHome } from "@/lib/studio-home-summary";
-import { cn, formatMoney } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/studio/")({
   component: StudioHome,
@@ -11,158 +21,229 @@ export const Route = createFileRoute("/studio/")({
 function StudioHome() {
   const [pulse, setPulse] = useState<{ id: string; title: string; live: boolean } | null>(null);
   const [jobs, setJobs] = useState<JobRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let on = true;
-    Promise.all([getLivePulse(), listPipeline()])
-      .then(([livePulse, rows]) => {
-        if (!on) return;
-        setPulse(livePulse);
-        setJobs(rows);
-      })
-      .catch(() => {
-        if (on) {
-          setPulse(null);
-          setJobs([]);
-        }
-      });
-    return () => {
-      on = false;
-    };
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const [livePulse, rows] = await Promise.all([getLivePulse(), listPipeline()]);
+      setPulse(livePulse);
+      setJobs(rows);
+    } catch (error) {
+      console.error("[studio-desk] Could not load production data", error);
+      setLoadError("The production desk couldn’t load. Check your connection and try again.");
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const summary = useMemo(() => summarizeStudioHome(jobs, pulse), [jobs, pulse]);
-  const nextJobs = useMemo(
-    () =>
-      [...jobs]
-        .filter((job) => job.status === "production" || job.status === "booked")
-        .sort((a, b) => {
-          const aDate = a.event_date ? new Date(a.event_date).getTime() : Number.MAX_SAFE_INTEGER;
-          const bDate = b.event_date ? new Date(b.event_date).getTime() : Number.MAX_SAFE_INTEGER;
-          return aDate - bDate;
-        })
-        .slice(0, 4),
-    [jobs],
-  );
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
 
-  const cards: {
-    to: string;
-    params?: Record<string, string>;
-    title: string;
-    body: string;
-  }[] = [
-    { to: "/studio/admin", title: "Admin", body: "Roles, onboarding, access, and new team invites — one dashboard for the floor." },
-    { to: "/studio/briefs", title: "Briefs", body: "Production run sheets, venue checks, and next-move priorities for the next event." },
-    { to: "/studio/runsheet", title: "Run sheet", body: "Day-of schedule, load-in milestones, and key handoff points for the show floor." },
-    { to: "/studio/pipeline", title: "Pipeline", body: "Inquiry through delivered. Advance the night in one motion." },
-    { to: "/studio/gear", title: "Gear", body: "Sound and decor stock. Service flags before they strand a show." },
-    { to: "/studio/crew", title: "Crew", body: "Calls, assignments, a sheet you can print in the van." },
-    { to: "/studio/vendors", title: "Vendors", body: "Florals, rigging, linen — lead times in one directory." },
-    { to: "/studio/marketing", title: "Case Forge", body: "Delivered jobs mint a page. Testimonials fire themselves." },
-    ...(pulse
-      ? [
-          {
-            to: "/studio/live/$projectId",
-            params: { projectId: pulse.id },
-            title: "Pulse",
-            body: `${pulse.live ? "Live now" : "Next show"} · ${pulse.title}. Run-of-show shared with the client.`,
-          },
-        ]
-      : []),
-  ];
-
+  const summary = useMemo(() => summarizeStudioHome(jobs), [jobs]);
   const nextEvent = summary.nextEvent;
+  const actionItems = summary.actionItems.slice(0, 5);
+  const extraActionCount = Math.max(0, summary.actionItems.length - actionItems.length);
 
   return (
-    <main className="shell py-8">
-      <section className="glass rounded-xl p-5 md:p-6">
-        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-          <div>
-            <p className="text-[11px] uppercase tracking-[0.32em] text-blue-2">Production command</p>
-            <h1 className="mt-2 font-serif text-4xl md:text-5xl">Studio operations</h1>
-          </div>
-          <div className="rounded-full border border-blue/30 bg-blue/10 px-3 py-1.5 text-[10px] uppercase tracking-[0.18em] text-blue-2">
-            {summary.priorityLabel}
-          </div>
+    <main className="shell pb-16 pt-6">
+      <header className="flex flex-wrap items-end justify-between gap-4 border-b border-paper/10 pb-5">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-blue-2">
+            Production desk · {new Intl.DateTimeFormat("en-KE", { weekday: "long", day: "numeric", month: "long" }).format(new Date())}
+          </p>
+          <h1 className="mt-2 font-sans text-3xl font-semibold tracking-tight text-paper md:text-4xl">
+            Today on the floor
+          </h1>
+          <p className="mt-2 max-w-xl text-sm text-mist">
+            The next show, overdue work, and the jobs that need a decision.
+          </p>
         </div>
+        <Button
+          type="button"
+          variant="line"
+          size="sm"
+          onClick={() => void refresh()}
+          disabled={loading}
+          aria-label="Refresh production desk"
+        >
+          <RefreshCw className={cn("size-3.5", loading && "animate-spin")} />
+          Refresh
+        </Button>
+      </header>
 
-        <div className="mt-6 grid gap-3 grid-cols-2 mobile-2up md:grid-cols-2 xl:grid-cols-4">
-          <Metric label="Active jobs" value={String(summary.liveJobs)} detail="Booked and on the floor" />
-          <Metric label="Due soon" value={String(summary.dueSoon)} detail="Within 42 days" />
-          <Metric label="Risk flags" value={String(summary.riskJobs)} detail="Venue or sign-off gaps" />
-          <Metric label="Value in motion" value={formatMoney(summary.activeValue)} detail={nextEvent ? `${nextEvent.title} is next` : "No active show yet"} />
-        </div>
+      {loadError ? (
+        <section className="mt-6 rounded-xl border border-red/25 bg-red/5 p-5" role="alert">
+          <p className="font-medium text-paper">{loadError}</p>
+          <Button type="button" className="mt-4" variant="line" size="sm" onClick={() => void refresh()}>
+            Try again
+          </Button>
+        </section>
+      ) : (
+        <>
+          <section aria-label="Production workload" className="grid grid-cols-3 divide-x divide-paper/10 border-b border-paper/10 py-5">
+            <WorkloadMetric label="Jobs marked active" value={String(summary.liveJobs)} />
+            <WorkloadMetric label="Due in 6 weeks" value={String(summary.dueSoon)} />
+            <WorkloadMetric
+              label="Past event · still active"
+              value={String(summary.overdueJobs.length)}
+              alert={summary.overdueJobs.length > 0}
+            />
+          </section>
 
-        <div className="mt-6 grid gap-4 lg:grid-cols-[1.35fr_0.65fr]">
-          <div className="rounded-lg border border-paper/10 bg-ink/50 p-4 md:p-5">
-            <p className="text-[11px] uppercase tracking-[0.18em] text-mist">Next event</p>
-            {nextEvent ? (
-              <>
-                <h2 className="mt-3 font-serif text-3xl text-paper">{nextEvent.title}</h2>
-                <div className="mt-4 grid gap-3 md:grid-cols-3">
-                  <Detail label="Client" value={nextEvent.client_name} />
-                  <Detail label="Venue" value={nextEvent.venue ?? "Venue TBC"} />
-                  <Detail label="Date" value={nextEvent.event_date ? new Date(nextEvent.event_date).toLocaleDateString("en-KE", { dateStyle: "medium" }) : "Date pending"} />
+          <div className="grid min-w-0 gap-5 pt-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(300px,0.8fr)]">
+            <section aria-labelledby="desk-attention-title" className="min-w-0">
+              <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-blue-2">Your next decisions</p>
+                  <h2 id="desk-attention-title" className="mt-1 text-2xl font-semibold text-paper">Needs attention</h2>
                 </div>
-              </>
-            ) : (
-              <p className="mt-3 text-sm text-mist">There is no booked or production job in the board right now.</p>
-            )}
-          </div>
+                <Link
+                  to="/studio/pipeline"
+                  search={{ jobId: undefined }}
+                  className="inline-flex min-h-10 items-center gap-1 text-xs font-medium text-mist transition-colors hover:text-paper"
+                >
+                  All jobs <ArrowUpRight className="size-3.5" />
+                </Link>
+              </div>
 
-          <div className="rounded-lg border border-paper/10 bg-ink/50 p-4">
-            <p className="text-[11px] uppercase tracking-[0.18em] text-mist">Live queue</p>
-            <div className="mt-3 space-y-3">
-              {nextJobs.length === 0 ? (
-                <p className="text-sm text-mist">No scheduled shows in the work queue.</p>
+              {loading ? (
+                <div className="space-y-2" aria-label="Loading production actions" aria-busy="true">
+                  {[0, 1, 2].map((item) => (
+                    <div key={item} className="h-[88px] animate-pulse rounded-lg border border-paper/10 bg-paper/[0.025]" />
+                  ))}
+                </div>
+              ) : actionItems.length ? (
+                <div className="divide-y divide-paper/10 border-y border-paper/10">
+                  {actionItems.map((item) => (
+                    <ActionRow key={item.job.id} item={item} />
+                  ))}
+                  {extraActionCount > 0 ? (
+                    <p className="px-1 py-3 text-xs text-mist">
+                      Showing the 5 most urgent items · {extraActionCount} more in{" "}
+                      <Link to="/studio/pipeline" search={{ jobId: undefined }} className="text-blue-2 hover:text-paper">Pipeline</Link>
+                    </p>
+                  ) : null}
+                </div>
               ) : (
-                nextJobs.map((job) => (
-                  <div key={job.id} className="rounded-md border border-paper/10 bg-paper/5 p-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="font-serif text-xl text-paper">{job.title}</p>
-                      <span className={cn("rounded-full px-2 py-1 text-[10px] uppercase tracking-[0.12em]", job.status === "production" ? "bg-green/20 text-green-300" : "bg-blue/15 text-blue-2")}>{job.status}</span>
+                <div className="rounded-lg border border-paper/10 bg-paper/[0.025] p-5">
+                  <div className="flex items-start gap-3">
+                    <Check className="mt-0.5 size-4 text-emerald-300" aria-hidden="true" />
+                    <div>
+                      <p className="font-medium text-paper">No urgent production actions</p>
+                      <p className="mt-1 text-sm text-mist">Open leads and show-readiness gaps will appear here.</p>
                     </div>
-                    <p className="mt-1 text-xs uppercase tracking-[0.14em] text-mist">{job.venue ?? "Venue TBC"}</p>
                   </div>
-                ))
+                </div>
               )}
-            </div>
-          </div>
-        </div>
-      </section>
+            </section>
 
-      <div className="mt-8 grid gap-3 grid-cols-2 mobile-2up md:grid-cols-2">
-        {cards.map((c) => (
-          <Link
-            key={c.title}
-            to={c.to}
-            params={c.params}
-            className="glass rounded-lg p-6 hover:glow-blue"
-          >
-            <h2 className="font-serif text-3xl">{c.title}</h2>
-            <p className="mt-2 text-sm text-mist">{c.body}</p>
-          </Link>
-        ))}
-      </div>
+            <aside className="min-w-0">
+              <section aria-labelledby="desk-next-show-title" className="rounded-xl border border-paper/10 bg-ink/60 p-5 md:p-6">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-mist">
+                    {pulse?.live ? "Show day" : "Next scheduled show"}
+                  </p>
+                  {pulse?.live ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-blue/25 bg-blue/10 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.12em] text-blue-2">
+                      <Radio className="size-3" aria-hidden="true" /> Live
+                    </span>
+                  ) : null}
+                </div>
+
+                {loading ? (
+                  <div className="mt-5 h-32 animate-pulse rounded-lg bg-paper/[0.04]" />
+                ) : nextEvent ? (
+                  <>
+                    <h2 id="desk-next-show-title" className="mt-4 font-serif text-3xl leading-tight text-paper">
+                      {nextEvent.title}
+                    </h2>
+                    <p className="mt-2 text-sm text-mist">
+                      {nextEvent.client_name} · {nextEvent.venue || "Venue to confirm"}
+                    </p>
+                    <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 border-t border-paper/10 pt-4 text-xs text-mist">
+                      <span className="inline-flex items-center gap-2">
+                        <CalendarDays className="size-3.5 text-blue-2" aria-hidden="true" />
+                        {formatEventDate(nextEvent.event_date)}
+                      </span>
+                      <span className="inline-flex items-center gap-2 capitalize">
+                        <Clock3 className="size-3.5 text-blue-2" aria-hidden="true" />
+                        {nextEvent.status}
+                      </span>
+                    </div>
+                    <div className="mt-5 flex flex-wrap gap-2">
+                      <Link to="/studio/pipeline" search={{ jobId: nextEvent.id }}>
+                        <Button variant="primary" size="sm">
+                          Open production file <ArrowUpRight className="size-3.5" />
+                        </Button>
+                      </Link>
+                      {pulse?.live && pulse.id === nextEvent.id ? (
+                        <Link to="/studio/live/$projectId" params={{ projectId: pulse.id }}>
+                          <Button variant="line" size="sm">Open crew Pulse</Button>
+                        </Link>
+                      ) : null}
+                    </div>
+                  </>
+                ) : (
+                  <div className="mt-4">
+                    <h2 id="desk-next-show-title" className="font-serif text-2xl text-paper">No upcoming show scheduled</h2>
+                    <p className="mt-2 text-sm leading-relaxed text-mist">
+                      Past-dated jobs still marked active are listed under Needs attention until they’re closed out.
+                    </p>
+                    <Link to="/studio/pipeline" search={{ jobId: undefined }} className="mt-4 inline-flex min-h-10 items-center gap-1 text-sm text-blue-2 hover:text-paper">
+                      Review the job board <ArrowUpRight className="size-4" />
+                    </Link>
+                  </div>
+                )}
+              </section>
+
+            </aside>
+          </div>
+        </>
+      )}
     </main>
   );
 }
 
-function Metric({ label, value, detail }: { label: string; value: string; detail: string }) {
+function WorkloadMetric({ label, value, alert = false }: { label: string; value: string; alert?: boolean }) {
   return (
-    <div className="rounded-lg border border-paper/10 bg-ink/50 p-4">
-      <p className="text-[10px] uppercase tracking-[0.18em] text-mist">{label}</p>
-      <p className="mt-3 font-serif text-3xl text-paper">{value}</p>
-      <p className="mt-1 text-xs uppercase tracking-[0.12em] text-blue-2">{detail}</p>
+    <div className="min-w-0 px-3 first:pl-0 last:pr-0 sm:px-5">
+      <p className="text-[10px] leading-snug text-mist sm:text-xs">{label}</p>
+      <p className={cn("mt-1 font-serif text-2xl tabular-nums sm:text-3xl", alert ? "text-amber-200" : "text-paper")}>
+        {value}
+      </p>
     </div>
   );
 }
 
-function Detail({ label, value }: { label: string; value: string }) {
+function ActionRow({ item }: { item: StudioActionItem }) {
+  const urgent = item.priority === "urgent";
   return (
-    <div className="rounded-md border border-paper/10 bg-paper/5 p-3">
-      <p className="text-[10px] uppercase tracking-[0.16em] text-mist">{label}</p>
-      <p className="mt-2 text-sm text-paper">{value}</p>
-    </div>
+    <Link
+      to="/studio/pipeline"
+      search={{ jobId: item.job.id }}
+      className="group flex min-h-20 items-center justify-between gap-3 py-3 transition-colors hover:bg-paper/[0.025]"
+    >
+      <div className="flex min-w-0 items-start gap-3">
+        <span className={cn("mt-1 grid size-8 shrink-0 place-items-center rounded-lg", urgent ? "bg-amber-300/10 text-amber-200" : "bg-paper/5 text-mist")}>
+          <CircleAlert className="size-4" aria-hidden="true" />
+        </span>
+        <div className="min-w-0">
+          <p className="truncate text-sm font-medium text-paper">{item.title}</p>
+          <p className="mt-1 truncate text-xs text-mist">{item.job.title} · {item.detail}</p>
+        </div>
+      </div>
+      <ArrowUpRight className="size-4 shrink-0 text-mist transition-colors group-hover:text-paper" aria-hidden="true" />
+    </Link>
   );
+}
+
+function formatEventDate(value: string | null | undefined) {
+  if (!value) return "Date to confirm";
+  const date = new Date(`${value.slice(0, 10)}T12:00:00`);
+  if (Number.isNaN(date.getTime())) return "Date to confirm";
+  return new Intl.DateTimeFormat("en-KE", { day: "numeric", month: "short", year: "numeric" }).format(date);
 }

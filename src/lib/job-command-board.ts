@@ -25,6 +25,11 @@ function isAttentionStatus(status: string): boolean {
   return ["inquiry", "quoted"].includes(status) || !status;
 }
 
+export function hasProductionVenue(venue: string | null | undefined): boolean {
+  const normalized = venue?.trim().toLowerCase();
+  return Boolean(normalized && normalized !== "tbc" && normalized !== "to be confirmed");
+}
+
 const SHOW_WEEK_DAYS = 45;
 
 export function summarizeJobCommandBoard(rows: JobCommandRow[]): JobCommandSummary {
@@ -39,20 +44,24 @@ export function summarizeJobCommandBoard(rows: JobCommandRow[]): JobCommandSumma
     .sort((a, b) => new Date(a.event_date ?? 0).getTime() - new Date(b.event_date ?? 0).getTime());
 
   const needsAttention = rows
-    .filter((row) => isAttentionStatus(row.status) || !row.venue || !row.event_date)
+    .filter((row) =>
+      ["inquiry", "quoted", "booked", "production"].includes(row.status) &&
+      (isAttentionStatus(row.status) || !hasProductionVenue(row.venue) || !row.event_date)
+    )
     .sort((a, b) => {
-      const aScore = Number(!a.venue) + Number(!a.event_date) + Number(isAttentionStatus(a.status));
-      const bScore = Number(!b.venue) + Number(!b.event_date) + Number(isAttentionStatus(b.status));
+      const aScore = Number(!hasProductionVenue(a.venue)) + Number(!a.event_date) + Number(isAttentionStatus(a.status));
+      const bScore = Number(!hasProductionVenue(b.venue)) + Number(!b.event_date) + Number(isAttentionStatus(b.status));
       return bScore - aScore;
     });
 
   const value = live.reduce((sum, row) => sum + (row.ballpark ?? 0), 0);
+  const outstanding = rows.filter((row) => isAttentionStatus(row.status)).length;
 
   return {
     live: live.length,
-    outstanding: live.length,
+    outstanding,
     value,
-    dueSoon: dueSoon.slice(0, 3),
-    needsAttention: needsAttention.slice(0, 3),
+    dueSoon,
+    needsAttention,
   };
 }

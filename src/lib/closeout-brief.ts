@@ -8,6 +8,7 @@ export type CloseoutJob = {
 };
 
 export type CloseoutItem = {
+  jobId?: string;
   label: string;
   owner: string;
   state: "ready" | "watch" | "risk";
@@ -32,6 +33,7 @@ export function summarizeCloseoutBrief(jobs: CloseoutJob[], paidAmount = 0): Clo
   const venuePending = activeJobs.filter((job) => !job.venue || job.venue === "TBC");
   if (venuePending.length) {
     items.push({
+      jobId: venuePending[0].id,
       label: "Venue confirmation",
       owner: "Venue coordinator",
       state: "watch",
@@ -42,6 +44,7 @@ export function summarizeCloseoutBrief(jobs: CloseoutJob[], paidAmount = 0): Clo
   const budgetOpen = activeJobs.filter((job) => !job.ballpark || job.ballpark <= 0);
   if (budgetOpen.length) {
     items.push({
+      jobId: budgetOpen[0].id,
       label: "Budget sign-off",
       owner: "Finance",
       state: "watch",
@@ -52,6 +55,7 @@ export function summarizeCloseoutBrief(jobs: CloseoutJob[], paidAmount = 0): Clo
   const delivered = activeJobs.filter((job) => job.status === "delivered");
   if (delivered.length) {
     items.push({
+      jobId: delivered[0].id,
       label: "Final client approval",
       owner: "Producer",
       state: "ready",
@@ -59,9 +63,10 @@ export function summarizeCloseoutBrief(jobs: CloseoutJob[], paidAmount = 0): Clo
     });
   }
 
-  const pendingScope = activeJobs.filter((job) => ["inquiry", "quoted"].includes(job.status ?? ""));
+  const pendingScope = jobs.filter((job) => ["inquiry", "quoted"].includes(job.status ?? ""));
   if (pendingScope.length) {
     items.push({
+      jobId: pendingScope[0].id,
       label: "Client scope confirmation",
       owner: "Producer",
       state: "watch",
@@ -72,6 +77,7 @@ export function summarizeCloseoutBrief(jobs: CloseoutJob[], paidAmount = 0): Clo
   const finalInvoice = activeJobs.filter((job) => job.status === "delivered" && (job.ballpark ?? 0) > 0 && outstandingAmount > 0);
   if (finalInvoice.length) {
     items.push({
+      jobId: finalInvoice[0].id,
       label: "Settlement and closeout",
       owner: "Finance",
       state: "watch",

@@ -70,17 +70,25 @@ function CrewPage() {
     void refresh();
   }, [refresh]);
 
-  const activeJobs = useMemo(
-    () =>
-      [...jobs]
-        .filter((job) => ["booked", "production"].includes(job.status))
-        .sort((a, b) => {
-          const aDate = a.event_date ? new Date(a.event_date).getTime() : Number.MAX_SAFE_INTEGER;
-          const bDate = b.event_date ? new Date(b.event_date).getTime() : Number.MAX_SAFE_INTEGER;
-          return aDate - bDate;
-        }),
-    [jobs],
-  );
+  const activeJobs = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return [...jobs]
+      .filter((job) => {
+        if (!["booked", "production"].includes(job.status) || !job.event_date) {
+          return ["booked", "production"].includes(job.status);
+        }
+        const eventDate = new Date(job.event_date);
+        if (Number.isNaN(eventDate.getTime())) return true;
+        eventDate.setHours(0, 0, 0, 0);
+        return eventDate >= today;
+      })
+      .sort((a, b) => {
+        const aDate = a.event_date ? new Date(a.event_date).getTime() : Number.MAX_SAFE_INTEGER;
+        const bDate = b.event_date ? new Date(b.event_date).getTime() : Number.MAX_SAFE_INTEGER;
+        return (Number.isNaN(aDate) ? Number.MAX_SAFE_INTEGER : aDate) - (Number.isNaN(bDate) ? Number.MAX_SAFE_INTEGER : bDate);
+      });
+  }, [jobs]);
   const nextJob = activeJobs[0] ?? null;
   const assignedCrew = useMemo(
     () => (nextJob ? crew.filter((person) => person.assigned_job_id === nextJob.id) : []),

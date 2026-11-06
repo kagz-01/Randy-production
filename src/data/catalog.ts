@@ -21,15 +21,7 @@ export type EventType =
   | "film";
 export type TierKey = "signal" | "floor" | "black";
 
-export const AGENCY_PILLARS = [
-  { key: "media", label: "Media production", line: "Film, photo, and content that captures defining moments." },
-  { key: "events", label: "Event planning & management", line: "Large-scale to intimate — designed, run, and remembered." },
-  { key: "branding", label: "Branding", line: "Identity systems that build trust and strengthen brands." },
-  { key: "digital", label: "Digital marketing", line: "Campaigns executed end to end, not just pretty posts." },
-  { key: "pr", label: "Public relations", line: "Stories, launches, and moments that earn attention." },
-] as const;
-
-export const PILLAR_LINE = "Randy Production · Media Production · Events · Branding · Digital · PR · Nairobi";
+export const PILLAR_LINE = "Randy Production · Film · Events · Branding · Live Production · Nairobi";
 
 export const SERVICES: {
   key: ServiceKey;
@@ -107,186 +99,7 @@ export const ADDONS: { key: ServiceKey; label: string; factor: number }[] = [
   { key: "decor", label: "Decor build", factor: 0.55 },
 ];
 
-export const WORK = [
-  {
-    id: "garden-vows",
-    title: "Garden Vows",
-    service: "decor" as ServiceKey,
-    year: "2026",
-    event: "Wedding storytelling",
-    outcome: "140 guests · soft ritual lighting",
-    image: "/catalog/wedding/GRA08375.webp",
-    stills: [
-      "/catalog/wedding/GRA08375.webp",
-      "/catalog/wedding/_MG_9277.webp",
-      "/catalog/wedding/IMG_9335.webp",
-    ],
-    logline: "A romantic garden ceremony built with layered florals, pale fabrics and a warm dusk palette.",
-    storyTitle: "A garden ceremony shaped by light, ritual and bloom.",
-    storyBody: [
-      "Garden Vows was designed as a romantic outdoor celebration that feels intimate, elevated and deeply personal. Layered florals, soft draping and warm evening tones create a ceremony that feels timeless while still contemporary.",
-      "Every detail was composed to carry emotion through the space — from the soft palette to the natural textures that frame the couple as they step into a new chapter together.",
-    ],
-    tags: ["Wedding", "Garden", "Decor", "Luxury Styling"],
-  },
-  {
-    id: "mama-joy",
-    title: "Mama Joy",
-    service: "decor" as ServiceKey,
-    year: "2026",
-    event: "Celebration portraiture",
-    outcome: "Portrait styling · full-day flow",
-    image: "/catalog/baby-shower/IMG_2674.webp",
-    stills: [
-      "/catalog/baby-shower/IMG_2674.webp",
-      "/catalog/baby-shower/IMG_2692.webp",
-      "/catalog/baby-shower/IMG_9743.webp",
-    ],
-    logline: "An elevated maternity concept with soft neutrals, luxury textures and confident portrait composition.",
-    storyTitle: "A celebration of motherhood, strength and new beginnings.",
-    storyBody: [
-      "Mama Joy is a heartwarming maternity campaign designed to capture the beauty, grace and confidence of expectant mothers. The concept blends soft, neutral tones with luxury textures, creating a calm and elegant visual narrative that feels both modern and timeless.",
-      "Through carefully composed portraits and natural storytelling, the campaign highlights the joy, strength and anticipation that come with motherhood.",
-    ],
-    tags: ["Maternity", "Lifestyle", "Portrait", "Brand Campaign"],
-  },
-  {
-    id: "silver-lantern",
-    title: "Silver Lantern",
-    service: "stage" as ServiceKey,
-    year: "2025",
-    event: "Private ceremonies",
-    outcome: "Lounge ceremony · atmosphere-first design",
-    image: "/catalog/wedding/_MG_9277.webp",
-    stills: [
-      "/catalog/wedding/_MG_9277.webp",
-      "/catalog/wedding/GRA08375.webp",
-      "/catalog/wedding/_MG_9281.webp",
-    ],
-    logline: "A tailored ceremony set designed around clean staging, polished draping and light-led emotion.",
-    storyTitle: "A quiet ceremony set with polished detail and warm light.",
-    storyBody: [
-      "Silver Lantern was built around an intimate, atmosphere-first ceremony experience. Clean staging, layered fabric textures and a restrained palette keep the focus on quiet emotion and thoughtful guest flow.",
-      "The setup balances elegance and simplicity, turning the ceremony into a space that feels both ceremonial and deeply personal.",
-    ],
-    tags: ["Ceremony", "Stage", "Private Event", "Atmosphere"],
-  },
-  {
-    id: "glass-tent",
-    title: "Glass Tent",
-    service: "decor" as ServiceKey,
-    year: "2025",
-    event: "Private gatherings",
-    outcome: "Outdoor event tent · guest styling",
-    image: "/catalog/decor/IMG_0953.webp",
-    stills: [
-      "/catalog/decor/IMG_0953.webp",
-      "/catalog/decor/_MG_9810.webp",
-      "/catalog/decor/_MG_9907.webp",
-    ],
-    logline: "A bright garden marquee with sculpted furniture lines, minimal drama and strong guest flow.",
-    storyTitle: "A relaxed outdoor gathering shaped by texture, clarity and ease.",
-    storyBody: [
-      "Glass Tent was designed for a refined outdoor gathering where guest movement, comfort and visual calm mattered as much as the styling. The palette stays fresh and airy while the furniture lines bring structure and intention.",
-      "The result is a social space that feels polished, open and welcoming without ever losing the sense of intimacy.",
-    ],
-    tags: ["Outdoor", "Decor", "Private Gathering", "Guest Flow"],
-  },
-  {
-    id: "night-pulse",
-    title: "Night Pulse",
-    service: "stage" as ServiceKey,
-    year: "2026",
-    event: "Live performance",
-    outcome: "High-energy lighting · crowd-first stage",
-    image: "/catalog/concert/GRA00269.webp",
-    stills: [
-      "/catalog/concert/GRA00269.webp",
-      "/catalog/concert/GRA00392.webp",
-      "/catalog/concert/GRA00813.webp",
-    ],
-    logline: "A live show build that blends intense colour, clean sightlines and stage moments built for performance.",
-    storyTitle: "An electrified stage build for movement, sound and impact.",
-    storyBody: [
-      "Night Pulse brings together immersive lighting, stage architecture and a clear performance rhythm. The design focuses on momentum and crowd energy while keeping every visual cue intentional and readable from the floor.",
-      "The set is built to sustain excitement across the night, making each transition feel sharp, cinematic and emotionally charged.",
-    ],
-    tags: ["Live Show", "Stage", "Lighting", "Performance"],
-  },
-  {
-    id: "villa-rhythm",
-    title: "Villa Rhythm",
-    service: "decor" as ServiceKey,
-    year: "2026",
-    event: "Luxe birthdays",
-    outcome: "Garden dinner · lounge detail styling",
-    image: "/catalog/decor/_MG_9907.webp",
-    stills: [
-      "/catalog/decor/_MG_9907.webp",
-      "/catalog/decor/IMG_1001.webp",
-      "/catalog/decor/IMG_1006.webp",
-    ],
-    logline: "A warm intimate celebration with layered textures, florals, and a relaxed social rhythm.",
-    storyTitle: "A warm villa gathering built for conversation, texture and ease.",
-    storyBody: [
-      "Villa Rhythm is a relaxed luxury birthday setting designed around warmth, movement and social flow. Layered textures, florals and tactile styling create a space that feels collected rather than staged.",
-      "The room settles into a natural rhythm — soft light, layered details and comfortable seating that hold the energy of the evening without distraction.",
-    ],
-    tags: ["Birthday", "Villa", "Lounge", "Social Styling"],
-  },
-];
-
-export const TEAM = [
-  {
-    id: "randy",
-    name: "Randy Okello",
-    role: "Director",
-    line: "I run the floor. 240 rooms dressed. I still walk in first.",
-    image: "/images/team-randy.jpg",
-    video: "/videos/hero.mp4",
-  },
-  {
-    id: "amara",
-    name: "Amara Njoroge",
-    role: "Sound",
-    line: "I run sound. Three hundred shows. If you hear it, I already heard it twice.",
-    image: "/images/team-amara.jpg",
-    video: "/videos/hero.mp4",
-  },
-  {
-    id: "leo",
-    name: "Leo Mensah",
-    role: "Decor",
-    line: "I dress rooms. Raw to black-tie is a geometry problem, not a mood board.",
-    image: "/images/work-decor.jpg",
-    video: "/videos/hero.mp4",
-  },
-  {
-    id: "sanaa",
-    name: "Sanaa Reid",
-    role: "Film",
-    line: "I shoot the proof. If it did not happen on camera, it did not ship.",
-    image: "/images/work-film.jpg",
-    video: "/videos/hero.mp4",
-  },
-] as const;
-
-export const OUTCOMES = [
-  { client: "Atelier Noir", line: "Cut launch film cycle from 6 weeks to 11 days." },
-  { client: "Meridian Bank", line: "420-cover gala, 11-minute room changeover." },
-  { client: "Kasa & Imani", line: "Look-Through cut decor setup by 30%." },
-  { client: "Ngugi family", line: "Ruracio tents for 280 — programme never slipped." },
-  { client: "NBO Sessions", line: "900-cap outdoor, zero RF dropouts." },
-  { client: "Helix Labs", line: "PR moment live on feed in 72 hours." },
-];
-
-export const TIMELINE = [
-  { date: "Mar 2026", title: "Low End Theory", service: "sound" as ServiceKey, stat: "11h rig" },
-  { date: "Apr 2026", title: "Kasa rooftop vows", service: "decor" as ServiceKey, stat: "−30% setup" },
-  { date: "Jun 2026", title: "Atelier Noir drop", service: "brand" as ServiceKey, stat: "11-day film" },
-  { date: "Aug 2026", title: "Ngugi hills ruracio", service: "decor" as ServiceKey, stat: "280 seated" },
-  { date: "Sep 2026", title: "Meridian Gala", service: "stage" as ServiceKey, stat: "Live tonight" },
-];
+export { WORK } from "./portfolio.ts";
 
 export const PACKAGES = [
   {
@@ -337,13 +150,6 @@ export const PACKAGES = [
     services: ["stage", "sound", "film"] as ServiceKey[],
     blurb: "Press briefing to public reveal — run of show, cameras, and the story.",
   },
-];
-
-export const STATS = [
-  { value: 247, label: "events delivered", suffix: "" },
-  { value: 1200, label: "hours of sound rigged", suffix: "+" },
-  { value: 40, label: "brand campaigns shipped", suffix: "" },
-  { value: 18, label: "rooms flipped overnight", suffix: "" },
 ];
 
 export const MERCH_AREAS: { area: string; count: number; examples: string[] }[] = [

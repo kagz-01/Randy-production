@@ -1,11 +1,29 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { Plus, RefreshCw, Save } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { toast } from "sonner";
-import { summarizeJobCommandBoard } from "@/lib/job-command-board";
-import { listPipeline, moveJob, type JobRow } from "@/lib/server/studio";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { EVENT_TYPES, SERVICES, TIERS } from "@/data/catalog";
+import { hasProductionVenue, summarizeJobCommandBoard } from "@/lib/job-command-board";
+import {
+  createProductionJob,
+  listClientAccounts,
+  listPipeline,
+  moveJob,
+  updateProductionJob,
+  type ClientAccountRow,
+  type ProductionJobInput,
+  type JobRow,
+} from "@/lib/server/studio";
 import { cn, formatMoney } from "@/lib/utils";
 
-export const Route = createFileRoute("/studio/pipeline")({ component: PipelinePage });
+export const Route = createFileRoute("/studio/pipeline")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    jobId: typeof search.jobId === "string" ? search.jobId : undefined,
+  }),
+  component: PipelinePage,
+});
 
 const COLS = [
   { key: "inquiry", label: "Inquiry" },
@@ -13,58 +31,220 @@ const COLS = [
   { key: "booked", label: "Booked" },
   { key: "production", label: "On the floor" },
   { key: "delivered", label: "Delivered" },
+  { key: "cancelled", label: "Cancelled" },
 ];
 
-function PipelinePage() {
-  const [jobs, setJobs] = useState<JobRow[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+type JobDraft = {
+  title: string;
+  client_name: string;
+  client_user_id: string;
+  service: string;
+  event_type: string;
+  guests: string;
+  tier: string;
+  status: string;
+  venue: string;
+  event_date: string;
+  ballpark: string;
+  notes: string;
+};
 
-  async function refresh() {
-    const rows = await listPipeline();
-    setJobs(rows);
-    if (!selectedId && rows[0]) setSelectedId(rows[0].id);
-    if (selectedId && !rows.some((row) => row.id === selectedId)) setSelectedId(rows[0]?.id ?? null);
-  }
+const EMPTY_JOB_DRAFT: JobDraft = {
+  title: "",
+  client_name: "",
+  client_user_id: "",
+  service: "",
+  event_type: "",
+  guests: "",
+  tier: "",
+  status: "inquiry",
+  venue: "",
+  event_date: "",
+  ballpark: "0",
+  notes: "",
+};
+
+function jobToDraft(job: JobRow): JobDraft {
+  return {
+    title: job.title,
+    client_name: job.client_name,
+    client_user_id: job.owner_user_id ?? "",
+    service: job.service,
+    event_type: job.event_type,
+    guests: String(job.guests),
+    tier: job.tier,
+    status: job.status,
+    venue: job.venue ?? "",
+    event_date: job.event_date?.slice(0, 10) ?? "",
+    ballpark: String(job.ballpark),
+    notes: job.notes ?? "",
+  };
+}
+
+function draftToInput(draft: JobDraft): ProductionJobInput {
+  return {
+    ...draft,
+    guests: Number(draft.guests),
+    ballpark: Number(draft.ballpark),
+    venue: draft.venue || null,
+    event_date: draft.event_date || null,
+    notes: draft.notes || null,
+  };
+}
+
+function PipelinePage() {
+  const { jobId: requestedJobId } = Route.useSearch();
+  const [jobs, setJobs] = useState<JobRow[]>([]);
+  const [clientAccounts, setClientAccounts] = useState<ClientAccountRow[]>([]);
+  const [clientAccountsError, setClientAccountsError] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [newJob, setNewJob] = useState<JobDraft>(EMPTY_JOB_DRAFT);
+  const [editingJobId, setEditingJobId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState<JobDraft>(EMPTY_JOB_DRAFT);
+  const [savingJob, setSavingJob] = useState(false);
+  const selectedIdRef = useRef<string | null>(selectedId);
+  selectedIdRef.current = selectedId;
+
+  const refresh = useCallback(async (preferredJobId?: string) => {
+    setLoadError(null);
+    setLoading(true);
+    try {
+      const rows = await listPipeline();
+      setJobs(rows);
+      const currentSelectedId = selectedIdRef.current;
+      let nextSelectedId = currentSelectedId;
+      if (preferredJobId && rows.some((row) => row.id === preferredJobId)) {
+        nextSelectedId = preferredJobId;
+      } else if (!currentSelectedId || !rows.some((row) => row.id === currentSelectedId)) {
+        nextSelectedId = rows[0]?.id ?? null;
+      }
+      selectedIdRef.current = nextSelectedId;
+      setSelectedId(nextSelectedId);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    refresh().catch(() => setJobs([]));
+    refresh(requestedJobId).catch((error) => {
+      console.error("[production-pipeline] Could not load jobs", error);
+      setLoadError("The job board could not be loaded. Refresh and try again.");
+    });
+  }, [refresh, requestedJobId]);
+
+  useEffect(() => {
+    let active = true;
+    listClientAccounts()
+      .then((accounts) => {
+        if (!active) return;
+        setClientAccounts(accounts);
+        setClientAccountsError(null);
+      })
+      .catch((error) => {
+        console.error("[production-pipeline] Could not load client accounts", error);
+        if (active) setClientAccountsError("Client accounts could not be loaded. Refresh before linking an account.");
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
   const board = useMemo(() => summarizeJobCommandBoard(jobs), [jobs]);
   const selectedJob = jobs.find((job) => job.id === selectedId) ?? jobs[0] ?? null;
 
-  const checklist = selectedJob
-    ? [
-        { label: "Venue confirmed", done: Boolean(selectedJob.venue && selectedJob.venue !== "TBC") },
-        { label: "Event date locked", done: Boolean(selectedJob.event_date) },
-        { label: "Scope approved", done: !["inquiry", "quoted"].includes(selectedJob.status) },
-        { label: "Budget in motion", done: Boolean(selectedJob.ballpark > 0) },
-      ]
-    : [];
+  async function createJob(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSavingJob(true);
+    try {
+      const created = await createProductionJob({ data: draftToInput(newJob) });
+      setJobs((current) => [created, ...current]);
+      setSelectedId(created.id);
+      selectedIdRef.current = created.id;
+      setNewJob(EMPTY_JOB_DRAFT);
+      setShowCreateForm(false);
+      toast.success("Production created.");
+    } catch (error) {
+      console.error("[production-pipeline] Could not create production", error);
+      toast.error(error instanceof Error ? error.message : "The production could not be created.");
+    } finally {
+      setSavingJob(false);
+    }
+  }
 
-  const timeline = selectedJob ? getTimeline(selectedJob) : [];
-  const approvals = selectedJob ? getApprovals(selectedJob) : [];
-  const procurement = selectedJob ? getProcurement(selectedJob) : [];
+  async function saveJob(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!editingJobId) return;
+    setSavingJob(true);
+    try {
+      const updated = await updateProductionJob({ data: { id: editingJobId, ...draftToInput(editDraft) } });
+      setJobs((current) => current.map((job) => job.id === updated.id ? updated : job));
+      setEditingJobId(null);
+      toast.success("Production details saved.");
+    } catch (error) {
+      console.error("[production-pipeline] Could not update production", error);
+      toast.error(error instanceof Error ? error.message : "Production details could not be saved.");
+    } finally {
+      setSavingJob(false);
+    }
+  }
 
   return (
     <main className="shell py-8">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-[11px] uppercase tracking-[0.32em] text-blue-2">Job command</p>
-          <h1 className="mt-2 font-serif text-5xl">Production floor</h1>
+          <h1 className="mt-2 font-serif text-5xl">Production jobs</h1>
         </div>
-        <div className="text-right">
-          <p className="text-[11px] uppercase tracking-[0.18em] text-mist">Live value</p>
-          <p className="font-serif text-3xl">{formatMoney(board.value)}</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="mr-2 text-right">
+            <p className="text-[11px] uppercase tracking-[0.18em] text-mist">Booked & in production</p>
+            <p className="font-serif text-2xl">{formatMoney(board.value)}</p>
+          </div>
+          <Button type="button" variant="line" size="sm" onClick={() => void refresh().catch((error) => {
+            console.error("[production-pipeline] Could not refresh jobs", error);
+            setLoadError("The job board could not be refreshed.");
+          })} disabled={loading}>
+            <RefreshCw className={cn("size-4", loading && "animate-spin")} />
+            Refresh
+          </Button>
+          <Button type="button" size="sm" onClick={() => setShowCreateForm((open) => !open)}>
+            <Plus className="size-4" />
+            Add production
+          </Button>
         </div>
       </div>
+
+      {loadError ? (
+        <p role="alert" className="mt-5 text-sm text-red-300">{loadError}</p>
+      ) : null}
+      {showCreateForm ? (
+        <JobForm
+          title="Create production record"
+          submitLabel="Create production"
+          draft={newJob}
+          clientAccounts={clientAccounts}
+          clientAccountsError={clientAccountsError}
+          clientAccountLocked={false}
+          busy={savingJob}
+          onChange={setNewJob}
+          onSubmit={createJob}
+          onCancel={() => setShowCreateForm(false)}
+        />
+      ) : null}
 
       <section className="mt-8 grid gap-4 md:grid-cols-4">
         <Metric label="Live jobs" value={String(board.live)} detail="Booked and in production" />
         <Metric label="Due soon" value={String(board.dueSoon.length)} detail="Within the next 6 weeks" />
-        <Metric label="Outstanding" value={String(board.outstanding)} detail="Needs decision or scope lock" />
-        <Metric label="Ready / risk" value={board.needsAttention.length ? "Watch" : "Clear"} detail={board.needsAttention.length ? `${board.needsAttention[0].title} needs attention` : "All active jobs are moving"} />
+        <Metric label="Open inquiries & quotes" value={String(board.outstanding)} detail="Waiting for a next step" />
+        <Metric label="Missing date or venue" value={String(board.needsAttention.filter((job) => !hasProductionVenue(job.venue) || !job.event_date).length)} detail="Across active production records" />
       </section>
+
+      {loading && jobs.length === 0 ? (
+        <p role="status" className="mt-8 text-sm text-mist">Loading production records…</p>
+      ) : null}
 
       {selectedJob ? (
         <>
@@ -72,40 +252,65 @@ function PipelinePage() {
             <article className="glass rounded-lg p-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <p className="text-[11px] uppercase tracking-[0.18em] text-blue-2">Selected job</p>
+                  <p className="text-[11px] uppercase tracking-[0.18em] text-blue-2">Production record</p>
                   <h2 className="mt-2 font-serif text-3xl">{selectedJob.title}</h2>
                 </div>
-                <span className="rounded-full border border-blue/30 bg-blue/10 px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-blue-2">
-                  {selectedJob.status}
-                </span>
-              </div>
-
-              <div className="mt-5 grid gap-3 md:grid-cols-3">
-                <Detail label="Client" value={selectedJob.client_name} />
-                <Detail label="Venue" value={selectedJob.venue ?? "TBC"} />
-                <Detail label="Budget" value={formatMoney(selectedJob.ballpark)} />
-              </div>
-
-              <div className="mt-5">
-                <p className="text-[11px] uppercase tracking-[0.18em] text-mist">Action checklist</p>
-                <div className="mt-3 space-y-2">
-                  {checklist.map((item) => (
-                    <div key={item.label} className="flex items-center justify-between rounded-md border border-paper/10 bg-ink/50 px-3 py-2">
-                      <span className="text-sm text-paper">{item.label}</span>
-                      <span className={cn("rounded-full px-2 py-1 text-[10px] uppercase tracking-[0.12em]", item.done ? "bg-green/20 text-green-300" : "bg-amber/20 text-amber-200")}>
-                        {item.done ? "Done" : "Open"}
-                      </span>
-                    </div>
-                  ))}
+                <div className="flex items-center gap-2">
+                  <span className="rounded-full border border-blue/30 bg-blue/10 px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-blue-2">
+                    {selectedJob.status}
+                  </span>
+                  {editingJobId !== selectedJob.id ? (
+                    <Button type="button" variant="line" size="sm" onClick={() => {
+                      setEditingJobId(selectedJob.id);
+                      setEditDraft(jobToDraft(selectedJob));
+                    }}>
+                      Edit details
+                    </Button>
+                  ) : null}
                 </div>
               </div>
+
+              {editingJobId === selectedJob.id ? (
+                <JobForm
+                  title="Edit production"
+                  submitLabel="Save production"
+                  draft={editDraft}
+                  clientAccounts={clientAccounts}
+                  clientAccountsError={clientAccountsError}
+                  clientAccountLocked={Boolean(selectedJob.owner_user_id)}
+                  busy={savingJob}
+                  onChange={setEditDraft}
+                  onSubmit={saveJob}
+                  onCancel={() => setEditingJobId(null)}
+                />
+              ) : (
+                <>
+                  <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                    <Detail label="Client" value={selectedJob.client_name} />
+                    <Detail label="Service" value={selectedJob.service} />
+                    <Detail label="Event type" value={selectedJob.event_type} />
+                    <Detail label="Date" value={selectedJob.event_date ?? "Not set"} />
+                    <Detail label="Venue" value={selectedJob.venue || "Not set"} />
+                    <Detail label="Guests" value={String(selectedJob.guests)} />
+                    <Detail label="Tier" value={selectedJob.tier} />
+                    <Detail label="Budget" value={formatMoney(selectedJob.ballpark)} />
+                    <Detail label="Job status" value={selectedJob.status} />
+                  </div>
+                  {selectedJob.notes ? (
+                    <div className="mt-4 rounded-md border border-paper/10 bg-ink/50 p-4">
+                      <p className="text-[10px] uppercase tracking-[0.16em] text-mist">Production notes</p>
+                      <p className="mt-2 whitespace-pre-wrap text-sm text-paper/85">{selectedJob.notes}</p>
+                    </div>
+                  ) : null}
+                </>
+              )}
             </article>
 
             <aside className="glass rounded-lg p-5">
               <p className="text-[11px] uppercase tracking-[0.18em] text-blue-2">Attention list</p>
               <div className="mt-4 space-y-3">
                 {board.needsAttention.length === 0 ? (
-                  <p className="text-sm text-mist">No immediate issues across the active floor.</p>
+                  <p className="text-sm text-mist">No open decisions or missing venue/date details.</p>
                 ) : (
                   board.needsAttention.map((job) => (
                     <button
@@ -124,53 +329,15 @@ function PipelinePage() {
             </aside>
           </section>
 
-          <section className="mt-8 grid gap-4 xl:grid-cols-3">
-            <article className="glass rounded-lg p-5">
-              <p className="text-[11px] uppercase tracking-[0.18em] text-blue-2">Delivery timeline</p>
-              <div className="mt-4 space-y-3">
-                {timeline.map((item) => (
-                  <div key={item.label} className="rounded-md border border-paper/10 bg-ink/50 p-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm text-paper">{item.label}</p>
-                      <span className={cn("rounded-full px-2 py-1 text-[10px] uppercase tracking-[0.12em]", item.tone === "green" ? "bg-green/20 text-green-300" : item.tone === "amber" ? "bg-amber/20 text-amber-200" : "bg-red/20 text-red-200")}>{item.state}</span>
-                    </div>
-                    <p className="mt-2 text-xs uppercase tracking-[0.14em] text-mist">{item.date}</p>
-                  </div>
-                ))}
-              </div>
-            </article>
-
-            <article className="glass rounded-lg p-5">
-              <p className="text-[11px] uppercase tracking-[0.18em] text-blue-2">Approvals</p>
-              <div className="mt-4 space-y-3">
-                {approvals.map((item) => (
-                  <div key={item.label} className="rounded-md border border-paper/10 bg-ink/50 p-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm text-paper">{item.label}</p>
-                      <span className={cn("rounded-full px-2 py-1 text-[10px] uppercase tracking-[0.12em]", item.done ? "bg-green/20 text-green-300" : "bg-amber/20 text-amber-200")}>{item.done ? "Signed" : "Pending"}</span>
-                    </div>
-                    <p className="mt-2 text-xs uppercase tracking-[0.14em] text-mist">{item.owner}</p>
-                  </div>
-                ))}
-              </div>
-            </article>
-
-            <article className="glass rounded-lg p-5">
-              <p className="text-[11px] uppercase tracking-[0.18em] text-blue-2">Procurement</p>
-              <div className="mt-4 space-y-3">
-                {procurement.map((item) => (
-                  <div key={item.label} className="rounded-md border border-paper/10 bg-ink/50 p-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm text-paper">{item.label}</p>
-                      <span className={cn("rounded-full px-2 py-1 text-[10px] uppercase tracking-[0.12em]", item.risk === "low" ? "bg-green/20 text-green-300" : item.risk === "medium" ? "bg-amber/20 text-amber-200" : "bg-red/20 text-red-200")}>{item.risk}</span>
-                    </div>
-                    <p className="mt-2 text-xs uppercase tracking-[0.14em] text-mist">{item.detail}</p>
-                  </div>
-                ))}
-              </div>
-            </article>
-          </section>
+          <p className="mt-5 text-xs text-mist">
+            Stage changes are saved to the production record. Cancelled jobs stay in the board history and can be reopened.
+          </p>
         </>
+      ) : !loading && !loadError ? (
+        <section className="mt-8 rounded-xl border border-paper/10 bg-ink/60 p-6">
+          <h2 className="text-xl font-medium text-paper">No production records yet</h2>
+          <p className="mt-2 text-sm text-mist">Add a real inquiry or production record to start the workflow.</p>
+        </section>
       ) : null}
 
       <div className="mt-8 flex gap-3 overflow-x-auto pb-6 no-scrollbar">
@@ -187,10 +354,15 @@ function PipelinePage() {
                   <article
                     key={j.id}
                     className={cn("glass rounded-md p-4 transition-colors", selectedJob?.id === j.id && "border border-blue/40 bg-blue/5")}
-                    onClick={() => setSelectedId(j.id)}
                   >
                     <p className="text-[11px] uppercase tracking-[0.16em] text-blue-2">{j.service}</p>
-                    <p className="font-serif text-xl">{j.title}</p>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedId(j.id)}
+                      className="text-left font-serif text-xl hover:text-blue-2"
+                    >
+                      {j.title}
+                    </button>
                     <p className="text-xs text-mist">{j.client_name}</p>
                     <p className="mt-2 text-sm tabular-nums">{formatMoney(j.ballpark)}</p>
                     <div className="mt-3 flex flex-wrap gap-1">
@@ -204,8 +376,9 @@ function PipelinePage() {
                             try {
                               await moveJob({ data: { id: j.id, status: c.key } });
                               await refresh();
-                            } catch {
-                              toast.error("Could not move job");
+                            } catch (error) {
+                              console.error("[production-pipeline] Could not change job stage", error);
+                              toast.error(error instanceof Error ? error.message : "Could not move production.");
                             }
                           }}
                         >
@@ -224,39 +397,135 @@ function PipelinePage() {
   );
 }
 
-function daysUntil(value: string | null | undefined) {
-  if (!value) return Number.POSITIVE_INFINITY;
-  const diff = new Date(value).getTime() - Date.now();
-  return Math.ceil(diff / (1000 * 60 * 60 * 24));
-}
+function JobForm({
+  title,
+  submitLabel,
+  draft,
+  clientAccounts,
+  clientAccountsError,
+  clientAccountLocked,
+  busy,
+  onChange,
+  onSubmit,
+  onCancel,
+}: {
+  title: string;
+  submitLabel: string;
+  draft: JobDraft;
+  clientAccounts: ClientAccountRow[];
+  clientAccountsError: string | null;
+  clientAccountLocked: boolean;
+  busy: boolean;
+  onChange: (draft: JobDraft) => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onCancel: () => void;
+}) {
+  const patch = <K extends keyof JobDraft>(key: K, value: JobDraft[K]) =>
+    onChange({ ...draft, [key]: value });
 
-function getTimeline(job: JobRow) {
-  const days = daysUntil(job.event_date);
-  return [
-    { label: "Brief lock", state: days <= 10 ? "Tight" : "On track", tone: days <= 10 ? "amber" : "green", date: job.event_date ? `${days}d to show` : "Date pending" },
-    { label: "Vendor confirmations", state: job.venue ? "Active" : "Awaiting site", tone: job.venue ? "green" : "amber", date: job.venue ? "Venue confirmed" : "Venue TBC" },
-    { label: "Load-in plan", state: days <= 3 ? "Final call" : "Standby", tone: days <= 3 ? "red" : "green", date: days <= 3 ? "This week" : "Ahead of schedule" },
-  ];
-}
-
-function getApprovals(job: JobRow) {
-  const venueDone = Boolean(job.venue && job.venue !== "TBC");
-  const budgetDone = job.ballpark > 0;
-  return [
-    { label: "Client scope", done: !["inquiry", "quoted"].includes(job.status), owner: "Producer + client" },
-    { label: "Venue approval", done: venueDone, owner: "Venue coordinator" },
-    { label: "Budget sign-off", done: budgetDone, owner: "Finance" },
-  ];
-}
-
-function getProcurement(job: JobRow) {
-  const venueRisk = job.venue && job.venue !== "TBC" ? "low" : "medium";
-  const serviceRisk = job.service ? "low" : "medium";
-  return [
-    { label: job.service || "Production service", risk: serviceRisk, detail: `${job.guests} guests · ${job.event_type}` },
-    { label: "Venue logistics", risk: venueRisk, detail: job.venue ?? "Venue to be assigned" },
-    { label: "Crew readiness", risk: job.status === "production" ? "low" : "medium", detail: job.status === "production" ? "Call sheet confirmed" : "Roster still needs final check" },
-  ];
+  return (
+    <form onSubmit={onSubmit} className="mt-5 rounded-xl border border-blue/20 bg-blue/5 p-5">
+      <h3 className="text-lg font-medium text-paper">{title}</h3>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <label className="grid gap-1.5 text-xs text-mist">
+          Production title
+          <Input required maxLength={200} value={draft.title} onChange={(event) => patch("title", event.target.value)} />
+        </label>
+        <label className="grid gap-1.5 text-xs text-mist">
+          Client name
+          <Input required maxLength={200} value={draft.client_name} onChange={(event) => patch("client_name", event.target.value)} />
+        </label>
+        <label className="grid gap-1.5 text-xs text-mist">
+          Client portal account
+          <select
+            value={draft.client_user_id}
+            disabled={clientAccountLocked || clientAccountsError !== null}
+            onChange={(event) => patch("client_user_id", event.target.value)}
+            className="min-h-11 rounded-md border border-paper/15 bg-void px-3 text-sm text-paper disabled:opacity-60"
+          >
+            <option value="">Not linked</option>
+            {draft.client_user_id && !clientAccounts.some((account) => account.user_id === draft.client_user_id) ? (
+              <option value={draft.client_user_id}>Existing linked client</option>
+            ) : null}
+            {clientAccounts.map((account) => (
+              <option key={account.user_id} value={account.user_id}>
+                {account.display_name} · {account.email}
+              </option>
+            ))}
+          </select>
+          <span className="text-[11px] leading-relaxed text-mist">
+            {clientAccountLocked
+              ? "This project is already linked and cannot be reassigned."
+              : clientAccountsError ?? "Only verified client accounts can be linked; you can also leave it unlinked."}
+          </span>
+        </label>
+        <label className="grid gap-1.5 text-xs text-mist">
+          Service
+          <select required value={draft.service} onChange={(event) => patch("service", event.target.value)} className="min-h-11 rounded-md border border-paper/15 bg-void px-3 text-sm text-paper">
+            {!draft.service ? <option value="" disabled>Choose a service</option> : null}
+            {draft.service && !SERVICES.some((service) => service.key === draft.service) ? <option value={draft.service}>{draft.service}</option> : null}
+            {SERVICES.map((service) => <option key={service.key} value={service.key}>{service.label}</option>)}
+          </select>
+        </label>
+        <label className="grid gap-1.5 text-xs text-mist">
+          Event type
+          <select required value={draft.event_type} onChange={(event) => patch("event_type", event.target.value)} className="min-h-11 rounded-md border border-paper/15 bg-void px-3 text-sm text-paper">
+            {!draft.event_type ? <option value="" disabled>Choose an event type</option> : null}
+            {draft.event_type && !EVENT_TYPES.some((type) => type.key === draft.event_type) ? <option value={draft.event_type}>{draft.event_type}</option> : null}
+            {EVENT_TYPES.map((type) => <option key={type.key} value={type.key}>{type.label}</option>)}
+          </select>
+        </label>
+        <label className="grid gap-1.5 text-xs text-mist">
+          Status
+          <select value={draft.status} onChange={(event) => patch("status", event.target.value)} className="min-h-11 rounded-md border border-paper/15 bg-void px-3 text-sm capitalize text-paper">
+            {COLS.map((column) => <option key={column.key} value={column.key}>{column.label}</option>)}
+          </select>
+        </label>
+        <label className="grid gap-1.5 text-xs text-mist">
+          Production tier
+          <select required value={draft.tier} onChange={(event) => patch("tier", event.target.value)} className="min-h-11 rounded-md border border-paper/15 bg-void px-3 text-sm text-paper">
+            {!draft.tier ? <option value="" disabled>Choose a tier</option> : null}
+            {draft.tier && !TIERS.some((tier) => tier.key === draft.tier) ? <option value={draft.tier}>{draft.tier}</option> : null}
+            {TIERS.map((tier) => <option key={tier.key} value={tier.key}>{tier.label}</option>)}
+          </select>
+        </label>
+        <label className="grid gap-1.5 text-xs text-mist">
+          Event date
+          <Input type="date" value={draft.event_date} onChange={(event) => patch("event_date", event.target.value)} />
+        </label>
+        <label className="grid gap-1.5 text-xs text-mist">
+          Venue
+          <Input maxLength={300} value={draft.venue} onChange={(event) => patch("venue", event.target.value)} placeholder="Not confirmed yet" />
+        </label>
+        <label className="grid gap-1.5 text-xs text-mist">
+          Guest count
+          <Input required type="number" min={0} max={100000} step={1} value={draft.guests} onChange={(event) => patch("guests", event.target.value)} />
+        </label>
+        <label className="grid gap-1.5 text-xs text-mist sm:col-span-2 xl:col-span-1">
+          Working budget (KES)
+          <Input type="number" min={0} max={2000000000} step={1} value={draft.ballpark} onChange={(event) => patch("ballpark", event.target.value)} />
+        </label>
+        <label className="grid gap-1.5 text-xs text-mist sm:col-span-2 xl:col-span-3">
+          Production notes
+          <textarea
+            maxLength={10000}
+            rows={4}
+            value={draft.notes}
+            onChange={(event) => patch("notes", event.target.value)}
+            className="w-full rounded-md border border-paper/15 bg-void px-3 py-2.5 text-sm text-paper outline-none focus-visible:border-blue-2"
+            placeholder="Record the real scope, constraints, and decisions."
+          />
+        </label>
+      </div>
+      <div className="mt-4 flex flex-wrap gap-2">
+        <Button type="submit" disabled={busy}>
+          <Save className="size-4" />
+          {busy ? "Saving…" : submitLabel}
+        </Button>
+        <Button type="button" variant="line" onClick={onCancel} disabled={busy}>Cancel</Button>
+      </div>
+    </form>
+  );
 }
 
 function Metric({ label, value, detail }: { label: string; value: string; detail: string }) {

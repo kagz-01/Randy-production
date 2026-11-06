@@ -1,5 +1,5 @@
 import { useState, useSyncExternalStore, type ReactNode } from "react";
-import { Navigate } from "@tanstack/react-router";
+import { Link, Navigate } from "@tanstack/react-router";
 import { GROK_PROVIDERS, authEnabled, signIn, signOut } from "./client";
 import { hasGateSessionMarker } from "./gate-session-marker";
 import { resolveSignInGateState } from "./sign-in-gate";
@@ -49,13 +49,7 @@ export function RedirectToSignIn({ to = SIGN_IN_PATH }: { to?: string }) {
   return <Navigate to={to} />;
 }
 
-export function SignInGate({
-  children,
-  fallback,
-}: {
-  children: ReactNode;
-  fallback?: ReactNode;
-}) {
+export function SignInGate({ children, fallback }: { children: ReactNode; fallback?: ReactNode }) {
   const { user, isPending } = useCurrentUserState();
   const state = resolveSignInGateState({ isPending, hasUser: user !== null });
   if (state === "pending") return null;
@@ -87,46 +81,45 @@ export function SignInButtons() {
  * gate-materialized — behind the gate the next request signs the viewer
  * straight back in, so a sign-out control there is a broken loop.
  */
-export function UserButton() {
+export function UserButton({
+  to = "/studio/profile",
+}: {
+  to?: "/portal" | "/portal/profile" | "/studio/profile";
+}) {
   const user = useCurrentUser();
-  // Sign-out can take a moment (and can fail when deployed), so the control
-  // shows it is working and cannot be fired twice.
+  if (!user) return null;
+  return (
+    <Link
+      to={to}
+      aria-label="Open Randy Production profile"
+      title="Randy Production profile"
+      className="grid size-10 place-items-center rounded-full border border-paper/15 bg-paper/[0.06] text-sm font-semibold text-paper outline-offset-2 transition-colors hover:bg-paper/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-2"
+    >
+      <span aria-hidden="true">R</span>
+    </Link>
+  );
+}
+
+export function SignOutButton({ className = "" }: { className?: string }) {
   const [signingOut, setSigningOut] = useState(false);
   const gateSession = useSyncExternalStore(
     subscribeToNothing,
     hasGateSessionMarker,
     noGateSessionOnServer,
   );
-  if (!user) return null;
-  const label = user.displayName ?? user.primaryEmail ?? "Account";
+  if (!authEnabled || gateSession) return null;
+
   return (
-    <div className="flex items-center gap-2">
-      {user.profileImageUrl ? (
-        <img
-          src={user.profileImageUrl}
-          alt=""
-          className="h-8 w-8 rounded-full object-cover"
-        />
-      ) : (
-        <span className="grid h-8 w-8 place-items-center rounded-full bg-black/10 text-sm font-medium dark:bg-white/20">
-          {label.charAt(0).toUpperCase()}
-        </span>
-      )}
-      <span className="text-sm font-medium">{label}</span>
-      {authEnabled && !gateSession && (
-        <button
-          type="button"
-          disabled={signingOut}
-          onClick={() => {
-            setSigningOut(true);
-            // Success navigates away; on failure re-enable so it can be retried.
-            void signOut().catch(() => setSigningOut(false));
-          }}
-          className="cursor-pointer text-sm underline-offset-4 opacity-70 hover:underline disabled:cursor-wait disabled:no-underline"
-        >
-          {signingOut ? "Signing out…" : "Sign out"}
-        </button>
-      )}
-    </div>
+    <button
+      type="button"
+      disabled={signingOut}
+      onClick={() => {
+        setSigningOut(true);
+        void signOut().catch(() => setSigningOut(false));
+      }}
+      className={`cursor-pointer text-sm underline-offset-4 opacity-70 hover:underline disabled:cursor-wait disabled:no-underline ${className}`}
+    >
+      {signingOut ? "Signing out…" : "Sign out"}
+    </button>
   );
 }
