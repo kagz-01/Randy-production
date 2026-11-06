@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { GROK_PROVIDERS, authEnabled, signIn } from "@/lib/auth/client";
+import { AUTH_PROVIDERS, authEnabled, signIn } from "@/lib/auth/client";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/login")({
@@ -11,7 +11,7 @@ export const Route = createFileRoute("/login")({
 
 function Login() {
   const { invite } = Route.useSearch();
-  const googleProvider = GROK_PROVIDERS[0];
+  const googleProvider = AUTH_PROVIDERS[0];
   const callbackURL = invite ? `/studio?invite=${encodeURIComponent(invite)}` : "/portal";
 
   return (
