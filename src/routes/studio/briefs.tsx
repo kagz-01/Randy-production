@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { RefreshCw, Save } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { toast } from "sonner";
@@ -128,6 +128,15 @@ function BriefsPage() {
           <p className="mt-2 text-sm text-mist">
             New inquiries and active jobs appear here from the Jobs board. Delivered work stays in the archive.
           </p>
+          <Link
+            to="/studio/pipeline"
+            search={{ jobId: undefined }}
+            className="mt-4 inline-flex"
+          >
+            <Button type="button" className="min-h-11">
+              Open jobs board
+            </Button>
+          </Link>
         </section>
       ) : (
         <>

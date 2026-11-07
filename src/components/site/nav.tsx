@@ -181,17 +181,17 @@ export function SiteNav() {
             <>
               {!isWorkspace ? (
                 <Link to={workspaceNavigation.workspacePath} className="hidden sm:inline-flex">
-                  <Button variant="ghost" size="sm">
+                  <Button variant="ghost" size="sm" className="min-h-11">
                     {workspaceNavigation.workspaceLabel}
                   </Button>
                 </Link>
               ) : null}
               <UserButton to={workspaceNavigation.profilePath} />
-              <SignOutButton className="hidden sm:inline-flex" />
+              <SignOutButton className="hidden min-h-11 sm:inline-flex" />
             </>
           ) : (
             <Link to="/login">
-              <Button variant="paper" size="sm">
+              <Button variant="paper" size="sm" className="min-h-11">
                 Sign in
               </Button>
             </Link>
