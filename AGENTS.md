@@ -5,23 +5,20 @@ Grok Build, in an isolated Linux sandbox; read it fully before writing code.
 Prompts are often short and casual — read intent generously and ship a
 **playable / demo-quality** product.
 
-**Depth lives in `.grok/references/*.md`**, read on demand as skills load
-theirs; the rules below name the file to open at each point it matters.
+**Project agent guidance lives in `.agent/`**. Read the relevant skill in
+`.agent/skills/` or workflow in `.agent/workflows/` when its topic applies;
+the rules below name the file to open at each point it matters.
 
 ---
 
-## Skills (in `.grok/skills/` — consult BEFORE building)
+## Skills (in `.agent/skills/` — consult BEFORE building)
 
-Skills are auto-listed with trigger words; open the matching `SKILL.md` (plus
-its `references/`) **before** you build or polish. Routing the triggers miss:
-DOM / overlay UI **including game chrome** → **`design-ui`**; game / canvas / 3D
-→ **`building-games`**, both for a game with UI chrome; **`controls`** before
-any WASD / vehicle / flight movement (inverted A/D is the top ship-blocker);
-the viewer's real Google/Microsoft/Notion/etc. data (calendar, mail, files,
-docs) → **`app-data`** — mandatory before writing **or refusing** such
-integration, and when you think "can't access user data", "needs OAuth",
-"Grok Dashboard instead": it serves viewer connector data via the gate;
-**`neon`** / **`auth`** only per §0.5.
+Open the relevant `SKILL.md` **before** you build or polish. Use
+`.agent/skills/frontend-design/SKILL.md` and
+`.agent/skills/mobile-design/SKILL.md` for interface work,
+`.agent/skills/game-development/SKILL.md` for games and interactive controls,
+and `.agent/skills/api-patterns/SKILL.md` plus
+`.agent/skills/database-design/SKILL.md` for server/data integrations.
 
 **Only call `imagine_*` tools when they appear in your available tools list** —
 never invent tool calls. Without them ship art with **CSS, SVG, emoji, canvas
@@ -31,8 +28,8 @@ skills still apply as design guidance.
 Gen-tool art: **`generate2dsprite`** (sprites), **`generate2dmap`** (maps),
 **`game-asset-core`** + specialists (doctrine/QC) — but **abstract / geometric
 games (tetris, snake, pong, breakout) stay procedural even when gen tools are
-listed**; generated sheets there are a quality regression. Pipelines:
-`.grok/references/generated-art.md`.
+listed**; generated sheets there are a quality regression. Follow
+`.agent/skills/game-development/SKILL.md` for game art and implementation.
 
 ---
 
@@ -91,8 +88,10 @@ list, not a judgement call:
   `localStorage` / zustand only — the common case (games, landing pages,
   calculators, most one-shot asks).
 
-Once the decision is ON, build from
-`.grok/references/data-and-auth.md` plus the `auth` / `neon` skills. **Auth ON ⇒
+Once the decision is ON, follow
+`.agent/skills/api-patterns/SKILL.md` and
+`.agent/skills/database-design/SKILL.md`, and reuse the repository's existing
+`src/lib` helpers. **Auth ON ⇒
 `authMiddleware` on every server function and every query scoped by the
 verified `context.userId`** — never a client-sent id, never a demo/mock user.
 
@@ -135,12 +134,13 @@ back the dev server and anything else the preview needs. **Rules
    shouldn't live in the workspace snapshot.
 6. **Start the app with `npm run dev` — never `vite` / `npx vite` directly**,
    here or during a turn. Only the npm scripts run Vite through
-   `scripts/with-app-env.mjs`, which puts `.grok/app-env.json`
-   (`VITE_AUTH_ENABLED`) into the environment.
+   `scripts/with-app-env.mjs`, which merges platform app configuration
+   (`VITE_AUTH_ENABLED`) into the environment. Keep using that wrapper; do not
+   bypass it or replace it with a `.env` file.
 
 Starting the dev server during a turn: write/update `startup.sh` first, then run
-`sh /workspace/startup.sh`, so revive and live work stay identical (worked
-example in `.grok/references/hibernate-revive.md`).
+`sh /workspace/startup.sh`, so revive and live work stay identical. Follow
+`.agent/skills/server-management/SKILL.md` for process and restart practices.
 
 ### What is already here
 
@@ -152,7 +152,7 @@ missing. Postgres and Better Auth are pre-wired in `src/lib`, **opt-in per app**
 - **Don't recreate `vite.config.ts` / `tsconfig.json`** or import a vendored
   `vite-tanstack-config` preset. Editing? Keep both port contracts, the
   build/preview-gated nitro plugin and `grokPwaPlugin()`
-  (`.grok/references/deploy-target.md`).
+  (see `.agent/skills/deployment-procedures/SKILL.md`).
 - **Never delete or overwrite `public/__grok/`, `server/`, `scripts/grok-pwa-*`**
   (platform chrome; `?install=1&platform=ios` serves the install tutorial, not
   app UI) or the pre-wired `src/lib` helpers; your own server routes go in
@@ -165,18 +165,20 @@ missing. Postgres and Better Auth are pre-wired in `src/lib`, **opt-in per app**
   needs `GROK_ALLOW_INSTALL_SCRIPTS=1 npm install <pkg>`.
 - **The app is deployed to Vercel**, where these fail though locally they don't:
   runtime filesystem writes, server-only Node APIs at import time, dev-only deps,
-  hard-coded hosts/ports/secrets (`.grok/references/deploy-target.md`).
+  hard-coded hosts/ports/secrets
+  (`.agent/skills/deployment-procedures/SKILL.md`).
 - **Never create a `.env` file** — the platform injects `DATABASE_URL` + auth
   creds on deploy; only `VITE_`-prefixed vars reach the browser.
 - **`XAI_API_KEY` in the env** = real, server-only xAI access spending the **app
-  owner's quota**: read **`xai-api`** first, keep calls user-initiated and
-  capped, never mock AI responses.
+  owner's quota**: keep calls user-initiated and capped, follow
+  `.agent/skills/api-patterns/SKILL.md`, and never mock AI responses.
 
 ### First scaffold — required entry files
 
-`npm run dev` errors until these four exist. **Copy their bodies from
-`.grok/references/scaffold.md`** — they match the installed TanStack Start, so
-don't scaffold from stale priors — and keep each contract:
+`npm run dev` errors until these four exist. Use
+`.agent/skills/app-builder/SKILL.md` for general scaffolding guidance; the
+repo-specific contracts below are authoritative for this installed TanStack
+Start setup:
 
 - **`src/router.tsx`** — a **named `export function getRouter()`** (a default
   `createRouter` export or an `app/` directory is rejected by the plugin)
@@ -211,9 +213,10 @@ don't scaffold from stale priors — and keep each contract:
    `src/routes/auth/popup.tsx`**: the template Vite plugin already serves
    `/auth/popup` (`popup.server.ts`), and a React page there shows the app
    inside the popup. Viewers opened from Grok are gate-signed-in with zero
-   clicks — **never render "Sign in / Re-auth with Grok" buttons** outside the
-   `app-data` skill's `login` error state. Wiring:
-   `.grok/references/data-and-auth.md`.
+   clicks — **never render generic sign-in / re-auth buttons** outside the
+   connector integration's documented `login` error state. Follow
+   `.agent/skills/api-patterns/SKILL.md` and
+   `.agent/skills/database-design/SKILL.md` for integration patterns.
 
 ---
 
@@ -223,8 +226,8 @@ don't scaffold from stale priors — and keep each contract:
 
 On a **follow-up turn** edit in place: HMR is live, and killing the dev server
 blanks the preview mid-session. Restart it only for `vite.config` / dependency
-changes. Revive, reboot-wipe and the `startup.sh` worked example:
-`.grok/references/hibernate-revive.md`.
+changes. Follow `.agent/skills/server-management/SKILL.md` for restart and
+process practices.
 
 ### Parallel work (subagents / multiple agents)
 
@@ -242,14 +245,16 @@ changes. Revive, reboot-wipe and the `startup.sh` worked example:
    (possibly one-line) ask into one concrete app. If it's trivial/no-signal or
    not a build request, do §0.5 (greet + ask, or just answer) instead of
    scaffolding.
-2. **Consult the skill(s).** For interface surfaces open **`design-ui`**; for
-   games/interactive/3D open **`building-games`** (both for a game with UI
-   chrome). When image-generation tools are listed: 2D sprites →
+2. **Consult the skill(s).** For interface surfaces open
+   **`.agent/skills/frontend-design/SKILL.md`** and
+   **`.agent/skills/mobile-design/SKILL.md`**; for games/interactive/3D open
+   **`.agent/skills/game-development/SKILL.md`** (also for game UI chrome).
+   When image-generation tools are listed: 2D sprites →
    **`generate2dsprite`**; maps/levels → **`generate2dmap`**. When gen tools are
    **not** listed, skip those pipelines and use polished CSS/SVG/canvas/WebGL
    art — do not invent missing `imagine_*` calls. For **any** WASD / vehicle /
-   flight: open **`.grok/skills/controls/SKILL.md`** **before** writing movement
-   (A must turn left under a chase cam; do not rely on genre files alone).
+   flight, read the game-development skill **before** writing movement (A must
+   turn left under a chase cam; do not rely on genre files alone).
    Custom-card app? Dispatch step 6's brand pass **now** — it takes minutes, so
    starting it here is what keeps it off the answer's critical path.
 3. Scaffold TanStack Start + implement for real — working UI + state, not
@@ -263,9 +268,10 @@ changes. Revive, reboot-wipe and the `startup.sh` worked example:
    terminals**, and do step 7 against the dev server while they run — the
    critical path is max(build, browser QA), not the sum. Both must pass before
    you finish.
-6. **Brand-asset pass — a subagent, never waited for.** Custom-card app per
-   the **`og`** skill (games of every kind, whimsical/creative apps,
-   brand-forward pages — not plain utilities)? Launch a `task` subagent the
+6. **Brand-asset pass — a subagent, never waited for.** Custom-card app
+   (games of every kind, whimsical/creative apps, brand-forward pages — not
+   plain utilities)? Follow `.agent/skills/frontend-design/SKILL.md` and
+   `scripts/brand-check.mjs`, then launch a `task` subagent the
    moment name and palette settle — during scaffolding, not at QA time —
    owning `public/` brand assets + `src/lib/og/site.json` (§ Parallel work),
    and keep building: generating card art here is pure waiting on the critical
@@ -273,10 +279,10 @@ changes. Revive, reboot-wipe and the `startup.sh` worked example:
    task's output suppresses its completion notification, so the result,
    failure included, would reach nobody; answer without it, one sentence more
    when it wakes you — publish again if they already did, or the live app keeps
-   the placeholder card. Meanwhile it keeps `/workspace/.grok/og-pending` fresh
-   (stale after 10 minutes), so a mid-task brand warning is no cue to redo its
-   work. Unless your own prompt says you *are* the pass — then make the
-   assets.
+   the placeholder card. The brand-check script maintains its temporary
+   pending marker (stale after 10 minutes), so a mid-task brand warning is no
+   cue to redo its work. Unless your own prompt says you *are* the pass — then
+   make the assets.
 7. **Verify it actually RENDERS — mandatory, before you say it's done.** A 200
    from curl is NOT enough; blank/white pages are the #1 failure. Run
    `node scripts/browser-smoke.mjs` — ONE run audits **desktop and mobile** and
@@ -289,7 +295,7 @@ changes. Revive, reboot-wipe and the `startup.sh` worked example:
    If blank or any console error, fix and re-check.
    **Anything interactive** (click, type, keys, state) — use the preinstalled
    **`agent-browser`** CLI, not a hand-written Playwright script; read
-   `.grok/references/browser-qa.md` first.
+   `.agent/skills/webapp-testing/SKILL.md` first.
    **Games with movement:** a still frame is not enough — confirm **A = left /
    D = right** while moving forward (`controls` §5c). Flip one steer/roll sign
    if inverted; retest.
@@ -330,7 +336,8 @@ in-browser say so and ship the best web-only build.
 - **`npm run build` and `npm run typecheck` pass**, and a real browser
   render check on **dev and on the built output** shows content with a clean
   console.
-- Cohesive UI per **`design-ui`** (tokens, no-slop rules); no broken imports.
+- Cohesive UI per `.agent/skills/frontend-design/SKILL.md` (tokens and
+  consistency); no broken imports.
 - Usable on mobile as well as a laptop viewport (390×844: no horizontal
   overflow, touch-friendly).
 - A `BRAND WARNING` from `browser-smoke.mjs` (missing share card) is **not
