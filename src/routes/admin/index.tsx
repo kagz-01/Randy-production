@@ -2124,81 +2124,107 @@ function PublicUpdatesTab({
           count={`${jobs.filter((job) => job.is_showcase).length} published`}
         />
         {sortedJobs.length ? (
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full min-w-[700px] border-collapse text-left">
-              <thead>
-                <tr className="border-b border-paper/10 text-[10px] uppercase tracking-[0.16em] text-mist">
-                  <th scope="col" className="py-3 pr-4 font-medium">
-                    Project
-                  </th>
-                  <th scope="col" className="py-3 pr-4 font-medium">
-                    Event date
-                  </th>
-                  <th scope="col" className="py-3 pr-4 font-medium">
-                    Status
-                  </th>
-                  <th scope="col" className="py-3 text-right font-medium">
-                    Public listing
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {sortedJobs.map((job) => {
-                  const eligible = ["booked", "production", "delivered"].includes(job.status);
-                  const disabled = updatingJobId === job.id || (!eligible && !job.is_showcase);
-                  return (
-                    <tr key={job.id} className="border-b border-paper/5 last:border-0">
-                      <td className="py-3 pr-4">
+          <>
+            <ul className="mt-4 grid gap-3 xl:hidden">
+              {sortedJobs.map((job) => {
+                const eligible = ["booked", "production", "delivered"].includes(job.status);
+                return (
+                  <li
+                    key={job.id}
+                    className="rounded-lg border border-paper/10 bg-void/35 p-4"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
                         <Link
                           to="/studio/pipeline"
                           search={{ jobId: job.id }}
-                          className="text-sm font-medium text-paper hover:text-blue-2"
+                          className="font-medium text-paper hover:text-blue-2"
                         >
                           {job.title}
                         </Link>
                         <p className="mt-1 text-xs capitalize text-mist">
                           {job.event_type.replaceAll("_", " ")}
                         </p>
-                      </td>
-                      <td className="py-3 pr-4 text-sm text-mist">
-                        {formatEventDate(job.event_date)}
-                      </td>
-                      <td className="py-3 pr-4">
-                        <PortfolioStatus status={job.status} />
-                      </td>
-                      <td className="py-3 text-right">
-                        <button
-                          type="button"
-                          role="switch"
-                          aria-checked={job.is_showcase}
-                          aria-label={`${job.is_showcase ? "Remove" : "Publish"} ${job.title} ${job.is_showcase ? "from" : "to"} Studio Updates`}
-                          disabled={disabled}
-                          onClick={() => onToggle(job)}
-                          className={cn(
-                            "inline-flex min-h-11 items-center rounded-full border px-3 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
-                            job.is_showcase
-                              ? "border-blue/40 bg-blue/15 text-blue-2"
-                              : "border-paper/15 text-mist hover:border-paper/35 hover:text-paper",
-                          )}
-                        >
-                          {updatingJobId === job.id
-                            ? "Saving…"
-                            : job.is_showcase
-                              ? "Published"
-                              : "Not published"}
-                        </button>
-                        {!eligible && !job.is_showcase ? (
-                          <span className="mt-1 block text-[10px] text-mist">
-                            Available after booking
-                          </span>
-                        ) : null}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                      </div>
+                      <PortfolioStatus status={job.status} />
+                    </div>
+                    <p className="mt-3 text-xs text-mist">
+                      Event date · {formatEventDate(job.event_date)}
+                    </p>
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                      <ShowcaseToggle
+                        job={job}
+                        updatingJobId={updatingJobId}
+                        onToggle={onToggle}
+                      />
+                      {!eligible && !job.is_showcase ? (
+                        <span className="text-[10px] text-mist">Available after booking</span>
+                      ) : null}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+            <div className="mt-4 hidden overflow-x-auto xl:block">
+              <table className="w-full min-w-[700px] border-collapse text-left">
+                <thead>
+                  <tr className="border-b border-paper/10 text-[10px] uppercase tracking-[0.16em] text-mist">
+                    <th scope="col" className="py-3 pr-4 font-medium">
+                      Project
+                    </th>
+                    <th scope="col" className="py-3 pr-4 font-medium">
+                      Event date
+                    </th>
+                    <th scope="col" className="py-3 pr-4 font-medium">
+                      Status
+                    </th>
+                    <th scope="col" className="py-3 text-right font-medium">
+                      Public listing
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedJobs.map((job) => {
+                    const eligible = ["booked", "production", "delivered"].includes(job.status);
+                    return (
+                      <tr key={job.id} className="border-b border-paper/5 last:border-0">
+                        <td className="py-3 pr-4">
+                          <Link
+                            to="/studio/pipeline"
+                            search={{ jobId: job.id }}
+                            className="text-sm font-medium text-paper hover:text-blue-2"
+                          >
+                            {job.title}
+                          </Link>
+                          <p className="mt-1 text-xs capitalize text-mist">
+                            {job.event_type.replaceAll("_", " ")}
+                          </p>
+                        </td>
+                        <td className="py-3 pr-4 text-sm text-mist">
+                          {formatEventDate(job.event_date)}
+                        </td>
+                        <td className="py-3 pr-4">
+                          <PortfolioStatus status={job.status} />
+                        </td>
+                        <td className="py-3 text-right">
+                          <ShowcaseToggle
+                            job={job}
+                            updatingJobId={updatingJobId}
+                            onToggle={onToggle}
+                          />
+                          {!eligible && !job.is_showcase ? (
+                            <span className="mt-1 block text-[10px] text-mist">
+                              Available after booking
+                            </span>
+                          ) : null}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         ) : (
           <EmptyState
             title="No projects to share yet"
@@ -2208,6 +2234,42 @@ function PublicUpdatesTab({
         )}
       </section>
     </div>
+  );
+}
+
+function ShowcaseToggle({
+  job,
+  updatingJobId,
+  onToggle,
+}: {
+  job: JobRow;
+  updatingJobId: string | null;
+  onToggle: (job: JobRow) => void;
+}) {
+  const eligible = ["booked", "production", "delivered"].includes(job.status);
+  const disabled = updatingJobId === job.id || (!eligible && !job.is_showcase);
+
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={job.is_showcase}
+      aria-label={`${job.is_showcase ? "Remove" : "Publish"} ${job.title} ${job.is_showcase ? "from" : "to"} Studio Updates`}
+      disabled={disabled}
+      onClick={() => onToggle(job)}
+      className={cn(
+        "inline-flex min-h-11 items-center rounded-full border px-3 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+        job.is_showcase
+          ? "border-blue/40 bg-blue/15 text-blue-2"
+          : "border-paper/15 text-mist hover:border-paper/35 hover:text-paper",
+      )}
+    >
+      {updatingJobId === job.id
+        ? "Saving…"
+        : job.is_showcase
+          ? "Published"
+          : "Not published"}
+    </button>
   );
 }
 
