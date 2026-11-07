@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, Check, Compass, Info } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SiteNav } from "@/components/site/nav";
 import { GlassCard, Reveal } from "@/components/site/fx";
 import { Button } from "@/components/ui/button";
@@ -43,6 +43,7 @@ const FOCUS_OPTIONS: { key: PackageFocus; label: string; detail: string }[] = [
 
 function MatchPage() {
   const knowledgeRequestId = useRef(0);
+  const recommendationHeadingRef = useRef<HTMLHeadingElement>(null);
   const [eventType, setEventType] = useState<EventType>("wedding");
   const [guests, setGuests] = useState(150);
   const [venueType, setVenueType] = useState<VenueType>("hall");
@@ -58,6 +59,15 @@ function MatchPage() {
   const packageDetails = result
     ? (PACKAGES.find((item) => item.id === result.packageId) ?? null)
     : null;
+
+  useEffect(() => {
+    if (!result || !packageDetails) return;
+    recommendationHeadingRef.current?.focus({ preventScroll: true });
+    recommendationHeadingRef.current?.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+      block: "start",
+    });
+  }, [result, packageDetails]);
 
   function clearRecommendation() {
     knowledgeRequestId.current += 1;
@@ -247,7 +257,6 @@ function MatchPage() {
               </Button>
             </GlassCard>
           </Reveal>
-
           <Reveal delay={0.08}>
             <GlassCard strong className="p-5 sm:p-7">
               {result && packageDetails ? (
@@ -255,7 +264,11 @@ function MatchPage() {
                   <p className="text-[10px] uppercase tracking-[0.2em] text-blue-2">
                     Recommended starting point
                   </p>
-                  <h2 className="mt-3 font-serif text-3xl leading-tight text-paper">
+                  <h2
+                    ref={recommendationHeadingRef}
+                    tabIndex={-1}
+                    className="scroll-mt-28 mt-3 font-serif text-3xl leading-tight text-paper focus:outline-none"
+                  >
                     {packageDetails.name}
                   </h2>
                   <p className="mt-2 text-sm leading-relaxed text-mist">{packageDetails.blurb}</p>

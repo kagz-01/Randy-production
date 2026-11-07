@@ -495,10 +495,10 @@ function QuotePage() {
         <div>
           <div className="flex flex-wrap items-center justify-between gap-4">
             <Link
-              to="/work"
+              to="/"
               className="inline-flex min-h-11 items-center gap-2 text-xs uppercase tracking-[0.18em] text-mist transition-colors hover:text-paper"
             >
-              <span aria-hidden>←</span> Back to work
+              <span aria-hidden>←</span> Home
             </Link>
             <span className="inline-flex items-center gap-2 rounded-full border border-paper/10 px-3 py-2 text-[10px] uppercase tracking-[0.16em] text-mist">
               <span className="size-1.5 rounded-full bg-blue-2" />

@@ -186,11 +186,18 @@ export function SiteNav() {
           ) : user ? (
             <>
               {!isWorkspace ? (
-                <Link to={workspaceNavigation.workspacePath} className="hidden sm:inline-flex">
-                  <Button variant="ghost" size="sm" className="min-h-11">
-                    {workspaceNavigation.workspaceLabel}
-                  </Button>
-                </Link>
+                user.isDevFallback || role !== null ? (
+                  <Link
+                    to={workspaceNavigation.workspacePath}
+                    aria-label={`Open ${workspaceNavigation.workspaceLabel}`}
+                    className="inline-flex"
+                  >
+                    <Button variant="ghost" size="sm" className="min-h-11 px-2.5 text-xs sm:px-3">
+                      <span className="sm:hidden">Dashboard</span>
+                      <span className="hidden sm:inline">{workspaceNavigation.workspaceLabel}</span>
+                    </Button>
+                  </Link>
+                ) : null
               ) : null}
               <UserButton to={workspaceNavigation.profilePath} />
               <SignOutButton className="hidden min-h-11 sm:inline-flex" />
