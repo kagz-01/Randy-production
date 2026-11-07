@@ -66,6 +66,7 @@ function StudioHome() {
           type="button"
           variant="line"
           size="sm"
+          className="min-h-11"
           onClick={() => void refresh()}
           disabled={loading}
           aria-label="Refresh production desk"
@@ -78,7 +79,7 @@ function StudioHome() {
       {loadError ? (
         <section className="mt-6 rounded-xl border border-red/25 bg-red/5 p-5" role="alert">
           <p className="font-medium text-paper">{loadError}</p>
-          <Button type="button" className="mt-4" variant="line" size="sm" onClick={() => void refresh()}>
+          <Button type="button" className="mt-4 min-h-11" variant="line" size="sm" onClick={() => void refresh()}>
             Try again
           </Button>
         </section>
@@ -104,7 +105,7 @@ function StudioHome() {
                 <Link
                   to="/studio/pipeline"
                   search={{ jobId: undefined }}
-                  className="inline-flex min-h-10 items-center gap-1 text-xs font-medium text-mist transition-colors hover:text-paper"
+                  className="inline-flex min-h-11 items-center gap-1 text-xs font-medium text-mist transition-colors hover:text-paper"
                 >
                   All jobs <ArrowUpRight className="size-3.5" />
                 </Link>
@@ -176,13 +177,13 @@ function StudioHome() {
                     </div>
                     <div className="mt-5 flex flex-wrap gap-2">
                       <Link to="/studio/pipeline" search={{ jobId: nextEvent.id }}>
-                        <Button variant="primary" size="sm">
+                        <Button variant="primary" size="sm" className="min-h-11">
                           Open production file <ArrowUpRight className="size-3.5" />
                         </Button>
                       </Link>
                       {pulse?.live && pulse.id === nextEvent.id ? (
                         <Link to="/studio/live/$projectId" params={{ projectId: pulse.id }}>
-                          <Button variant="line" size="sm">Open crew Pulse</Button>
+                          <Button variant="line" size="sm" className="min-h-11">Open crew Pulse</Button>
                         </Link>
                       ) : null}
                     </div>
@@ -193,7 +194,7 @@ function StudioHome() {
                     <p className="mt-2 text-sm leading-relaxed text-mist">
                       Past-dated jobs still marked active are listed under Needs attention until they’re closed out.
                     </p>
-                    <Link to="/studio/pipeline" search={{ jobId: undefined }} className="mt-4 inline-flex min-h-10 items-center gap-1 text-sm text-blue-2 hover:text-paper">
+                    <Link to="/studio/pipeline" search={{ jobId: undefined }} className="mt-4 inline-flex min-h-11 items-center gap-1 text-sm text-blue-2 hover:text-paper">
                       Review the job board <ArrowUpRight className="size-4" />
                     </Link>
                   </div>

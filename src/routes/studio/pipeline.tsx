@@ -196,21 +196,21 @@ function PipelinePage() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-[11px] uppercase tracking-[0.32em] text-blue-2">Job command</p>
-          <h1 className="mt-2 font-serif text-5xl">Production jobs</h1>
+          <h1 className="mt-2 font-serif text-4xl sm:text-5xl">Production jobs</h1>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <div className="mr-2 text-right">
             <p className="text-[11px] uppercase tracking-[0.18em] text-mist">Booked & in production</p>
             <p className="font-serif text-2xl">{formatMoney(board.value)}</p>
           </div>
-          <Button type="button" variant="line" size="sm" onClick={() => void refresh().catch((error) => {
+          <Button type="button" variant="line" size="sm" className="min-h-11" onClick={() => void refresh().catch((error) => {
             console.error("[production-pipeline] Could not refresh jobs", error);
             setLoadError("The job board could not be refreshed.");
           })} disabled={loading}>
             <RefreshCw className={cn("size-4", loading && "animate-spin")} />
             Refresh
           </Button>
-          <Button type="button" size="sm" onClick={() => setShowCreateForm((open) => !open)}>
+          <Button type="button" size="sm" className="min-h-11" onClick={() => setShowCreateForm((open) => !open)}>
             <Plus className="size-4" />
             Add production
           </Button>
@@ -260,7 +260,7 @@ function PipelinePage() {
                     {selectedJob.status}
                   </span>
                   {editingJobId !== selectedJob.id ? (
-                    <Button type="button" variant="line" size="sm" onClick={() => {
+                    <Button type="button" variant="line" size="sm" className="min-h-11" onClick={() => {
                       setEditingJobId(selectedJob.id);
                       setEditDraft(jobToDraft(selectedJob));
                     }}>
@@ -359,7 +359,7 @@ function PipelinePage() {
                     <button
                       type="button"
                       onClick={() => setSelectedId(j.id)}
-                      className="text-left font-serif text-xl hover:text-blue-2"
+                      className="min-h-11 text-left font-serif text-xl hover:text-blue-2"
                     >
                       {j.title}
                     </button>
@@ -370,7 +370,7 @@ function PipelinePage() {
                         <button
                           key={c.key}
                           type="button"
-                          className={cn("rounded-sm px-2 py-1 text-[10px] uppercase tracking-[0.12em] text-mist hover:bg-paper/10 hover:text-paper")}
+                          className={cn("min-h-11 rounded-sm px-2 text-[10px] uppercase tracking-[0.12em] text-mist hover:bg-paper/10 hover:text-paper")}
                           onClick={async (event) => {
                             event.stopPropagation();
                             try {

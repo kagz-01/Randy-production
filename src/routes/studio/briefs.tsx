@@ -113,7 +113,7 @@ function BriefsPage() {
             Keep the event date, venue, guest count and working notes accurate before the crew call.
           </p>
         </div>
-        <Button type="button" variant="line" size="sm" onClick={() => void refresh()} disabled={loading}>
+        <Button type="button" variant="line" size="sm" className="min-h-11" onClick={() => void refresh()} disabled={loading}>
           <RefreshCw className={cn("size-4", loading && "animate-spin")} />
           Refresh
         </Button>
