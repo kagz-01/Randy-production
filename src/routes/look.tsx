@@ -488,7 +488,7 @@ function EventPlannerPage() {
                           aria-pressed={selectedFocalPoint.id === point.id}
                           onClick={() => setSelectedPointKind(point.id)}
                           className={cn(
-                            "min-h-10 rounded-full border px-3 text-xs transition-colors",
+                            "min-h-11 rounded-full border px-3 text-xs transition-colors",
                             selectedFocalPoint.id === point.id
                               ? "border-blue-2/60 bg-blue/10 text-paper"
                               : "border-paper/10 text-mist hover:text-paper",

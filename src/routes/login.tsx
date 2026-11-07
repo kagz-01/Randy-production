@@ -112,7 +112,7 @@ function Login() {
                     setMode(value);
                     setSignInError(null);
                   }}
-                  className={`min-h-10 rounded-[0.65rem] border px-3 text-sm font-medium transition-colors ${
+                  className={`min-h-11 rounded-[0.65rem] border px-3 text-sm font-medium transition-colors ${
                     mode === value
                       ? "border-[#403a30] bg-[#24221e] text-paper"
                       : "border-transparent text-[#aaa499] hover:text-paper"

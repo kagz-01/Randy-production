@@ -199,7 +199,7 @@ function BookPage() {
                 <div className="border-t border-paper/10 px-5 py-4 md:px-6">
                   {quoteLines ? (
                     <details className="group">
-                      <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-3 text-sm font-medium text-paper marker:hidden">
+                      <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 text-sm font-medium text-paper marker:hidden">
                         Estimate breakdown
                         <span className="text-xs text-mist">{quoteLines.length} line items</span>
                       </summary>

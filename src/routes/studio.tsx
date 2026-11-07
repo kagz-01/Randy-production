@@ -221,7 +221,7 @@ function StudioLayout() {
             </p>
             {pulse && !isDesk ? (
               <Link to="/studio/live/$projectId" params={{ projectId: pulse.id }}>
-                <Button variant="line" size="sm" className="min-h-9">
+                <Button variant="line" size="sm" className="min-h-11">
                   <span className={pulse.live ? "live-dot mr-2 inline-block size-2 rounded-full bg-blue" : "mr-2 inline-block size-2 rounded-full bg-blue/60"} />
                   {pulse.live ? "Show day" : "Next show"} · {pulse.title}
                 </Button>
