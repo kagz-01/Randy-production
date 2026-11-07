@@ -772,7 +772,7 @@ function BillingSection({
         <SectionHeading
           eyebrow="Project billing"
           title="Invoices"
-          count={`${invoices.length} records`}
+          count={`${invoices.length} record${invoices.length === 1 ? "" : "s"}`}
         />
         {invoices.length ? (
           <div className="mt-4 grid gap-3">
