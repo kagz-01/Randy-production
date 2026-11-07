@@ -1124,7 +1124,7 @@ function AdminSignals({
           <button
             type="button"
             onClick={onOpenOperations}
-            className="mt-2 inline-flex min-h-9 items-center gap-1 text-xs font-medium text-blue-2 hover:text-paper"
+            className="mt-2 inline-flex min-h-11 items-center gap-1 text-xs font-medium text-blue-2 hover:text-paper"
           >
             Review operations <ChevronRight className="size-3.5" />
           </button>
@@ -1166,7 +1166,7 @@ function AdminSignals({
           <button
             type="button"
             onClick={onOpenPeople}
-            className="min-h-9 text-xs font-medium text-blue-2 hover:text-paper"
+            className="min-h-11 text-xs font-medium text-blue-2 hover:text-paper"
           >
             Manage
           </button>
@@ -1274,6 +1274,7 @@ function PeopleTab({
                 id="new-invite-name"
                 autoComplete="name"
                 required
+                className="min-h-11"
                 value={form.name}
                 onChange={(event) => onFormChange({ ...form, name: event.target.value })}
                 placeholder="e.g. Amina Njoroge"
@@ -1285,6 +1286,7 @@ function PeopleTab({
                 type="email"
                 autoComplete="email"
                 required
+                className="min-h-11"
                 value={form.email}
                 onChange={(event) => onFormChange({ ...form, email: event.target.value })}
                 placeholder="name@company.com"
@@ -1294,6 +1296,7 @@ function PeopleTab({
               <label className="block space-y-1.5">
                 <span className="text-xs font-medium text-paper">Role</span>
                 <Input
+                  className="min-h-11"
                   value={form.role}
                   onChange={(event) => onFormChange({ ...form, role: event.target.value })}
                   placeholder="Role"
@@ -1302,6 +1305,7 @@ function PeopleTab({
               <label className="block space-y-1.5">
                 <span className="text-xs font-medium text-paper">Team</span>
                 <Input
+                  className="min-h-11"
                   value={form.team}
                   onChange={(event) => onFormChange({ ...form, team: event.target.value })}
                   placeholder="Team"
@@ -1321,6 +1325,7 @@ function PeopleTab({
               <Input
                 id="latest-staff-invite"
                 readOnly
+                className="min-h-11"
                 value={inviteLink}
                 onFocus={(event) => event.currentTarget.select()}
               />
@@ -1970,6 +1975,7 @@ function PaymentAgreementManager({ jobs }: { jobs: JobRow[] }) {
                       <Input
                         required
                         maxLength={120}
+                        className="min-h-11"
                         value={milestone.label}
                         onChange={(event) => updateMilestone(index, { label: event.target.value })}
                         placeholder="e.g. Venue booking"
@@ -1983,6 +1989,7 @@ function PaymentAgreementManager({ jobs }: { jobs: JobRow[] }) {
                         min={1}
                         max={2_000_000_000}
                         step={1}
+                        className="min-h-11"
                         value={milestone.amount}
                         onChange={(event) => updateMilestone(index, { amount: event.target.value })}
                       />
@@ -1991,6 +1998,7 @@ function PaymentAgreementManager({ jobs }: { jobs: JobRow[] }) {
                       Due date
                       <Input
                         type="date"
+                        className="min-h-11"
                         value={milestone.dueDate}
                         onChange={(event) =>
                           updateMilestone(index, { dueDate: event.target.value })
@@ -2001,6 +2009,7 @@ function PaymentAgreementManager({ jobs }: { jobs: JobRow[] }) {
                       Milestone details
                       <Input
                         maxLength={1000}
+                        className="min-h-11"
                         value={milestone.note}
                         onChange={(event) => updateMilestone(index, { note: event.target.value })}
                         placeholder="Optional"
@@ -2528,7 +2537,7 @@ function DashboardError({ message, onRetry }: { message: string; onRetry: () => 
         <div>
           <p className="font-medium text-paper">Admin data is unavailable</p>
           <p className="mt-1 text-sm text-mist">{message}</p>
-          <Button type="button" className="mt-4" variant="line" onClick={onRetry}>
+          <Button type="button" className="mt-4 min-h-11" variant="line" onClick={onRetry}>
             <RefreshCw className="size-4" />
             Try again
           </Button>
