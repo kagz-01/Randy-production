@@ -13,6 +13,7 @@ function ClientProfile() {
   const { user, isPending } = useCurrentUserState();
   const [role, setRole] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [roleRetry, setRoleRetry] = useState(0);
   const userId = user?.id;
   const displayName = user?.isDevFallback
     ? "Randy Production"
@@ -38,9 +39,18 @@ function ClientProfile() {
     return () => {
       active = false;
     };
-  }, [userId]);
+  }, [roleRetry, userId]);
 
-  if (isPending) return <div className="min-h-dvh bg-void" />;
+  if (isPending) {
+    return (
+      <div className="min-h-dvh bg-void">
+        <SiteNav />
+        <main className="shell pb-20 pt-28">
+          <p role="status" className="text-sm text-mist">Checking your account…</p>
+        </main>
+      </div>
+    );
+  }
   if (!user) return <RedirectToSignIn />;
   if (!user.isDevFallback && (role === "staff" || role === "admin")) {
     return <Navigate to="/studio/profile" />;
@@ -67,9 +77,17 @@ function ClientProfile() {
         </header>
 
         {error ? (
-          <p role="alert" className="mt-6 max-w-xl text-sm text-red-300">
-            {error}
-          </p>
+          <div className="mt-6 max-w-xl">
+            <p role="alert" className="text-sm text-red-300">{error}</p>
+            <Button
+              type="button"
+              variant="line"
+              className="mt-4 min-h-11"
+              onClick={() => setRoleRetry((count) => count + 1)}
+            >
+              Try again
+            </Button>
+          </div>
         ) : role === null && !user.isDevFallback ? (
           <p className="mt-6 text-sm text-mist">Verifying your account…</p>
         ) : role && role !== "client" && !user.isDevFallback ? (

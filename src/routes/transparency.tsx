@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { SiteFooter, SiteNav } from "@/components/site/nav";
+import { Button } from "@/components/ui/button";
 import { getPublicTransparency } from "@/lib/server/studio";
 
 export const Route = createFileRoute("/transparency")({ component: TransparencyPage });
@@ -46,6 +47,7 @@ function TransparencyPage() {
   const [productions, setProductions] = useState<PublicProduction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retry, setRetry] = useState(0);
   const groupedProductions = STATUS_GROUPS.map((group) => ({
     ...group,
     productions: productions
@@ -61,6 +63,8 @@ function TransparencyPage() {
 
   useEffect(() => {
     let active = true;
+    setLoading(true);
+    setError(null);
     getPublicTransparency()
       .then((rows) => {
         if (active) setProductions(rows);
@@ -75,7 +79,7 @@ function TransparencyPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [retry]);
 
   return (
     <div className="min-h-dvh bg-void">
@@ -99,7 +103,19 @@ function TransparencyPage() {
             <p className="text-xs text-mist">Read-only · status and dates from the production board</p>
           </div>
 
-          {error ? <p role="alert" className="mt-5 text-sm text-red-300">{error}</p> : null}
+          {error ? (
+            <div className="mt-5" role="alert">
+              <p className="text-sm text-red-300">{error}</p>
+              <Button
+                type="button"
+                variant="line"
+                className="mt-3 min-h-11"
+                onClick={() => setRetry((count) => count + 1)}
+              >
+                Try again
+              </Button>
+            </div>
+          ) : null}
           {loading ? <p role="status" className="mt-5 text-sm text-mist">Loading public updates…</p> : null}
           {!loading && !error && !hasPublicUpdates ? (
             <div className="mt-5 rounded-xl border border-paper/10 bg-ink/60 p-6 text-sm text-mist">
