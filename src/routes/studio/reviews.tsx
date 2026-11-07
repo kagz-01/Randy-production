@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Check, MessageSquare, Plus, RefreshCw, Save, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +30,7 @@ function ClientReviewsPage() {
   const [saving, setSaving] = useState(false);
   const [busyDraftId, setBusyDraftId] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const draftRequestId = useRef(0);
 
   const reviewJobs = useMemo(
     () => jobs.filter((job) => !["delivered", "cancelled"].includes(job.status)),
@@ -46,7 +47,7 @@ function ClientReviewsPage() {
       setSelectedId((current) =>
         rows.some((job) => job.id === current && !["delivered", "cancelled"].includes(job.status))
           ? current
-          : rows.find((job) => !["delivered", "cancelled"].includes(job.status))?.id ?? "",
+          : (rows.find((job) => !["delivered", "cancelled"].includes(job.status))?.id ?? ""),
       );
     } catch (error) {
       console.error("[studio-reviews] Could not load productions", error);
@@ -57,15 +58,18 @@ function ClientReviewsPage() {
   }, []);
 
   const refreshDrafts = useCallback(async (jobId: string) => {
+    const requestId = ++draftRequestId.current;
     setLoadError(null);
     setLoadingDrafts(true);
     try {
-      setDrafts(await listJobDrafts({ data: { jobId } }));
+      const rows = await listJobDrafts({ data: { jobId } });
+      if (requestId === draftRequestId.current) setDrafts(rows);
     } catch (error) {
+      if (requestId !== draftRequestId.current) return;
       console.error("[studio-reviews] Could not load client drafts", error);
       setLoadError("Client review items could not be loaded. Refresh and try again.");
     } finally {
-      setLoadingDrafts(false);
+      if (requestId === draftRequestId.current) setLoadingDrafts(false);
     }
   }, []);
 
@@ -75,11 +79,16 @@ function ClientReviewsPage() {
 
   useEffect(() => {
     if (!selectedJob) {
+      draftRequestId.current += 1;
       setDrafts([]);
+      setLoadingDrafts(false);
       return;
     }
     setNewDraft(EMPTY_DRAFT);
     void refreshDrafts(selectedJob.id);
+    return () => {
+      draftRequestId.current += 1;
+    };
   }, [refreshDrafts, selectedJob]);
 
   async function createDraft(event: FormEvent<HTMLFormElement>) {
@@ -104,8 +113,10 @@ function ClientReviewsPage() {
   async function saveDraft(draft: DraftRow, form: DraftForm): Promise<boolean> {
     setBusyDraftId(draft.id);
     try {
-      const updated = await updateJobDraft({ data: { id: draft.id, jobId: draft.job_id, ...form } });
-      setDrafts((current) => current.map((item) => item.id === updated.id ? updated : item));
+      const updated = await updateJobDraft({
+        data: { id: draft.id, jobId: draft.job_id, ...form },
+      });
+      setDrafts((current) => current.map((item) => (item.id === updated.id ? updated : item)));
       toast.success("Draft updated and returned to client review.");
       return true;
     } catch (error) {
@@ -139,22 +150,37 @@ function ClientReviewsPage() {
           <p className="eyebrow">Client collaboration</p>
           <h1 className="mt-2 text-4xl md:text-5xl">Client reviews</h1>
           <p className="mt-3 max-w-2xl text-sm text-mist">
-            Share a real design or content draft, review the client’s response, then update and resubmit it.
+            Share a real design or content draft, review the client’s response, then update and
+            resubmit it.
           </p>
         </div>
-        <Button type="button" variant="line" size="sm" onClick={() => void refreshJobs()} disabled={loading}>
+        <Button
+          type="button"
+          variant="line"
+          size="sm"
+          onClick={() => void refreshJobs()}
+          disabled={loading}
+        >
           <RefreshCw className={cn("size-4", loading && "animate-spin")} />
           Refresh
         </Button>
       </header>
 
-      {loadError ? <p role="alert" className="mt-5 text-sm text-red-300">{loadError}</p> : null}
+      {loadError ? (
+        <p role="alert" className="mt-5 text-sm text-red-300">
+          {loadError}
+        </p>
+      ) : null}
       {loading ? (
-        <p role="status" className="mt-6 text-sm text-mist">Loading current productions…</p>
+        <p role="status" className="mt-6 text-sm text-mist">
+          Loading current productions…
+        </p>
       ) : reviewJobs.length === 0 ? (
         <section className="mt-6 rounded-xl border border-paper/10 bg-ink/60 p-6">
           <h2 className="text-xl font-medium text-paper">No active productions</h2>
-          <p className="mt-2 text-sm text-mist">Create a production in Jobs before preparing a client review.</p>
+          <p className="mt-2 text-sm text-mist">
+            Create a production in Jobs before preparing a client review.
+          </p>
         </section>
       ) : (
         <>
@@ -166,7 +192,9 @@ function ClientReviewsPage() {
               className="min-h-11 rounded-md border border-paper/15 bg-void px-3 text-sm text-paper"
             >
               {reviewJobs.map((job) => (
-                <option key={job.id} value={job.id}>{job.title} · {job.client_name}</option>
+                <option key={job.id} value={job.id}>
+                  {job.title} · {job.client_name}
+                </option>
               ))}
             </select>
           </label>
@@ -176,27 +204,37 @@ function ClientReviewsPage() {
               <section className="rounded-xl border border-paper/10 bg-ink/70 p-5 md:p-6">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <p className="eyebrow">{selectedJob.client_name} · {selectedJob.status}</p>
+                    <p className="eyebrow">
+                      {selectedJob.client_name} · {selectedJob.status}
+                    </p>
                     <h2 className="mt-2 text-2xl font-semibold text-paper">{selectedJob.title}</h2>
                   </div>
-                  <span className={cn(
-                    "rounded-full border px-3 py-2 text-xs",
-                    selectedJob.owner_user_id
-                      ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-200"
-                      : "border-amber-400/30 bg-amber-400/10 text-amber-200",
-                  )}>
-                    {selectedJob.owner_user_id ? "Client portal linked" : "No client account linked"}
+                  <span
+                    className={cn(
+                      "rounded-full border px-3 py-2 text-xs",
+                      selectedJob.owner_user_id
+                        ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-200"
+                        : "border-amber-400/30 bg-amber-400/10 text-amber-200",
+                    )}
+                  >
+                    {selectedJob.owner_user_id
+                      ? "Client portal linked"
+                      : "No client account linked"}
                   </span>
                 </div>
                 {!selectedJob.owner_user_id ? (
                   <p className="mt-4 text-sm text-mist">
-                    Link a verified client account from Jobs before sharing drafts. Without an account, no client can see or respond to them.
+                    Link a verified client account from Jobs before sharing drafts. Without an
+                    account, no client can see or respond to them.
                   </p>
                 ) : null}
               </section>
 
               {selectedJob.owner_user_id ? (
-                <form onSubmit={createDraft} className="rounded-xl border border-blue/20 bg-blue/5 p-5 md:p-6">
+                <form
+                  onSubmit={createDraft}
+                  className="rounded-xl border border-blue/20 bg-blue/5 p-5 md:p-6"
+                >
                   <div className="flex items-center gap-2">
                     <Plus className="size-4 text-blue-2" aria-hidden="true" />
                     <h3 className="text-lg font-medium text-paper">Share a draft</h3>
@@ -204,11 +242,25 @@ function ClientReviewsPage() {
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
                     <label className="grid gap-1.5 text-xs text-mist">
                       Draft title
-                      <Input required maxLength={200} value={newDraft.title} onChange={(event) => setNewDraft({ ...newDraft, title: event.target.value })} placeholder="e.g. Reception stage layout" />
+                      <Input
+                        required
+                        maxLength={200}
+                        value={newDraft.title}
+                        onChange={(event) =>
+                          setNewDraft({ ...newDraft, title: event.target.value })
+                        }
+                        placeholder="e.g. Reception stage layout"
+                      />
                     </label>
                     <label className="grid gap-1.5 text-xs text-mist">
                       Type
-                      <Input required maxLength={80} value={newDraft.kind} onChange={(event) => setNewDraft({ ...newDraft, kind: event.target.value })} placeholder="Design, run of show, content…" />
+                      <Input
+                        required
+                        maxLength={80}
+                        value={newDraft.kind}
+                        onChange={(event) => setNewDraft({ ...newDraft, kind: event.target.value })}
+                        placeholder="Design, run of show, content…"
+                      />
                     </label>
                     <label className="grid gap-1.5 text-xs text-mist sm:col-span-2">
                       Details for the client
@@ -238,7 +290,9 @@ function ClientReviewsPage() {
                   <p className="text-xs text-mist">{drafts.length} items</p>
                 </div>
                 {loadingDrafts ? (
-                  <p role="status" className="mt-5 text-sm text-mist">Loading shared drafts…</p>
+                  <p role="status" className="mt-5 text-sm text-mist">
+                    Loading shared drafts…
+                  </p>
                 ) : drafts.length ? (
                   <ul className="mt-4 space-y-4">
                     {drafts.map((draft) => (
@@ -254,7 +308,10 @@ function ClientReviewsPage() {
                 ) : (
                   <div className="mt-5 rounded-lg border border-dashed border-paper/15 px-4 py-5">
                     <p className="text-sm font-medium text-paper">No drafts shared yet</p>
-                    <p className="mt-1 text-sm text-mist">Add a draft above to make it available in the linked client’s project workspace.</p>
+                    <p className="mt-1 text-sm text-mist">
+                      Add a draft above to make it available in the linked client’s project
+                      workspace.
+                    </p>
                   </div>
                 )}
               </section>
@@ -305,7 +362,9 @@ function DraftEditor({
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="text-[10px] uppercase tracking-[0.16em] text-blue-2">{draft.kind}</p>
-            <p className="mt-1 text-xs capitalize text-mist">Status: {draft.status.replaceAll("_", " ")}</p>
+            <p className="mt-1 text-xs capitalize text-mist">
+              Status: {draft.status.replaceAll("_", " ")}
+            </p>
           </div>
           <Button type="button" variant="line" size="sm" disabled={busy} onClick={onDelete}>
             <Trash2 className="size-3.5" />
@@ -330,11 +389,21 @@ function DraftEditor({
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <label className="grid gap-1.5 text-xs text-mist">
             Draft title
-            <Input required maxLength={200} value={form.title} onChange={(event) => patch("title", event.target.value)} />
+            <Input
+              required
+              maxLength={200}
+              value={form.title}
+              onChange={(event) => patch("title", event.target.value)}
+            />
           </label>
           <label className="grid gap-1.5 text-xs text-mist">
             Type
-            <Input required maxLength={80} value={form.kind} onChange={(event) => patch("kind", event.target.value)} />
+            <Input
+              required
+              maxLength={80}
+              value={form.kind}
+              onChange={(event) => patch("kind", event.target.value)}
+            />
           </label>
           <label className="grid gap-1.5 text-xs text-mist sm:col-span-2">
             Details shown to the client
@@ -347,9 +416,18 @@ function DraftEditor({
             />
           </label>
         </div>
-        <Button type="submit" variant={draft.status === "changes_requested" ? "primary" : "line"} className="mt-4 min-h-10" disabled={busy || !dirty}>
+        <Button
+          type="submit"
+          variant={draft.status === "changes_requested" ? "primary" : "line"}
+          className="mt-4 min-h-10"
+          disabled={busy || !dirty}
+        >
           <Save className="size-4" />
-          {busy ? "Saving…" : draft.status === "changes_requested" ? "Update & resubmit" : "Save draft"}
+          {busy
+            ? "Saving…"
+            : draft.status === "changes_requested"
+              ? "Update & resubmit"
+              : "Save draft"}
         </Button>
       </form>
     </li>

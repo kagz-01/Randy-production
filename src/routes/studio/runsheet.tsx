@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Printer, RefreshCw, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,6 +38,7 @@ function RunSheetPage() {
   const [savingCueId, setSavingCueId] = useState<string | null>(null);
   const [savingNewCue, setSavingNewCue] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const cueRequestId = useRef(0);
 
   const activeJobs = useMemo(
     () =>
@@ -57,7 +58,7 @@ function RunSheetPage() {
       setSelectedJobId((current) =>
         rows.some((job) => job.id === current && ["booked", "production"].includes(job.status))
           ? current
-          : rows.find((job) => ["booked", "production"].includes(job.status))?.id ?? "",
+          : (rows.find((job) => ["booked", "production"].includes(job.status))?.id ?? ""),
       );
     } catch (error) {
       console.error("[studio-runsheet] Could not load productions", error);
@@ -68,20 +69,32 @@ function RunSheetPage() {
   }, []);
 
   const refreshCues = useCallback(async (jobId: string) => {
+    const requestId = ++cueRequestId.current;
     setLoadingCues(true);
     setLoadError(null);
     try {
       const rows = await listJobCues({ data: { jobId } });
+      if (requestId !== cueRequestId.current) return;
       setCues(rows);
-      setDrafts(Object.fromEntries(rows.map((cue) => [
-        cue.id,
-        { starts_at: timeValue(cue.starts_at), title: cue.title, owner: cue.owner, kind: cue.kind },
-      ])));
+      setDrafts(
+        Object.fromEntries(
+          rows.map((cue) => [
+            cue.id,
+            {
+              starts_at: timeValue(cue.starts_at),
+              title: cue.title,
+              owner: cue.owner,
+              kind: cue.kind,
+            },
+          ]),
+        ),
+      );
     } catch (error) {
+      if (requestId !== cueRequestId.current) return;
       console.error("[studio-runsheet] Could not load run-sheet cues", error);
       setLoadError("This run sheet could not be loaded. Refresh and try again.");
     } finally {
-      setLoadingCues(false);
+      if (requestId === cueRequestId.current) setLoadingCues(false);
     }
   }, []);
 
@@ -91,11 +104,16 @@ function RunSheetPage() {
 
   useEffect(() => {
     if (!selectedJobId || !activeJobs.some((job) => job.id === selectedJobId)) {
+      cueRequestId.current += 1;
       setCues([]);
       setDrafts({});
+      setLoadingCues(false);
       return;
     }
     void refreshCues(selectedJobId);
+    return () => {
+      cueRequestId.current += 1;
+    };
   }, [activeJobs, refreshCues, selectedJobId]);
 
   function updateDraft(id: string, field: keyof CueDraft, value: string) {
@@ -120,7 +138,8 @@ function RunSheetPage() {
         },
       });
       setCues((current) =>
-        current.map((item) => item.id === cue.id ? updated : item)
+        current
+          .map((item) => (item.id === cue.id ? updated : item))
           .sort((a, b) => a.starts_at.localeCompare(b.starts_at) || a.sort_order - b.sort_order),
       );
       toast.success("Run-sheet cue saved.");
@@ -141,11 +160,18 @@ function RunSheetPage() {
         data: { jobId: selectedJob.id, ...newCue },
       });
       setCues((current) =>
-        [...current, created].sort((a, b) => a.starts_at.localeCompare(b.starts_at) || a.sort_order - b.sort_order),
+        [...current, created].sort(
+          (a, b) => a.starts_at.localeCompare(b.starts_at) || a.sort_order - b.sort_order,
+        ),
       );
       setDrafts((current) => ({
         ...current,
-        [created.id]: { starts_at: timeValue(created.starts_at), title: created.title, owner: created.owner, kind: created.kind },
+        [created.id]: {
+          starts_at: timeValue(created.starts_at),
+          title: created.title,
+          owner: created.owner,
+          kind: created.kind,
+        },
       }));
       setNewCue(EMPTY_NEW_CUE);
       toast.success("Cue added to the run sheet.");
@@ -161,7 +187,9 @@ function RunSheetPage() {
     setSavingCueId(cue.id);
     try {
       await setCueStatus({ data: { id: cue.id, status } });
-      setCues((current) => current.map((item) => item.id === cue.id ? { ...item, status } : item));
+      setCues((current) =>
+        current.map((item) => (item.id === cue.id ? { ...item, status } : item)),
+      );
     } catch (error) {
       console.error("[studio-runsheet] Could not update cue status", error);
       toast.error(error instanceof Error ? error.message : "Cue status could not be updated.");
@@ -176,7 +204,9 @@ function RunSheetPage() {
     try {
       await deleteJobCue({ data: { id: cue.id } });
       setCues((current) => current.filter((item) => item.id !== cue.id));
-      setDrafts((current) => Object.fromEntries(Object.entries(current).filter(([id]) => id !== cue.id)));
+      setDrafts((current) =>
+        Object.fromEntries(Object.entries(current).filter(([id]) => id !== cue.id)),
+      );
       toast.success("Cue removed.");
     } catch (error) {
       console.error("[studio-runsheet] Could not remove cue", error);
@@ -197,11 +227,23 @@ function RunSheetPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button type="button" variant="line" size="sm" onClick={() => void refreshJobs()} disabled={loadingJobs}>
+          <Button
+            type="button"
+            variant="line"
+            size="sm"
+            onClick={() => void refreshJobs()}
+            disabled={loadingJobs}
+          >
             <RefreshCw className={cn("size-4", loadingJobs && "animate-spin")} />
             Refresh
           </Button>
-          <Button type="button" variant="line" size="sm" onClick={() => window.print()} disabled={!selectedJob || !cues.length}>
+          <Button
+            type="button"
+            variant="line"
+            size="sm"
+            onClick={() => window.print()}
+            disabled={!selectedJob || !cues.length}
+          >
             <Printer className="size-4" />
             Print
           </Button>
@@ -209,10 +251,14 @@ function RunSheetPage() {
       </header>
 
       {loadError ? (
-        <p role="alert" className="mt-5 text-sm text-red-300">{loadError}</p>
+        <p role="alert" className="mt-5 text-sm text-red-300">
+          {loadError}
+        </p>
       ) : null}
       {loadingJobs ? (
-        <p role="status" className="mt-6 text-sm text-mist">Loading booked productions…</p>
+        <p role="status" className="mt-6 text-sm text-mist">
+          Loading booked productions…
+        </p>
       ) : activeJobs.length === 0 ? (
         <section className="mt-6 rounded-xl border border-paper/10 bg-ink/60 p-6">
           <h2 className="text-xl font-medium text-paper">No booked production to schedule</h2>
@@ -239,7 +285,8 @@ function RunSheetPage() {
             </label>
             {selectedJob ? (
               <p className="text-sm text-mist">
-                {selectedJob.client_name} · {selectedJob.venue || "Venue not set"} · {selectedJob.guests} guests
+                {selectedJob.client_name} · {selectedJob.venue || "Venue not set"} ·{" "}
+                {selectedJob.guests} guests
               </p>
             ) : null}
           </section>
@@ -251,7 +298,9 @@ function RunSheetPage() {
                   <p className="eyebrow">Saved production cues</p>
                   <h2 className="mt-1 text-2xl font-semibold text-paper">{selectedJob.title}</h2>
                 </div>
-                <p className="text-xs text-mist">{cues.length} cues · changes save to this production</p>
+                <p className="text-xs text-mist">
+                  {cues.length} cues · changes save to this production
+                </p>
               </div>
 
               {cues.length ? (
@@ -259,23 +308,44 @@ function RunSheetPage() {
                   {cues.map((cue) => {
                     const draft = drafts[cue.id];
                     return (
-                      <li key={cue.id} className="grid gap-3 py-5 xl:grid-cols-[minmax(0,1fr)_auto]">
+                      <li
+                        key={cue.id}
+                        className="grid gap-3 py-5 xl:grid-cols-[minmax(0,1fr)_auto]"
+                      >
                         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[130px_minmax(180px,1.5fr)_minmax(140px,1fr)_minmax(120px,0.8fr)]">
                           <label className="grid gap-1 text-xs text-mist">
                             Time
-                            <Input type="time" value={draft?.starts_at ?? ""} onChange={(event) => updateDraft(cue.id, "starts_at", event.target.value)} />
+                            <Input
+                              type="time"
+                              value={draft?.starts_at ?? ""}
+                              onChange={(event) =>
+                                updateDraft(cue.id, "starts_at", event.target.value)
+                              }
+                            />
                           </label>
                           <label className="grid gap-1 text-xs text-mist">
                             Cue
-                            <Input value={draft?.title ?? ""} onChange={(event) => updateDraft(cue.id, "title", event.target.value)} maxLength={200} />
+                            <Input
+                              value={draft?.title ?? ""}
+                              onChange={(event) => updateDraft(cue.id, "title", event.target.value)}
+                              maxLength={200}
+                            />
                           </label>
                           <label className="grid gap-1 text-xs text-mist">
                             Owner
-                            <Input value={draft?.owner ?? ""} onChange={(event) => updateDraft(cue.id, "owner", event.target.value)} maxLength={120} />
+                            <Input
+                              value={draft?.owner ?? ""}
+                              onChange={(event) => updateDraft(cue.id, "owner", event.target.value)}
+                              maxLength={120}
+                            />
                           </label>
                           <label className="grid gap-1 text-xs text-mist">
                             Type
-                            <Input value={draft?.kind ?? ""} onChange={(event) => updateDraft(cue.id, "kind", event.target.value)} maxLength={80} />
+                            <Input
+                              value={draft?.kind ?? ""}
+                              onChange={(event) => updateDraft(cue.id, "kind", event.target.value)}
+                              maxLength={80}
+                            />
                           </label>
                         </div>
                         <div className="flex flex-wrap items-center gap-2 xl:justify-end">
@@ -296,10 +366,23 @@ function RunSheetPage() {
                               {status}
                             </button>
                           ))}
-                          <Button type="button" variant="line" size="sm" disabled={savingCueId === cue.id} onClick={() => void saveCue(cue)}>
+                          <Button
+                            type="button"
+                            variant="line"
+                            size="sm"
+                            disabled={savingCueId === cue.id}
+                            onClick={() => void saveCue(cue)}
+                          >
                             {savingCueId === cue.id ? "Saving…" : "Save"}
                           </Button>
-                          <Button type="button" variant="ghost" size="sm" disabled={savingCueId === cue.id} aria-label={`Remove ${cue.title}`} onClick={() => void removeCue(cue)}>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            disabled={savingCueId === cue.id}
+                            aria-label={`Remove ${cue.title}`}
+                            onClick={() => void removeCue(cue)}
+                          >
                             <Trash2 className="size-4" />
                           </Button>
                         </div>
@@ -313,20 +396,50 @@ function RunSheetPage() {
                 </p>
               )}
 
-              <form onSubmit={addCue} className="mt-6 rounded-xl border border-blue/20 bg-blue/5 p-5">
+              <form
+                onSubmit={addCue}
+                className="mt-6 rounded-xl border border-blue/20 bg-blue/5 p-5"
+              >
                 <h3 className="font-medium text-paper">Add a show-day cue</h3>
                 <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                  <label className="grid gap-1 text-xs text-mist">Time
-                    <Input type="time" required value={newCue.startsAt} onChange={(event) => setNewCue({ ...newCue, startsAt: event.target.value })} />
+                  <label className="grid gap-1 text-xs text-mist">
+                    Time
+                    <Input
+                      type="time"
+                      required
+                      value={newCue.startsAt}
+                      onChange={(event) => setNewCue({ ...newCue, startsAt: event.target.value })}
+                    />
                   </label>
-                  <label className="grid gap-1 text-xs text-mist">Cue
-                    <Input required maxLength={200} value={newCue.title} onChange={(event) => setNewCue({ ...newCue, title: event.target.value })} placeholder="e.g. Doors open" />
+                  <label className="grid gap-1 text-xs text-mist">
+                    Cue
+                    <Input
+                      required
+                      maxLength={200}
+                      value={newCue.title}
+                      onChange={(event) => setNewCue({ ...newCue, title: event.target.value })}
+                      placeholder="e.g. Doors open"
+                    />
                   </label>
-                  <label className="grid gap-1 text-xs text-mist">Owner
-                    <Input required maxLength={120} value={newCue.owner} onChange={(event) => setNewCue({ ...newCue, owner: event.target.value })} placeholder="Person or team" />
+                  <label className="grid gap-1 text-xs text-mist">
+                    Owner
+                    <Input
+                      required
+                      maxLength={120}
+                      value={newCue.owner}
+                      onChange={(event) => setNewCue({ ...newCue, owner: event.target.value })}
+                      placeholder="Person or team"
+                    />
                   </label>
-                  <label className="grid gap-1 text-xs text-mist">Type
-                    <Input required maxLength={80} value={newCue.kind} onChange={(event) => setNewCue({ ...newCue, kind: event.target.value })} placeholder="e.g. sound, setup" />
+                  <label className="grid gap-1 text-xs text-mist">
+                    Type
+                    <Input
+                      required
+                      maxLength={80}
+                      value={newCue.kind}
+                      onChange={(event) => setNewCue({ ...newCue, kind: event.target.value })}
+                      placeholder="e.g. sound, setup"
+                    />
                   </label>
                 </div>
                 <Button type="submit" className="mt-4" disabled={savingNewCue}>
@@ -335,7 +448,9 @@ function RunSheetPage() {
               </form>
             </section>
           ) : selectedJob && loadingCues ? (
-            <p role="status" className="mt-6 text-sm text-mist">Loading this production’s cues…</p>
+            <p role="status" className="mt-6 text-sm text-mist">
+              Loading this production’s cues…
+            </p>
           ) : null}
         </>
       )}
