@@ -20,6 +20,7 @@ const LINKS = [
 const STUDIO_TOOLS = [
   { to: "/studio/gear", label: "Gear" },
   { to: "/studio/vendors", label: "Vendors" },
+  { to: "/studio/merch", label: "Merch" },
   { to: "/studio/marketing", label: "Case Forge" },
 ] as const;
 

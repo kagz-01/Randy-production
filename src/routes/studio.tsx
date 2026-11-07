@@ -7,6 +7,7 @@ import {
   FileText,
   LayoutDashboard,
   MessageSquare,
+  Package,
   Sparkles,
   Store,
   Users,
@@ -38,6 +39,7 @@ const WORKFLOWS = [
 const TOOLS = [
   { to: "/studio/gear", label: "Gear", icon: Boxes },
   { to: "/studio/vendors", label: "Vendors", icon: Store },
+  { to: "/studio/merch", label: "Merch", icon: Package },
   { to: "/studio/marketing", label: "Case Forge", icon: Sparkles },
 ] as const;
 
