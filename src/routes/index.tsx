@@ -99,7 +99,7 @@ function Home() {
           <video
             ref={heroVideoRef}
             key={HERO_VIDEO_URL}
-            className="size-full object-cover ken-burn"
+            className="size-full object-cover object-[92%_center] ken-burn md:object-center"
             autoPlay={!prefersReducedMotion}
             muted
             loop
@@ -111,7 +111,8 @@ function Home() {
           >
             <source src={HERO_VIDEO_URL} type="video/mp4" />
           </video>
-          <div className="absolute inset-0 bg-linear-to-t from-void via-void/60 to-void/50" />
+          <div className="absolute inset-0 bg-linear-to-t from-void via-void/75 to-void/60" />
+          <div className="absolute inset-0 bg-linear-to-r from-void/55 via-void/15 to-transparent" />
         </motion.div>
 
         <motion.div
