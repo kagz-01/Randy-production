@@ -415,7 +415,7 @@ function StudioCollaboration() {
                 <button
                   type="button"
                   onClick={() => setReply(null)}
-                  className="shrink-0 text-paper underline"
+                  className="min-h-11 shrink-0 rounded-md px-3 text-paper underline underline-offset-2"
                 >
                   Cancel
                 </button>
@@ -427,7 +427,7 @@ function StudioCollaboration() {
                 <button
                   type="button"
                   onClick={() => setAttachment(null)}
-                  className="shrink-0 text-paper underline"
+                  className="min-h-11 shrink-0 rounded-md px-3 text-paper underline underline-offset-2"
                 >
                   Remove
                 </button>
