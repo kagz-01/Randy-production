@@ -47,34 +47,86 @@ function StudioLayout() {
   const pathname = useLocation({ select: (location) => location.pathname });
   const { user, isPending } = useCurrentUserState();
   const [role, setRole] = useState<string | null>(null);
+  const [roleError, setRoleError] = useState<string | null>(null);
+  const [roleRetry, setRoleRetry] = useState(0);
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [accepting, setAccepting] = useState(false);
   const [pulse, setPulse] = useState<{ id: string; title: string; live: boolean } | null>(null);
+  const [pulseError, setPulseError] = useState(false);
+  const [pulseRetry, setPulseRetry] = useState(0);
   const isDesk = pathname === "/studio" || pathname === "/studio/";
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setRole(null);
+      setRoleError(null);
+      return;
+    }
+    let active = true;
+    setRole(null);
+    setRoleError(null);
     getMe()
-      .then((p) => setRole(p.role))
-      .catch(() => setRole("client"));
-  }, [user]);
+      .then((p) => {
+        if (active) setRole(p.role);
+      })
+      .catch((error) => {
+        console.error("[studio] Could not verify workspace role", error);
+        if (active) setRoleError("Studio access couldn’t be verified. Please retry.");
+      });
+    return () => {
+      active = false;
+    };
+  }, [user, roleRetry]);
 
   useEffect(() => {
+    if (role !== "staff" && role !== "admin") {
+      setPulse(null);
+      setPulseError(false);
+      return;
+    }
     let on = true;
     getLivePulse()
       .then((r) => {
-        if (on) setPulse(r);
+        if (on) {
+          setPulse(r);
+          setPulseError(false);
+        }
       })
-      .catch(() => {
-        if (on) setPulse(null);
+      .catch((error) => {
+        console.error("[studio] Could not load show status", error);
+        if (on) {
+          setPulse(null);
+          setPulseError(true);
+        }
       });
     return () => {
       on = false;
     };
-  }, []);
+  }, [role, pulseRetry]);
 
-  if (isPending || (user && role === null)) return <div className="min-h-dvh bg-void" />;
+  if (isPending || (user && role === null && !roleError)) {
+    return <div className="min-h-dvh bg-void" />;
+  }
   if (!user) return invite ? <Navigate to="/login" search={{ invite }} /> : <RedirectToSignIn />;
+
+  if (roleError) {
+    return (
+      <div className="min-h-dvh bg-void">
+        <SiteNav />
+        <main className="mx-auto max-w-xl px-5 pt-32">
+          <p role="alert" className="text-sm text-red-300">{roleError}</p>
+          <Button
+            type="button"
+            variant="line"
+            className="mt-4 min-h-11"
+            onClick={() => setRoleRetry((count) => count + 1)}
+          >
+            Retry
+          </Button>
+        </main>
+      </div>
+    );
+  }
 
   if (role !== "staff" && role !== "admin") {
     return (
@@ -175,7 +227,35 @@ function StudioLayout() {
                 </Button>
               </Link>
             ) : null}
+            {pulseError && !isDesk ? (
+              <button
+                type="button"
+                onClick={() => setPulseRetry((count) => count + 1)}
+                className="min-h-11 text-xs text-mist underline decoration-paper/25 underline-offset-4 hover:text-paper"
+              >
+                Show status unavailable · Retry
+              </button>
+            ) : null}
           </header>
+          <nav aria-label="Studio navigation" className="shell mt-3 lg:hidden">
+            <div className="-mx-1 flex gap-2 overflow-x-auto pb-2">
+              {[...WORKFLOWS, ...TOOLS].map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    className="flex min-h-11 shrink-0 items-center gap-2 rounded-lg border border-paper/10 px-3 text-xs font-medium text-mist transition-colors hover:bg-paper/[0.05] hover:text-paper focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-2"
+                    activeOptions={{ exact: "exact" in item && item.exact }}
+                    activeProps={{ className: "bg-paper/[0.08] text-paper hover:bg-paper/[0.1]" }}
+                  >
+                    <Icon className="size-4 shrink-0" aria-hidden="true" />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </div>
+          </nav>
           <Outlet />
         </section>
       </div>

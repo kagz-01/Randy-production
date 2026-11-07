@@ -1,12 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import {
-  ArrowDown,
-  ArrowRight,
-  Check,
-  ClipboardList,
-  MapPin,
-  Sparkles,
-} from "lucide-react";
+import { ArrowDown, ArrowRight, Check, ClipboardList, MapPin, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { SiteNav } from "@/components/site/nav";
@@ -46,6 +39,24 @@ type QuoteSearch = {
   plannerHandoff?: "1";
 };
 
+type QuoteDraft = {
+  eventType: EventType;
+  guests: number;
+  tier: TierKey;
+  venueType: VenueType;
+  services: ServiceKey[];
+  venue: string;
+  date: string;
+  title: string;
+  clientName: string;
+  email: string;
+  phone: string;
+  message: string;
+};
+
+const QUOTE_DRAFT_STORAGE_KEY = "randy-production:quote-draft";
+const QUOTE_DRAFT_TTL_MS = 30 * 60 * 1000;
+
 export const Route = createFileRoute("/quote")({
   validateSearch: (search: Record<string, unknown>): QuoteSearch => {
     const rawGuests =
@@ -82,7 +93,16 @@ const EVENT_GROUPS: { label: string; description: string; events: EventType[] }[
   {
     label: "Celebrations & culture",
     description: "Personal milestones, ceremonies and family gatherings",
-    events: ["wedding", "traditional", "birthday", "graduation", "harambee", "private", "naming", "school"],
+    events: [
+      "wedding",
+      "traditional",
+      "birthday",
+      "graduation",
+      "harambee",
+      "private",
+      "naming",
+      "school",
+    ],
   },
   {
     label: "Business & brands",
@@ -125,6 +145,61 @@ const SERVICE_DETAILS: Record<ServiceKey, string> = {
   decor: "Styling, florals, draping and finish",
 };
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function parseQuoteDraft(serialized: string): QuoteDraft | null {
+  const parsed: unknown = JSON.parse(serialized);
+  if (!isRecord(parsed)) throw new Error("The saved quote draft is not an object.");
+  if (typeof parsed.expiresAt !== "number" || !Number.isFinite(parsed.expiresAt)) {
+    throw new Error("The saved quote draft has no valid expiry.");
+  }
+  if (parsed.expiresAt <= Date.now()) return null;
+
+  const eventType = EVENT_TYPES.find((item) => item.key === parsed.eventType)?.key;
+  const guests = GUEST_BANDS.find((item) => item.key === parsed.guests)?.key;
+  const tier = TIERS.find((item) => item.key === parsed.tier)?.key;
+  const venueType = VENUE_TYPES.find((item) => item.key === parsed.venueType)?.key;
+  if (!eventType || !guests || !tier || !venueType || !Array.isArray(parsed.services)) {
+    throw new Error("The saved quote draft is missing valid production selections.");
+  }
+
+  const services = parsed.services
+    .map((key) => ADDONS.find((item) => item.key === key)?.key)
+    .filter((key): key is ServiceKey => key !== undefined);
+  if (services.length !== parsed.services.length) {
+    throw new Error("The saved quote draft contains an unknown service.");
+  }
+
+  const text = (key: string) => {
+    const value = parsed[key];
+    if (typeof value !== "string") {
+      throw new Error(`The saved quote draft has an invalid ${key} field.`);
+    }
+    return value;
+  };
+  const date = text("date");
+  if (date && !isValidEventDate(date)) {
+    throw new Error("The saved quote draft has an invalid event date.");
+  }
+
+  return {
+    eventType,
+    guests,
+    tier,
+    venueType,
+    services,
+    venue: text("venue"),
+    date,
+    title: text("title"),
+    clientName: text("clientName"),
+    email: text("email"),
+    phone: text("phone"),
+    message: text("message"),
+  };
+}
+
 function QuotePage() {
   const nav = useNavigate();
   const search = Route.useSearch();
@@ -138,7 +213,9 @@ function QuotePage() {
         .filter((key): key is ServiceKey => key !== undefined)
     : ["stage", "sound", "decor"];
   const [eventType, setEventType] = useState<EventType>(initialEventType);
-  const [eventGroupLabel, setEventGroupLabel] = useState(initialEventGroup?.label ?? EVENT_GROUPS[0].label);
+  const [eventGroupLabel, setEventGroupLabel] = useState(
+    initialEventGroup?.label ?? EVENT_GROUPS[0].label,
+  );
   const [guests, setGuests] = useState(search.guests ?? 150);
   const [tier, setTier] = useState<TierKey>(search.tier ?? "floor");
   const [venueType, setVenueType] = useState<VenueType>(search.venueType ?? "hall");
@@ -152,7 +229,55 @@ function QuotePage() {
   const [message, setMessage] = useState(search.message ?? "");
   const [plannerHandoffNotice, setPlannerHandoffNotice] = useState<"loaded" | "error" | null>(null);
   const [note, setNote] = useState<string | null>(null);
+  const [draftRestored, setDraftRestored] = useState(false);
+  const [draftRestoreError, setDraftRestoreError] = useState(false);
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (search.plannerHandoff === "1") return;
+    let serialized: string | null;
+    try {
+      serialized = window.localStorage.getItem(QUOTE_DRAFT_STORAGE_KEY);
+    } catch (error) {
+      console.error("[quote-builder] Could not read the saved quote draft", error);
+      setDraftRestoreError(true);
+      return;
+    }
+    if (!serialized) return;
+
+    try {
+      const draft = parseQuoteDraft(serialized);
+      if (!draft) {
+        window.localStorage.removeItem(QUOTE_DRAFT_STORAGE_KEY);
+        return;
+      }
+      setEventType(draft.eventType);
+      setEventGroupLabel(
+        EVENT_GROUPS.find((group) => group.events.includes(draft.eventType))?.label ??
+          EVENT_GROUPS[0].label,
+      );
+      setGuests(draft.guests);
+      setTier(draft.tier);
+      setVenueType(draft.venueType);
+      setServices(draft.services);
+      setVenue(draft.venue);
+      setDate(draft.date);
+      setTitle(draft.title);
+      setClientName(draft.clientName);
+      setEmail(draft.email);
+      setPhone(draft.phone);
+      setMessage(draft.message);
+      setDraftRestored(true);
+    } catch (error) {
+      console.error("[quote-builder] Could not restore the saved quote draft", error);
+      setDraftRestoreError(true);
+      try {
+        window.localStorage.removeItem(QUOTE_DRAFT_STORAGE_KEY);
+      } catch (removeError) {
+        console.error("[quote-builder] Could not clear the invalid quote draft", removeError);
+      }
+    }
+  }, [search.plannerHandoff]);
 
   useEffect(() => {
     if (search.plannerHandoff !== "1") return;
@@ -185,7 +310,10 @@ function QuotePage() {
         JSON.stringify({ title, venue, date, message }),
       );
     } catch (error) {
-      console.error("[quote-builder] Could not keep the event planner details in this session", error);
+      console.error(
+        "[quote-builder] Could not keep the event planner details in this session",
+        error,
+      );
       setPlannerHandoffNotice("error");
     }
   }, [date, message, plannerHandoffNotice, title, venue]);
@@ -216,7 +344,20 @@ function QuotePage() {
       phone,
       message,
     }),
-    [eventType, guests, tier, services, venueType, title, venue, date, clientName, email, phone, message],
+    [
+      eventType,
+      guests,
+      tier,
+      services,
+      venueType,
+      title,
+      venue,
+      date,
+      clientName,
+      email,
+      phone,
+      message,
+    ],
   );
   const proposalSheet = useMemo(() => buildProposalSheet(proposalInput), [proposalInput]);
 
@@ -227,13 +368,39 @@ function QuotePage() {
   }
 
   async function lockQuote() {
-    if (!user) {
-      nav({ to: "/login" });
-      return;
-    }
     if (!contactReady) {
       toast.error("Add the organiser’s name and at least one contact method to continue.");
       document.getElementById("client-details")?.scrollIntoView({ behavior: "smooth" });
+      return;
+    }
+    if (!user) {
+      try {
+        const draft: QuoteDraft = {
+          eventType,
+          guests,
+          tier,
+          venueType,
+          services,
+          venue,
+          date,
+          title,
+          clientName,
+          email,
+          phone,
+          message,
+        };
+        window.localStorage.setItem(
+          QUOTE_DRAFT_STORAGE_KEY,
+          JSON.stringify({ ...draft, expiresAt: Date.now() + QUOTE_DRAFT_TTL_MS }),
+        );
+      } catch (error) {
+        console.error("[quote-builder] Could not preserve the quote before sign-in", error);
+        toast.error(
+          "We couldn’t preserve this quote. Download the estimate summary before signing in.",
+        );
+        return;
+      }
+      nav({ to: "/login", search: { returnTo: "quote" } });
       return;
     }
 
@@ -255,6 +422,11 @@ function QuotePage() {
           message: message || undefined,
         },
       });
+      try {
+        window.localStorage.removeItem(QUOTE_DRAFT_STORAGE_KEY);
+      } catch (error) {
+        console.error("[quote-builder] Could not clear the submitted quote draft", error);
+      }
       if (search.plannerHandoff === "1") {
         try {
           window.sessionStorage.removeItem(EVENT_PLAN_HANDOFF_STORAGE_KEY);
@@ -371,6 +543,23 @@ function QuotePage() {
               : "The private details from your event plan could not be restored. Your event and production selections remain; please add the missing details below."}
           </p>
         ) : null}
+        {draftRestored ? (
+          <p
+            role="status"
+            className="mt-4 rounded-lg border border-blue-2/20 bg-blue/5 p-4 text-sm leading-relaxed text-paper/85"
+          >
+            Your quote and contact details were restored. Review them below before continuing.
+          </p>
+        ) : null}
+        {draftRestoreError ? (
+          <p
+            role="alert"
+            className="mt-4 rounded-lg border border-amber-200/20 bg-amber-200/[0.05] p-4 text-sm leading-relaxed text-amber-50/85"
+          >
+            A saved quote could not be restored. Your estimate is available; please check the
+            selections and contact details before continuing.
+          </p>
+        ) : null}
 
         <div className="sticky top-20 z-30 mt-4 flex items-center justify-between gap-3 rounded-lg border border-paper/10 bg-void/90 px-4 py-3 shadow-[0_12px_30px_rgb(0_0_0/0.2)] backdrop-blur-xl lg:hidden">
           <div>
@@ -389,10 +578,7 @@ function QuotePage() {
 
         <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(19rem,0.75fr)] lg:items-start lg:gap-10">
           <div className="min-w-0">
-            <section
-              id="event-brief"
-              className="scroll-mt-28 border-b border-paper/10 pb-9 pt-2"
-            >
+            <section id="event-brief" className="scroll-mt-28 border-b border-paper/10 pb-9 pt-2">
               <SectionHeading
                 number="01"
                 title="Start with the occasion"
@@ -400,11 +586,7 @@ function QuotePage() {
               />
 
               <div className="mt-7">
-                <div
-                  role="group"
-                  aria-label="Event category"
-                  className="grid grid-cols-3 gap-2"
-                >
+                <div role="group" aria-label="Event category" className="grid grid-cols-3 gap-2">
                   {EVENT_GROUPS.map((group) => {
                     const active = eventGroupLabel === group.label;
                     return (
@@ -528,10 +710,7 @@ function QuotePage() {
               </div>
             </section>
 
-            <section
-              id="production-plan"
-              className="scroll-mt-28 border-b border-paper/10 py-9"
-            >
+            <section id="production-plan" className="scroll-mt-28 border-b border-paper/10 py-9">
               <SectionHeading
                 number="02"
                 title="Shape the production"
@@ -684,13 +863,20 @@ function QuotePage() {
               <p className="max-w-md text-xs leading-relaxed text-mist">
                 Your estimate is a starting point. Final scope is confirmed after a production
                 conversation and venue review.
+                {!user
+                  ? " Your quote and contact details stay on this browser for up to 30 minutes while you sign in."
+                  : ""}
               </p>
               <Button
                 onClick={lockQuote}
                 disabled={busy || isPending}
                 className="h-12 w-full shrink-0 sm:w-auto"
               >
-                {isPending ? "Checking account…" : user ? "Continue to booking" : "Sign in to continue"}
+                {isPending
+                  ? "Checking account…"
+                  : user
+                    ? "Continue to booking"
+                    : "Sign in to continue"}
                 <ArrowRight className="size-4" aria-hidden />
               </Button>
             </div>
@@ -776,7 +962,10 @@ function QuotePage() {
                 <details className="group border-t border-paper/10 pt-4">
                   <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 text-xs font-medium text-paper marker:hidden">
                     View estimate breakdown · line items before VAT
-                    <ArrowDown className="size-4 text-mist transition-transform group-open:rotate-180" aria-hidden />
+                    <ArrowDown
+                      className="size-4 text-mist transition-transform group-open:rotate-180"
+                      aria-hidden
+                    />
                   </summary>
                   <ul className="mt-2 space-y-3">
                     {priceSummary.lines.map((line) => (
@@ -869,15 +1058,7 @@ function SectionHeading({
   );
 }
 
-function Field({
-  label,
-  hint,
-  children,
-}: {
-  label: string;
-  hint?: string;
-  children: ReactNode;
-}) {
+function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
   return (
     <div>
       <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">

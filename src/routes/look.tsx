@@ -1,19 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import {
-  ArrowRight,
-  ImagePlus,
-  RotateCcw,
-  Trash2,
-} from "lucide-react";
+import { ArrowRight, ImagePlus, RotateCcw, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState, type ChangeEvent, type MouseEvent } from "react";
 import { SiteNav } from "@/components/site/nav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  EVENT_TYPES,
-  GUEST_BANDS,
-  type EventType,
-} from "@/data/catalog";
+import { EVENT_TYPES, GUEST_BANDS, type EventType } from "@/data/catalog";
 import {
   DEFAULT_EVENT_PLAN,
   EVENT_PLAN_FOCAL_POINTS,
@@ -49,7 +40,9 @@ function EventPlannerPage() {
   const navigate = useNavigate();
   const [plan, setPlan] = useState<EventPlanDraft>(DEFAULT_EVENT_PLAN);
   const [draftLoaded, setDraftLoaded] = useState(false);
-  const [saveState, setSaveState] = useState<"loading" | "saving" | "saved" | "unavailable">("loading");
+  const [saveState, setSaveState] = useState<"loading" | "saving" | "saved" | "unavailable">(
+    "loading",
+  );
   const [draftMessage, setDraftMessage] = useState<string | null>(null);
   const [uploadUrl, setUploadUrl] = useState<string | null>(null);
   const [uploadName, setUploadName] = useState<string | null>(null);
@@ -62,7 +55,8 @@ function EventPlannerPage() {
   const storageUnavailableRef = useRef(false);
 
   const selectedEvent = EVENT_TYPES.find((event) => event.key === plan.eventType) ?? EVENT_TYPES[1];
-  const selectedMood = EVENT_PLAN_MOODS.find((mood) => mood.id === plan.moodId) ?? EVENT_PLAN_MOODS[0];
+  const selectedMood =
+    EVENT_PLAN_MOODS.find((mood) => mood.id === plan.moodId) ?? EVENT_PLAN_MOODS[0];
   const eventDateInvalid = Boolean(plan.eventDate && plan.eventDate < localDateValue(new Date()));
   const canContinue = !eventDateInvalid;
 
@@ -170,7 +164,8 @@ function EventPlannerPage() {
   }
 
   function startFreshPlan() {
-    if (!window.confirm("Start a fresh event plan? This clears the saved draft in this browser.")) return;
+    if (!window.confirm("Start a fresh event plan? This clears the saved draft in this browser."))
+      return;
     setPlan(DEFAULT_EVENT_PLAN);
     removePhoto();
     setFocalPointError(null);
@@ -187,23 +182,30 @@ function EventPlannerPage() {
 
   function continueToQuote() {
     if (!canContinue) {
-      setHandoffError("Choose today or a future date, or clear the event date if it is not confirmed.");
+      setHandoffError(
+        "Choose today or a future date, or clear the event date if it is not confirmed.",
+      );
       return;
     }
     const handoff = buildEventPlanHandoff(plan);
     try {
-      window.sessionStorage.setItem(EVENT_PLAN_HANDOFF_STORAGE_KEY, JSON.stringify(handoff.details));
+      window.sessionStorage.setItem(
+        EVENT_PLAN_HANDOFF_STORAGE_KEY,
+        JSON.stringify(handoff.details),
+      );
     } catch (error) {
       console.error("[event-planner] Could not prepare the quote handoff", error);
-      setHandoffError("This browser could not carry your event details into the quote. Please try again or copy your brief into the quote form.");
+      setHandoffError(
+        "This browser could not carry your event details into the quote. Please try again or copy your brief into the quote form.",
+      );
       return;
     }
     navigate({ to: "/quote", search: handoff.search });
   }
 
-  const selectedFocalPoint = EVENT_PLAN_FOCAL_POINTS.find(
-    (point) => point.id === selectedPointKind,
-  ) ?? EVENT_PLAN_FOCAL_POINTS[0];
+  const selectedFocalPoint =
+    EVENT_PLAN_FOCAL_POINTS.find((point) => point.id === selectedPointKind) ??
+    EVENT_PLAN_FOCAL_POINTS[0];
 
   return (
     <div className="min-h-dvh">
@@ -212,10 +214,13 @@ function EventPlannerPage() {
         <div className="flex flex-wrap items-start justify-between gap-5 border-b border-paper/10 pb-8">
           <div className="max-w-3xl">
             <p className="eyebrow">Plan Your Event · Randy Production</p>
-            <h1 className="mt-4 max-w-[13ch] text-5xl leading-[0.94] md:text-7xl">Shape the room before the quote.</h1>
+            <h1 className="mt-4 max-w-[13ch] text-5xl leading-[0.94] md:text-7xl">
+              Shape the room before the quote.
+            </h1>
             <p className="section-lead mt-5 max-w-2xl">
               Capture the event’s creative direction and mark the moments that matter in the room.
-              When you are ready, carry the brief into Get a Quote to choose production and see pricing.
+              When you are ready, carry the brief into Get a Quote to choose production and see
+              pricing.
             </p>
           </div>
           <div className="min-w-[220px] rounded-lg border border-paper/10 bg-ink/60 p-4">
@@ -227,11 +232,13 @@ function EventPlannerPage() {
                   ? "Browser storage is unavailable."
                   : "Saved in this browser"}
             </p>
-            {draftMessage ? <p className="mt-2 text-xs leading-relaxed text-mist">{draftMessage}</p> : null}
+            {draftMessage ? (
+              <p className="mt-2 text-xs leading-relaxed text-mist">{draftMessage}</p>
+            ) : null}
             <button
               type="button"
               onClick={startFreshPlan}
-              className="mt-3 inline-flex min-h-9 items-center gap-2 text-xs text-mist underline decoration-paper/20 underline-offset-4 hover:text-paper"
+              className="mt-3 inline-flex min-h-11 items-center gap-2 text-xs text-mist underline decoration-paper/20 underline-offset-4 hover:text-paper"
             >
               <RotateCcw className="size-3.5" aria-hidden />
               Start a fresh plan
@@ -239,7 +246,10 @@ function EventPlannerPage() {
           </div>
         </div>
 
-        <nav aria-label="Planner sections" className="mt-5 grid grid-cols-3 gap-2 text-[10px] uppercase tracking-[0.14em] text-mist sm:max-w-xl">
+        <nav
+          aria-label="Planner sections"
+          className="mt-5 grid grid-cols-3 gap-2 text-[10px] uppercase tracking-[0.14em] text-mist sm:max-w-xl"
+        >
           <PlannerStep number="01" label="Event context" href="#event-details" />
           <PlannerStep number="02" label="Room concept" href="#room-concept" />
           <PlannerStep number="03" label="Creative brief" href="#event-intention" />
@@ -303,7 +313,9 @@ function EventPlannerPage() {
                     className="h-12"
                   />
                   {eventDateInvalid ? (
-                    <p className="mt-2 text-xs text-rose-200">Choose a future date or leave the date blank.</p>
+                    <p className="mt-2 text-xs text-rose-200">
+                      Choose a future date or leave the date blank.
+                    </p>
                   ) : null}
                 </PlannerField>
                 <PlannerField label="Venue or area" hint="Optional if not booked yet">
@@ -330,12 +342,16 @@ function EventPlannerPage() {
                 <button
                   type="button"
                   onClick={placeFocalPoint}
-                  aria-label={`Add ${selectedFocalPoint.label} to the room concept. Click or press Enter to place it.`}
+                  aria-label={`Add ${selectedFocalPoint.label} to the room concept. Tap or click, or press Enter, to place it.`}
                   className="group relative block aspect-[16/10] w-full cursor-crosshair overflow-hidden bg-[#10141a] text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-blue-2"
                 >
                   <img
                     src={uploadUrl ?? INSPIRATION_IMAGE}
-                    alt={uploadName ? `Your venue photo: ${uploadName}` : "Randy Production room styling inspiration"}
+                    alt={
+                      uploadName
+                        ? `Your venue photo: ${uploadName}`
+                        : "Randy Production room styling inspiration"
+                    }
                     className="absolute inset-0 size-full object-cover"
                   />
                   <span
@@ -346,7 +362,9 @@ function EventPlannerPage() {
                     }}
                   />
                   {plan.focalPoints.map((point, index) => {
-                    const label = EVENT_PLAN_FOCAL_POINTS.find((item) => item.id === point.kind)?.label ?? "Focus";
+                    const label =
+                      EVENT_PLAN_FOCAL_POINTS.find((item) => item.id === point.kind)?.label ??
+                      "Focus";
                     return (
                       <span
                         key={`${point.kind}-${index}`}
@@ -373,7 +391,7 @@ function EventPlannerPage() {
                       </span>
                     </span>
                     <span className="rounded-full border border-white/30 bg-void/55 px-3 py-2 text-[10px] text-paper">
-                      Click to place {selectedFocalPoint.label.toLowerCase()}
+                      Tap or click to place {selectedFocalPoint.label.toLowerCase()}
                     </span>
                   </span>
                 </button>
@@ -383,7 +401,8 @@ function EventPlannerPage() {
                     <div>
                       <p className="text-xs font-medium text-paper">Venue photo</p>
                       <p className="mt-1 text-xs leading-relaxed text-mist">
-                        Upload a photo to preview the direction. Your image stays on this device and is not attached to the quote.
+                        Upload a photo to preview the direction. It is not saved with this draft or
+                        attached to the quote.
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -395,7 +414,11 @@ function EventPlannerPage() {
                         className="sr-only"
                         aria-label="Upload a venue photo"
                       />
-                      <Button variant="line" onClick={() => fileInputRef.current?.click()} className="min-h-11">
+                      <Button
+                        variant="line"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="min-h-11"
+                      >
                         <ImagePlus className="size-4" aria-hidden />
                         {uploadName ? "Change photo" : "Upload a photo"}
                       </Button>
@@ -407,8 +430,14 @@ function EventPlannerPage() {
                       ) : null}
                     </div>
                   </div>
-                  {uploadName ? <p className="break-all text-xs text-mist">Selected: {uploadName}</p> : null}
-                  {uploadError ? <p role="alert" className="text-xs text-rose-200">{uploadError}</p> : null}
+                  {uploadName ? (
+                    <p className="break-all text-xs text-mist">Selected: {uploadName}</p>
+                  ) : null}
+                  {uploadError ? (
+                    <p role="alert" className="text-xs text-rose-200">
+                      {uploadError}
+                    </p>
+                  ) : null}
 
                   <div>
                     <p className="text-xs font-medium text-paper">Overall feeling</p>
@@ -437,7 +466,9 @@ function EventPlannerPage() {
                         min={20}
                         max={80}
                         value={plan.overlayStrength}
-                        onChange={(event) => updatePlan("overlayStrength", Number(event.target.value))}
+                        onChange={(event) =>
+                          updatePlan("overlayStrength", Number(event.target.value))
+                        }
                         className="mt-2 block w-full accent-blue"
                         aria-label="Colour treatment strength"
                       />
@@ -446,7 +477,9 @@ function EventPlannerPage() {
 
                   <div className="border-t border-paper/10 pt-4">
                     <p className="text-xs font-medium text-paper">Room focal points</p>
-                    <p className="mt-1 text-xs text-mist">Choose a marker, then click where it belongs on the image.</p>
+                    <p className="mt-1 text-xs text-mist">
+                      Choose a marker, then click where it belongs on the image.
+                    </p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       {EVENT_PLAN_FOCAL_POINTS.map((point) => (
                         <button
@@ -468,13 +501,26 @@ function EventPlannerPage() {
                     {plan.focalPoints.length ? (
                       <ul className="mt-3 space-y-2">
                         {plan.focalPoints.map((point, index) => {
-                          const label = EVENT_PLAN_FOCAL_POINTS.find((item) => item.id === point.kind)?.label ?? "Focus";
+                          const label =
+                            EVENT_PLAN_FOCAL_POINTS.find((item) => item.id === point.kind)?.label ??
+                            "Focus";
                           return (
-                            <li key={`${point.kind}-${index}`} className="flex items-center justify-between gap-3 text-xs text-paper">
-                              <span>{index + 1}. {label} · {Math.round(point.x)}% across, {Math.round(point.y)}% down</span>
+                            <li
+                              key={`${point.kind}-${index}`}
+                              className="flex items-center justify-between gap-3 text-xs text-paper"
+                            >
+                              <span>
+                                {index + 1}. {label} · {Math.round(point.x)}% across,{" "}
+                                {Math.round(point.y)}% down
+                              </span>
                               <button
                                 type="button"
-                                onClick={() => updatePlan("focalPoints", plan.focalPoints.filter((_, itemIndex) => itemIndex !== index))}
+                                onClick={() =>
+                                  updatePlan(
+                                    "focalPoints",
+                                    plan.focalPoints.filter((_, itemIndex) => itemIndex !== index),
+                                  )
+                                }
                                 aria-label={`Remove ${label} focal point ${index + 1}`}
                                 className="inline-flex size-9 shrink-0 items-center justify-center rounded-md text-mist hover:bg-paper/5 hover:text-paper"
                               >
@@ -485,12 +531,16 @@ function EventPlannerPage() {
                         })}
                       </ul>
                     ) : null}
-                    {focalPointError ? <p role="status" className="mt-2 text-xs text-amber-100">{focalPointError}</p> : null}
+                    {focalPointError ? (
+                      <p role="status" className="mt-2 text-xs text-amber-100">
+                        {focalPointError}
+                      </p>
+                    ) : null}
                     <button
                       type="button"
                       disabled={plan.focalPoints.length === 0}
                       onClick={() => updatePlan("focalPoints", [])}
-                      className="mt-2 min-h-9 text-xs text-mist underline decoration-paper/20 underline-offset-4 hover:text-paper disabled:cursor-not-allowed disabled:opacity-40"
+                      className="mt-2 min-h-11 text-xs text-mist underline decoration-paper/20 underline-offset-4 hover:text-paper disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       Clear all focal points
                     </button>
@@ -540,14 +590,17 @@ function EventPlannerPage() {
             <div className="overflow-hidden rounded-xl border border-paper/12 bg-ink/80 shadow-[0_24px_70px_rgb(0_0_0/0.28)]">
               <div className="border-b border-paper/10 p-5 sm:p-6">
                 <div className="flex items-center justify-between gap-3">
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-blue-2">Your creative brief</p>
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-blue-2">
+                    Your creative brief
+                  </p>
                   <ImagePlus className="size-4 text-blue-2" aria-hidden />
                 </div>
                 <p className="mt-4 font-serif text-2xl tracking-[-0.04em] text-paper">
                   {plan.title || selectedEvent.label}
                 </p>
                 <p className="mt-2 text-xs leading-relaxed text-mist">
-                  A visual direction to discuss with the production team. No package is selected and no price is calculated here.
+                  A visual direction to discuss with the production team. No package is selected and
+                  no price is calculated here.
                 </p>
               </div>
 
@@ -555,9 +608,14 @@ function EventPlannerPage() {
                 <section>
                   <div className="mt-3 space-y-3">
                     <SummaryRow label="Occasion" value={selectedEvent.label} />
-                    <SummaryRow label="Audience" value={`${GUEST_BANDS.find((band) => band.key === plan.guests)?.label ?? plan.guests} guests`} />
+                    <SummaryRow
+                      label="Audience"
+                      value={`${GUEST_BANDS.find((band) => band.key === plan.guests)?.label ?? plan.guests} guests`}
+                    />
                     {plan.eventDate ? <SummaryRow label="Date" value={plan.eventDate} /> : null}
-                    {plan.venueName ? <SummaryRow label="Venue / area" value={plan.venueName} /> : null}
+                    {plan.venueName ? (
+                      <SummaryRow label="Venue / area" value={plan.venueName} />
+                    ) : null}
                     <SummaryRow label="Visual direction" value={selectedMood.label} />
                     <SummaryRow label="Room focal points" value={`${plan.focalPoints.length}`} />
                   </div>
@@ -566,12 +624,16 @@ function EventPlannerPage() {
                 <div className="rounded-lg border border-blue-2/20 bg-blue/5 p-4">
                   <p className="text-xs font-medium text-paper">Ready to price the production?</p>
                   <p className="mt-2 text-xs leading-relaxed text-mist">
-                    Get a Quote is where you choose package, services and production level, review the estimate,
-                    and send your request.
+                    Get a Quote is where you choose package, services and production level, review
+                    the estimate, and send your request.
                   </p>
                 </div>
 
-                {handoffError ? <p role="alert" className="text-xs leading-relaxed text-rose-200">{handoffError}</p> : null}
+                {handoffError ? (
+                  <p role="alert" className="text-xs leading-relaxed text-rose-200">
+                    {handoffError}
+                  </p>
+                ) : null}
                 <Button
                   variant="primary"
                   onClick={continueToQuote}
@@ -582,7 +644,8 @@ function EventPlannerPage() {
                   <ArrowRight className="size-4" aria-hidden />
                 </Button>
                 <p className="text-center text-[10px] leading-relaxed text-mist">
-                  Event context and notes carry over. Your uploaded photo stays on this device.
+                  Event context and notes carry over. Uploaded photos are preview-only and need to
+                  be added again if you reopen the planner.
                 </p>
               </div>
             </div>

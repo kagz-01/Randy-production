@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, Check, Compass, Info } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { SiteNav } from "@/components/site/nav";
 import { GlassCard, Reveal } from "@/components/site/fx";
 import { Button } from "@/components/ui/button";
@@ -23,13 +23,26 @@ import { getKnowledgeForMatch, type KnowledgeAssistantResult } from "@/lib/serve
 export const Route = createFileRoute("/match")({ component: MatchPage });
 
 const FOCUS_OPTIONS: { key: PackageFocus; label: string; detail: string }[] = [
-  { key: "full-production", label: "A coordinated event", detail: "Stage, sound and room, managed together" },
-  { key: "room-design", label: "The room and its look", detail: "Décor, styling and guest experience" },
+  {
+    key: "full-production",
+    label: "A coordinated event",
+    detail: "Stage, sound and room, managed together",
+  },
+  {
+    key: "room-design",
+    label: "The room and its look",
+    detail: "Décor, styling and guest experience",
+  },
   { key: "clear-sound", label: "Sound that works", detail: "A clean, reliable audio setup" },
-  { key: "brand-story", label: "Brand and content", detail: "A launch or story people can see and share" },
+  {
+    key: "brand-story",
+    label: "Brand and content",
+    detail: "A launch or story people can see and share",
+  },
 ];
 
 function MatchPage() {
+  const knowledgeRequestId = useRef(0);
   const [eventType, setEventType] = useState<EventType>("wedding");
   const [guests, setGuests] = useState(150);
   const [venueType, setVenueType] = useState<VenueType>("hall");
@@ -43,27 +56,37 @@ function MatchPage() {
   const event = EVENT_TYPES.find((item) => item.key === eventType) ?? EVENT_TYPES[0];
   const guestBand = GUEST_BANDS.find((band) => band.key === guests)?.label ?? String(guests);
   const packageDetails = result
-    ? PACKAGES.find((item) => item.id === result.packageId) ?? null
+    ? (PACKAGES.find((item) => item.id === result.packageId) ?? null)
     : null;
 
   function clearRecommendation() {
+    knowledgeRequestId.current += 1;
     setResult(null);
     setKnowledge(null);
     setKnowledgeError(null);
+    setKnowledgeLoading(false);
   }
 
   async function updateRecommendation() {
+    const requestId = ++knowledgeRequestId.current;
     setResult(recommendPackage({ eventType, guests, venueType, focus, weddingWeekend }));
     setKnowledge(null);
     setKnowledgeError(null);
     setKnowledgeLoading(true);
     try {
-      setKnowledge(await getKnowledgeForMatch({ data: { eventType, guests, venueType, focus, weddingWeekend } }));
+      const nextKnowledge = await getKnowledgeForMatch({
+        data: { eventType, guests, venueType, focus, weddingWeekend },
+      });
+      if (requestId === knowledgeRequestId.current) setKnowledge(nextKnowledge);
     } catch (error) {
       console.error("[package-match] Could not load sourced planning knowledge", error);
-      setKnowledgeError("The sourced planning notes could not be loaded. Your package recommendation is still available.");
+      if (requestId === knowledgeRequestId.current) {
+        setKnowledgeError(
+          "The sourced planning notes could not be loaded. Your package recommendation is still available.",
+        );
+      }
     } finally {
-      setKnowledgeLoading(false);
+      if (requestId === knowledgeRequestId.current) setKnowledgeLoading(false);
     }
   }
 
@@ -78,14 +101,17 @@ function MatchPage() {
           </h1>
           <p className="section-lead mt-4 max-w-2xl">
             Not sure which production package fits? Tell us the event size and your main priority.
-            We’ll recommend a package and explain why. Pricing and quote requests happen in Get a Quote.
+            We’ll recommend a package and explain why. Pricing and quote requests happen in Get a
+            Quote.
           </p>
         </Reveal>
 
         <div className="mt-9 grid items-start gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(20rem,0.95fr)]">
           <Reveal>
             <GlassCard strong={false} className="p-5 sm:p-7">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-blue-2">A few quick details</p>
+              <p className="text-[10px] uppercase tracking-[0.2em] text-blue-2">
+                A few quick details
+              </p>
 
               <label htmlFor="match-event" className="mt-6 block text-sm font-medium text-paper">
                 What are you planning?
@@ -110,7 +136,9 @@ function MatchPage() {
 
               <fieldset className="mt-6">
                 <legend className="text-sm font-medium text-paper">About how many guests?</legend>
-                <p className="mt-1 text-xs text-mist">Choose the closest size. We can refine it later.</p>
+                <p className="mt-1 text-xs text-mist">
+                  Choose the closest size. We can refine it later.
+                </p>
                 <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
                   {GUEST_BANDS.map((band) => (
                     <button
@@ -156,7 +184,9 @@ function MatchPage() {
               </p>
 
               <fieldset className="mt-6">
-                <legend className="text-sm font-medium text-paper">What matters most to you?</legend>
+                <legend className="text-sm font-medium text-paper">
+                  What matters most to you?
+                </legend>
                 <div className="mt-3 grid gap-2 sm:grid-cols-2">
                   {FOCUS_OPTIONS.map((option) => (
                     <button
@@ -175,9 +205,13 @@ function MatchPage() {
                     >
                       <span className="flex items-center justify-between gap-2 text-sm font-medium text-paper">
                         {option.label}
-                        {focus === option.key ? <Check className="size-4 text-blue-2" aria-hidden /> : null}
+                        {focus === option.key ? (
+                          <Check className="size-4 text-blue-2" aria-hidden />
+                        ) : null}
                       </span>
-                      <span className="mt-1 block text-xs leading-relaxed text-mist">{option.detail}</span>
+                      <span className="mt-1 block text-xs leading-relaxed text-mist">
+                        {option.detail}
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -203,7 +237,11 @@ function MatchPage() {
                 </label>
               ) : null}
 
-              <Button className="mt-6 min-h-12 w-full" onClick={() => void updateRecommendation()} disabled={knowledgeLoading}>
+              <Button
+                className="mt-6 min-h-12 w-full"
+                onClick={() => void updateRecommendation()}
+                disabled={knowledgeLoading}
+              >
                 {knowledgeLoading ? "Finding cited guidance…" : "Show my recommendation"}
                 <Compass className="size-4" aria-hidden />
               </Button>
@@ -214,8 +252,12 @@ function MatchPage() {
             <GlassCard strong className="p-5 sm:p-7">
               {result && packageDetails ? (
                 <>
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-blue-2">Recommended starting point</p>
-                  <h2 className="mt-3 font-serif text-3xl leading-tight text-paper">{packageDetails.name}</h2>
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-blue-2">
+                    Recommended starting point
+                  </p>
+                  <h2 className="mt-3 font-serif text-3xl leading-tight text-paper">
+                    {packageDetails.name}
+                  </h2>
                   <p className="mt-2 text-sm leading-relaxed text-mist">{packageDetails.blurb}</p>
 
                   <div className="mt-4 border-y border-paper/10 py-4">
@@ -238,7 +280,9 @@ function MatchPage() {
                   </div>
 
                   <div className="mt-5">
-                    <h3 className="text-sm font-medium text-paper">Included in this starting scope</h3>
+                    <h3 className="text-sm font-medium text-paper">
+                      Included in this starting scope
+                    </h3>
                     <ul className="mt-2 flex flex-wrap gap-2">
                       {result.services.map((service) => (
                         <li
@@ -257,31 +301,47 @@ function MatchPage() {
                   </div>
 
                   {knowledgeLoading ? (
-                    <p className="mt-5 text-xs text-mist" role="status">Checking approved planning references…</p>
+                    <p className="mt-5 text-xs text-mist" role="status">
+                      Checking approved planning references…
+                    </p>
                   ) : null}
                   {knowledgeError ? (
-                    <p className="mt-5 rounded-md border border-amber-300/20 bg-amber-300/5 p-3 text-xs leading-relaxed text-amber-100" role="status">
+                    <p
+                      className="mt-5 rounded-md border border-amber-300/20 bg-amber-300/5 p-3 text-xs leading-relaxed text-amber-100"
+                      role="status"
+                    >
                       {knowledgeError}
                     </p>
                   ) : null}
                   {knowledge ? (
-                    <section className="mt-5 rounded-md border border-blue/20 bg-blue/5 p-4" aria-label="Sourced planning guidance">
-                      <p className="text-[10px] uppercase tracking-[0.16em] text-blue-2">Evidence from the knowledge base</p>
+                    <section
+                      className="mt-5 rounded-md border border-blue/20 bg-blue/5 p-4"
+                      aria-label="Sourced planning guidance"
+                    >
+                      <p className="text-[10px] uppercase tracking-[0.16em] text-blue-2">
+                        Evidence from the knowledge base
+                      </p>
                       {knowledge.insight ? (
                         <div className="mt-3">
                           <h3 className="text-sm font-medium text-paper">AI planning insight</h3>
-                          <p className="mt-1 text-sm leading-relaxed text-mist">{knowledge.insight}</p>
+                          <p className="mt-1 text-sm leading-relaxed text-mist">
+                            {knowledge.insight}
+                          </p>
                         </div>
                       ) : null}
                       {knowledge.aiMessage ? (
-                        <p className="mt-2 text-xs leading-relaxed text-mist">{knowledge.aiMessage}</p>
+                        <p className="mt-2 text-xs leading-relaxed text-mist">
+                          {knowledge.aiMessage}
+                        </p>
                       ) : null}
                       {knowledge.entries.length > 0 ? (
                         <ul className="mt-4 space-y-3 border-t border-paper/10 pt-3">
                           {knowledge.entries.map((entry) => (
                             <li key={entry.id}>
                               <h3 className="text-sm font-medium text-paper">{entry.title}</h3>
-                              <p className="mt-1 text-xs leading-relaxed text-mist">{entry.content}</p>
+                              <p className="mt-1 text-xs leading-relaxed text-mist">
+                                {entry.content}
+                              </p>
                               <div className="mt-1 flex flex-wrap gap-x-2 text-[10px] text-mist">
                                 <span>{entry.source_name}</span>
                                 <span>·</span>
@@ -304,7 +364,8 @@ function MatchPage() {
                         </ul>
                       ) : null}
                       <p className="mt-3 border-t border-paper/10 pt-3 text-[10px] leading-relaxed text-mist">
-                        Guidance is contextual, not a legal or venue-compliance determination. Verify current requirements with the venue and relevant local authorities.
+                        Guidance is contextual, not a legal or venue-compliance determination.
+                        Verify current requirements with the venue and relevant local authorities.
                       </p>
                     </section>
                   ) : null}
@@ -331,17 +392,19 @@ function MatchPage() {
                 </>
               ) : (
                 <>
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-mist">How the guide works</p>
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-mist">
+                    How the guide works
+                  </p>
                   <h2 className="mt-3 font-serif text-3xl leading-tight text-paper">
                     Start with your production needs.
                   </h2>
                   <p className="mt-3 text-sm leading-relaxed text-mist">
-                    The guide uses your event format, guest count, venue and main priority to choose a
-                    starting package. It does not price or submit anything.
+                    The guide uses your event format, guest count, venue and main priority to choose
+                    a starting package. It does not price or submit anything.
                   </p>
                   <p className="mt-6 border-t border-paper/10 pt-5 text-xs leading-relaxed text-mist">
-                    When you are ready, continue to Get a Quote to review the scope, see the estimate and
-                    send your brief to the production team.
+                    When you are ready, continue to Get a Quote to review the scope, see the
+                    estimate and send your brief to the production team.
                   </p>
                 </>
               )}

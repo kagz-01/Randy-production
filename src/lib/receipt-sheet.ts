@@ -8,7 +8,7 @@ export type ReceiptSheetInput = {
   jobTitle?: string;
   venue?: string;
   eventDate?: string;
-  projectId?: string;
+  paymentReference?: string;
 };
 
 function formatMoney(value: number): string {
@@ -24,7 +24,7 @@ function escapeHtml(value: string): string {
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
-    .replace(/\"/g, "&quot;")
+    .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
 }
 
@@ -162,7 +162,7 @@ export function buildReceiptSheet(input: ReceiptSheetInput): string {
         <div><label>Project</label><p>${escapeHtml(input.jobTitle || "Production booking")}</p></div>
         <div><label>Venue</label><p>${escapeHtml(input.venue || "Venue to be confirmed")}</p></div>
         <div><label>Date</label><p>${escapeHtml(input.eventDate || "To be confirmed")}</p></div>
-        <div><label>Ref</label><p>${escapeHtml(input.projectId || input.receiptNo)}</p></div>
+        <div><label>Payment ref</label><p>${escapeHtml(input.paymentReference || input.receiptNo)}</p></div>
       </section>
 
       <section class="notes">

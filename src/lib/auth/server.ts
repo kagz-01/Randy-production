@@ -28,7 +28,7 @@
  * a verified id via `@/lib/auth/middleware`.
  */
 import { betterAuth } from "better-auth";
-import { bearer, genericOAuth } from "better-auth/plugins";
+import { bearer, genericOAuth, magicLink } from "better-auth/plugins";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { getCookie } from "@tanstack/react-start/server";
 import { randomBytes } from "node:crypto";
@@ -126,6 +126,52 @@ const trustedOrigins: string[] = explicitBaseURL
     ];
 
 const databaseUrl = env("DATABASE_URL");
+const resendApiKey = env("RESEND_API_KEY");
+const resendFromEmail = env("RESEND_FROM_EMAIL");
+
+async function sendMagicLinkEmail({ email, url }: { email: string; url: string }) {
+  if (!resendApiKey || !resendFromEmail) {
+    console.error("[auth] Magic-link email is unavailable: Resend is not configured.");
+    throw new Error("Email sign-in is temporarily unavailable. Please use Google sign-in.");
+  }
+  const safeUrl = url.replace(/[&<>"']/g, (character) => {
+    const entities: Record<string, string> = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    };
+    return entities[character] ?? character;
+  });
+
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${resendApiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: resendFromEmail,
+      to: [email],
+      subject: "Your Randy Production sign-in link",
+      text: [
+        "Use this secure link to sign in to Randy Production:",
+        "",
+        url,
+        "",
+        "This link expires in 10 minutes and can only be used once.",
+        "If you did not request it, you can ignore this email.",
+      ].join("\n"),
+      html: `<div style="font-family:Arial,sans-serif;color:#211f1a;line-height:1.6"><p>Use this secure link to sign in to Randy Production:</p><p><a href="${safeUrl}" style="display:inline-block;padding:12px 20px;background:#1c1b19;color:#f3f1ea;border-radius:10px;text-decoration:none">Sign in to Randy Production</a></p><p>This link expires in 10 minutes and can only be used once.</p><p>If you did not request it, you can ignore this email.</p></div>`,
+    }),
+  });
+
+  if (!response.ok) {
+    console.error(`[auth] Resend rejected magic-link email (HTTP ${response.status}).`);
+    throw new Error("We couldn't send the sign-in email. Please try again later.");
+  }
+}
 
 // Static broker OAuth endpoints are used only by the live-preview popup.
 const issuerBase = grokIssuer.replace(/\/+$/, "");
@@ -235,6 +281,13 @@ export const auth = betterAuth({
     // Keep the brokered provider for the dynamic-host live preview. Production
     // sign-in uses Google's native provider configured above.
     ...(grokOAuthPlugin ? [grokOAuthPlugin] : []),
+
+    magicLink({
+      expiresIn: 10 * 60,
+      storeToken: "hashed",
+      rateLimit: { window: 60, max: 3 },
+      sendMagicLink: sendMagicLinkEmail,
+    }),
 
     // Accept `Authorization: Bearer <session-token>` as an alternative to the
     // cookie. Needed for the LIVE PREVIEW: the app runs in an embedded iframe

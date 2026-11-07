@@ -130,12 +130,15 @@ describe("priceQuote", () => {
       jobTitle: "Garden Wedding",
       venue: "Nairobi Arboretum",
       eventDate: "2026-12-12",
+      paymentReference: "M-PESA-ABC123",
     });
 
     assert.match(sheet, /<html/i);
     assert.match(sheet, /RP-20261007-AB12CD34/);
     assert.match(sheet, /Njeri.*Kairo/);
     assert.match(sheet, /Payment proof/i);
+    assert.match(sheet, /Payment ref/);
+    assert.match(sheet, /M-PESA-ABC123/);
     assert.match(sheet, /Ksh\s*245,000/i);
   });
 });

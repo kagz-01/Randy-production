@@ -20,13 +20,20 @@ function ReceiptsPage() {
   const [paymentReports, setPaymentReports] = useState<OfflinePaymentReportRow[]>([]);
   const [authorized, setAuthorized] = useState<boolean | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [accessRetry, setAccessRetry] = useState(0);
   const [reviewingReportId, setReviewingReportId] = useState<string | null>(null);
 
   async function refresh() {
-    const [receipts, reports] = await Promise.all([listReceipts(), listOfflinePaymentReports()]);
-    setRows(receipts);
-    setPaymentReports(reports);
+    setLoading(true);
     setLoadError(null);
+    try {
+      const [receipts, reports] = await Promise.all([listReceipts(), listOfflinePaymentReports()]);
+      setRows(receipts);
+      setPaymentReports(reports);
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function reviewReport(
@@ -65,6 +72,7 @@ function ReceiptsPage() {
         if (!active) return;
         if (profile.role !== "admin") {
           setAuthorized(false);
+          setLoading(false);
           return;
         }
         setAuthorized(true);
@@ -81,12 +89,13 @@ function ReceiptsPage() {
         if (active) {
           setAuthorized(false);
           setLoadError("Admin access could not be verified.");
+          setLoading(false);
         }
       });
     return () => {
       active = false;
     };
-  }, []);
+  }, [accessRetry]);
 
   const summary = useMemo(
     () =>
@@ -110,10 +119,45 @@ function ReceiptsPage() {
         <h1 className="font-serif text-4xl text-paper">Admin access required</h1>
         <p className="mt-3 text-sm text-mist">The finance ledger is restricted to Studio Admins.</p>
         {loadError ? (
-          <p role="alert" className="mt-4 text-sm text-red-300">
-            {loadError}
-          </p>
+          <>
+            <p role="alert" className="mt-4 text-sm text-red-300">{loadError}</p>
+            <Button
+              type="button"
+              variant="line"
+              className="mt-4 min-h-11"
+              onClick={() => {
+                setAuthorized(null);
+                setLoading(true);
+                setLoadError(null);
+                setAccessRetry((count) => count + 1);
+              }}
+            >
+              Retry access check
+            </Button>
+          </>
         ) : null}
+      </main>
+    );
+  }
+
+  if (loading && rows.length === 0 && paymentReports.length === 0) {
+    return <main className="shell py-16 text-sm text-mist" role="status">Loading finance ledger…</main>;
+  }
+  if (loadError && rows.length === 0 && paymentReports.length === 0) {
+    return (
+      <main className="shell py-16">
+        <p role="alert" className="max-w-xl text-sm text-red-300">{loadError}</p>
+        <Button
+          type="button"
+          variant="line"
+          className="mt-4 min-h-11"
+          onClick={() => void refresh().catch((error) => {
+            console.error("[studio-receipts] Could not reload ledger", error);
+            setLoadError("The finance ledger could not be loaded. Try again.");
+          })}
+        >
+          Try again
+        </Button>
       </main>
     );
   }
@@ -140,6 +184,18 @@ function ReceiptsPage() {
           <p className="font-serif text-3xl">{summary.count}</p>
           <p className="text-sm text-mist">{formatMoney(summary.total)}</p>
         </div>
+        <Button
+          type="button"
+          variant="line"
+          className="min-h-11"
+          disabled={loading}
+          onClick={() => void refresh().catch((error) => {
+            console.error("[studio-receipts] Could not refresh ledger", error);
+            setLoadError("The finance ledger could not be refreshed.");
+          })}
+        >
+          {loading ? "Refreshing…" : "Refresh ledger"}
+        </Button>
       </div>
 
       <section className="mt-8 grid gap-4 md:grid-cols-3">
@@ -203,7 +259,7 @@ function ReceiptsPage() {
           </div>
         </div>
         <div className="mt-4 grid gap-3">
-          {rows.map((receipt) => (
+          {rows.length ? rows.map((receipt) => (
             <article key={receipt.id} className="glass rounded-lg p-5">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
@@ -266,7 +322,11 @@ function ReceiptsPage() {
                 </Link>
               </div>
             </article>
-          ))}
+          )) : (
+            <p className="rounded-lg border border-paper/10 bg-ink/50 p-5 text-sm text-mist">
+              No receipts have been issued yet.
+            </p>
+          )}
         </div>
       </section>
     </main>

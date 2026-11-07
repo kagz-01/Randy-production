@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { SiteNav } from "@/components/site/nav";
 import { NotFoundPage } from "@/lib/not-found-page";
@@ -25,36 +25,68 @@ function CaseNotFound() {
 function CasePage() {
   const { work } = Route.useLoaderData();
   const stills = work.stills;
-  const galleryImages = useMemo(() => [work.image, ...stills].filter(Boolean), [stills, work.image]);
-  const serviceLabel = SERVICES.find((service) => service.key === work.service)?.label ?? work.service;
-  const storyTitle = work.storyTitle ?? `${work.title} is shaped by craft, atmosphere and intention.`;
+  const galleryImages = useMemo(
+    () => [work.image, ...stills].filter(Boolean),
+    [stills, work.image],
+  );
+  const serviceLabel =
+    SERVICES.find((service) => service.key === work.service)?.label ?? work.service;
+  const storyTitle =
+    work.storyTitle ?? `${work.title} is shaped by craft, atmosphere and intention.`;
   const storyBody = work.storyBody ?? [
     `This project was built around ${work.event.toLowerCase()}, balancing atmosphere, texture and detail with a clear editorial point of view.`,
     "The result is a narrative-rich visual experience that lets the story live in the image, the styling and the feeling of the moment.",
   ];
   const storyTags = work.tags ?? ["Editorial", "Creative Direction", "Storytelling", "Craft"];
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const lightboxRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const restoreFocusRef = useRef<HTMLElement | null>(null);
 
-  const openImage = (index: number) => setSelectedIndex(index);
+  const openImage = (index: number) => {
+    if (selectedIndex === null && document.activeElement instanceof HTMLElement) {
+      restoreFocusRef.current = document.activeElement;
+    }
+    setSelectedIndex(index);
+  };
   const closeImage = () => setSelectedIndex(null);
-  const goToPrevious = () => {
-    if (selectedIndex === null) return;
-    setSelectedIndex((selectedIndex - 1 + galleryImages.length) % galleryImages.length);
-  };
-  const goToNext = () => {
-    if (selectedIndex === null) return;
-    setSelectedIndex((selectedIndex + 1) % galleryImages.length);
-  };
 
   useEffect(() => {
-    if (selectedIndex === null) return;
+    if (selectedIndex === null) {
+      restoreFocusRef.current?.focus();
+      restoreFocusRef.current = null;
+      return;
+    }
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") closeImage();
-      if (event.key === "ArrowLeft") goToPrevious();
-      if (event.key === "ArrowRight") goToNext();
+      if (event.key === "ArrowLeft") {
+        setSelectedIndex((current) =>
+          current === null ? current : (current - 1 + galleryImages.length) % galleryImages.length,
+        );
+      }
+      if (event.key === "ArrowRight") {
+        setSelectedIndex((current) =>
+          current === null ? current : (current + 1) % galleryImages.length,
+        );
+      }
+      if (event.key === "Tab") {
+        const focusable =
+          lightboxRef.current?.querySelectorAll<HTMLButtonElement>("button:not(:disabled)");
+        if (!focusable?.length) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
     };
 
+    closeButtonRef.current?.focus();
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [selectedIndex, galleryImages.length]);
@@ -65,12 +97,12 @@ function CasePage() {
 
       <main className="pb-12">
         <div className="w-full px-3 pt-28 md:px-5 md:pt-32">
-          <section className="h-[74vh] min-h-140 max-h-215 overflow-hidden bg-[#071119]">
-            <div className="grid h-full lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)]">
-              <div className="flex h-full flex-col justify-center p-6 md:p-8 lg:p-10 lg:py-12">
+          <section className="overflow-hidden bg-[#071119] lg:h-[74vh] lg:min-h-140 lg:max-h-215">
+            <div className="grid lg:h-full lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)]">
+              <div className="flex flex-col justify-center p-6 md:p-8 lg:h-full lg:p-10 lg:py-12">
                 <Link
                   to="/work"
-                  className="inline-flex w-fit items-center gap-2 text-[9px] uppercase tracking-[0.22em] text-paper/70 transition-colors hover:text-paper"
+                  className="inline-flex min-h-11 w-fit items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-paper/70 transition-colors hover:text-paper"
                 >
                   <span aria-hidden>←</span>
                   Back to work
@@ -89,22 +121,22 @@ function CasePage() {
                   {work.logline}
                 </p>
 
-                <div className="mt-7 grid max-w-96 grid-cols-3 gap-3 text-[9px] uppercase tracking-[0.18em] text-mist">
+                <div className="mt-7 grid max-w-96 grid-cols-3 gap-3 text-[10px] uppercase tracking-[0.14em] text-mist">
                   <div>
                     <span className="mb-1 block text-paper/40">Service</span>
-                    <span className="inline-block rounded-full border border-paper/15 bg-paper/5 px-2 py-1.5 text-[9px] text-paper/90">
+                    <span className="inline-block rounded-full border border-paper/15 bg-paper/5 px-2 py-1.5 text-[10px] text-paper/90">
                       {serviceLabel}
                     </span>
                   </div>
                   <div>
                     <span className="mb-1 block text-paper/40">Photographs</span>
-                    <span className="inline-block rounded-full border border-paper/15 bg-paper/5 px-2 py-1.5 text-[9px] text-paper/90">
+                    <span className="inline-block rounded-full border border-paper/15 bg-paper/5 px-2 py-1.5 text-[10px] text-paper/90">
                       {galleryImages.length}
                     </span>
                   </div>
                   <div>
                     <span className="mb-1 block text-paper/40">Collection</span>
-                    <span className="inline-block rounded-full border border-paper/15 bg-paper/5 px-2 py-1.5 text-[9px] text-paper/90">
+                    <span className="inline-block rounded-full border border-paper/15 bg-paper/5 px-2 py-1.5 text-[10px] text-paper/90">
                       Catalog
                     </span>
                   </div>
@@ -114,7 +146,7 @@ function CasePage() {
               <button
                 type="button"
                 onClick={() => openImage(0)}
-                className="group relative block min-h-90 overflow-hidden border-0 bg-transparent p-0 text-left lg:min-h-135"
+                className="group relative block min-h-72 overflow-hidden border-0 bg-transparent p-0 text-left sm:min-h-90 lg:min-h-135"
                 aria-label={`Open ${work.title} image`}
               >
                 <img
@@ -143,7 +175,10 @@ function CasePage() {
 
                 <div className="mt-7 flex flex-wrap gap-2 text-[9px] uppercase tracking-[0.14em] text-paper/75">
                   {storyTags.map((tag) => (
-                    <span key={tag} className="rounded-full border border-paper/15 bg-paper/[0.02] px-3 py-1.5">
+                    <span
+                      key={tag}
+                      className="rounded-full border border-paper/15 bg-paper/[0.02] px-3 py-1.5"
+                    >
                       {tag}
                     </span>
                   ))}
@@ -173,7 +208,7 @@ function CasePage() {
             <div className="mt-8 flex items-center justify-between border-t border-paper/10 pt-5">
               <Link
                 to="/work"
-                className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-paper transition-colors hover:text-blue-2"
+                className="inline-flex min-h-11 items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-paper transition-colors hover:text-blue-2"
               >
                 <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-paper/15 bg-paper/2 text-[12px]">
                   ◌
@@ -190,13 +225,23 @@ function CasePage() {
       </main>
 
       {selectedIndex !== null && galleryImages[selectedIndex] ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#030507]/80 p-4 backdrop-blur-sm">
+        <div
+          ref={lightboxRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label={`${work.title} photograph viewer`}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#030507]/80 p-4 backdrop-blur-sm"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) closeImage();
+          }}
+        >
           <div className="relative w-full max-w-6xl">
             <button
+              ref={closeButtonRef}
               type="button"
               onClick={closeImage}
               aria-label="Close image viewer"
-              className="absolute -top-12 right-0 flex h-10 w-10 items-center justify-center rounded-full border border-paper/10 bg-[#0d1418]/90 text-xl text-paper shadow-lg transition-colors hover:border-paper/30 hover:bg-[#111b20]"
+              className="absolute -top-12 right-0 flex size-11 items-center justify-center rounded-full border border-paper/10 bg-[#0d1418]/90 text-xl text-paper shadow-lg transition-colors hover:border-paper/30 hover:bg-[#111b20]"
             >
               ×
             </button>
@@ -204,25 +249,38 @@ function CasePage() {
             <div className="relative overflow-hidden rounded-3xl border border-paper/10 bg-[#071119] shadow-[0_30px_120px_rgba(0,0,0,0.55)]">
               <img
                 src={galleryImages[selectedIndex]}
-                alt={`${work.title} detail ${selectedIndex + 1}`}
+                alt={`${work.title}, photograph ${selectedIndex + 1} of ${galleryImages.length}`}
                 className="block max-h-[82vh] w-full object-contain object-center"
               />
+              <p aria-live="polite" className="sr-only">
+                Photograph {selectedIndex + 1} of {galleryImages.length}
+              </p>
 
               {galleryImages.length > 1 ? (
                 <>
                   <button
                     type="button"
-                    onClick={goToPrevious}
+                    onClick={() =>
+                      setSelectedIndex((current) =>
+                        current === null
+                          ? current
+                          : (current - 1 + galleryImages.length) % galleryImages.length,
+                      )
+                    }
                     aria-label="Previous image"
-                    className="absolute left-4 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-paper/10 bg-[#0d1418]/80 text-2xl text-paper shadow-lg transition-colors hover:border-paper/30 hover:bg-[#111b20]"
+                    className="absolute left-3 top-1/2 flex size-11 -translate-y-1/2 items-center justify-center rounded-full border border-paper/10 bg-[#0d1418]/80 text-2xl text-paper shadow-lg transition-colors hover:border-paper/30 hover:bg-[#111b20] sm:left-4"
                   >
                     ‹
                   </button>
                   <button
                     type="button"
-                    onClick={goToNext}
+                    onClick={() =>
+                      setSelectedIndex((current) =>
+                        current === null ? current : (current + 1) % galleryImages.length,
+                      )
+                    }
                     aria-label="Next image"
-                    className="absolute right-4 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-paper/10 bg-[#0d1418]/80 text-2xl text-paper shadow-lg transition-colors hover:border-paper/30 hover:bg-[#111b20]"
+                    className="absolute right-3 top-1/2 flex size-11 -translate-y-1/2 items-center justify-center rounded-full border border-paper/10 bg-[#0d1418]/80 text-2xl text-paper shadow-lg transition-colors hover:border-paper/30 hover:bg-[#111b20] sm:right-4"
                   >
                     ›
                   </button>

@@ -174,6 +174,7 @@ function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [authorized, setAuthorized] = useState<boolean | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [accessRetry, setAccessRetry] = useState(0);
   const [savingInvite, setSavingInvite] = useState(false);
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [updatingInviteId, setUpdatingInviteId] = useState<string | null>(null);
@@ -229,7 +230,7 @@ function AdminDashboard() {
     return () => {
       active = false;
     };
-  }, [authPending, loadDashboard, user]);
+  }, [accessRetry, authPending, loadDashboard, user]);
 
   useEffect(() => {
     const media = window.matchMedia("(min-width: 1024px)");
@@ -397,9 +398,21 @@ function AdminDashboard() {
           Invitations, team access, and operational controls are reserved for Studio Admins.
         </p>
         {loadError ? (
-          <p role="alert" className="mt-4 text-sm text-red-300">
-            {loadError}
-          </p>
+          <>
+            <p role="alert" className="mt-4 text-sm text-red-300">{loadError}</p>
+            <Button
+              type="button"
+              variant="line"
+              className="mt-4 min-h-11"
+              onClick={() => {
+                setAuthorized(null);
+                setLoadError(null);
+                setAccessRetry((count) => count + 1);
+              }}
+            >
+              Retry access check
+            </Button>
+          </>
         ) : null}
       </main>
     );

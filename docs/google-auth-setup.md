@@ -31,11 +31,11 @@ use its broker because preview hostnames are temporary.
 
 In the Randy Production Vercel project, add these variables for **Production**:
 
-| Variable | Value |
-| --- | --- |
-| `GOOGLE_CLIENT_ID` | The OAuth client ID from Google Cloud |
+| Variable               | Value                                     |
+| ---------------------- | ----------------------------------------- |
+| `GOOGLE_CLIENT_ID`     | The OAuth client ID from Google Cloud     |
 | `GOOGLE_CLIENT_SECRET` | The OAuth client secret from Google Cloud |
-| `BETTER_AUTH_URL` | `https://randy-production.vercel.app` |
+| `BETTER_AUTH_URL`      | `https://randy-production.vercel.app`     |
 
 The production deployment must also have `BETTER_AUTH_SECRET` and `DATABASE_URL`
 configured. Keep all secrets in Vercel's environment settings; do not commit them,
@@ -45,3 +45,18 @@ changing environment variables.
 This Google client is configured for the stable production domain. Vercel preview
 deployment URLs and the live App Builder preview have different callback hosts
 and are not covered by this setup.
+
+## Email magic links
+
+The login page also supports passwordless email sign-in. Configure these server-
+only variables in Vercel for each environment where email sign-in should work:
+
+| Variable            | Value                                                                      |
+| ------------------- | -------------------------------------------------------------------------- |
+| `RESEND_API_KEY`    | A private Resend API key                                                   |
+| `RESEND_FROM_EMAIL` | A sender address or `Name <email@your-verified-domain>` verified in Resend |
+
+The email link expires after 10 minutes and can be used once. Requests are rate
+limited. Without both variables, email sign-in fails safely and the Google
+option remains available. Do not expose the Resend key through a `VITE_` variable
+or commit it to the repository.

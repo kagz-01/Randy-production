@@ -95,7 +95,10 @@ function PortalHome() {
   const activeJobs = jobs.filter((job) => ["booked", "production"].includes(job.status));
   const deliveredJobs = jobs.filter((job) => job.status === "delivered");
   const needsAttention = jobs.filter((job) => ["inquiry", "quoted"].includes(job.status));
-  const featuredJob = sortedJobs.find((job) => ["booked", "production"].includes(job.status)) ?? sortedJobs[0] ?? null;
+  const featuredJob =
+    sortedJobs.find((job) => ["booked", "production"].includes(job.status)) ??
+    sortedJobs[0] ??
+    null;
 
   if (isPending) return <div className="min-h-dvh bg-void" />;
   if (!user) return <RedirectToSignIn />;
@@ -104,7 +107,9 @@ function PortalHome() {
       <div className="min-h-dvh bg-void">
         <SiteNav />
         <main className="shell pt-32">
-          <p role="alert" className="max-w-xl text-sm text-red-300">{roleError}</p>
+          <p role="alert" className="max-w-xl text-sm text-red-300">
+            {roleError}
+          </p>
           <button
             type="button"
             onClick={() => window.location.reload()}
@@ -159,10 +164,11 @@ function PortalHome() {
         ) : jobs.length === 0 ? (
           <EmptyProjects />
         ) : (
-          <div className="space-y-7 pt-7">
-            <section aria-label="Project summary" className="grid gap-3 sm:grid-cols-3">
+          <div className="space-y-5 pt-5 sm:space-y-7 sm:pt-7">
+            <section aria-label="Project summary" className="grid grid-cols-3 gap-2 sm:gap-3">
               <SummaryCard
                 label="In progress"
+                shortLabel="Active"
                 value={String(activeJobs.length)}
                 detail="Projects underway"
                 icon={FolderOpen}
@@ -170,6 +176,7 @@ function PortalHome() {
               />
               <SummaryCard
                 label="Needs your attention"
+                shortLabel="Action"
                 value={String(needsAttention.length)}
                 detail="Inquiry or quote awaiting a next step"
                 icon={CircleAlert}
@@ -177,6 +184,7 @@ function PortalHome() {
               />
               <SummaryCard
                 label="Completed"
+                shortLabel="Done"
                 value={String(deliveredJobs.length)}
                 detail="Delivered projects"
                 icon={Check}
@@ -186,7 +194,7 @@ function PortalHome() {
 
             {featuredJob ? (
               <section className="overflow-hidden rounded-xl border border-blue/20 bg-[linear-gradient(120deg,rgb(47_107_255_/_0.12),transparent_58%)]">
-                <div className="grid gap-6 p-5 md:grid-cols-[minmax(0,1.35fr)_minmax(220px,0.65fr)] md:p-7">
+                <div className="grid gap-4 p-4 sm:gap-6 sm:p-5 md:grid-cols-[minmax(0,1.35fr)_minmax(220px,0.65fr)] md:p-7">
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-blue-2">
@@ -201,10 +209,18 @@ function PortalHome() {
                     </p>
                     <ProjectProgress status={featuredJob.status} className="mt-6 max-w-xl" />
                   </div>
-                  <div className="flex flex-col justify-between gap-5 rounded-lg border border-paper/10 bg-void/40 p-4 md:p-5">
-                    <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-1">
-                      <Detail icon={CalendarDays} label="Event date" value={formatPortalDate(featuredJob.event_date)} />
-                      <Detail icon={Clock3} label="Project value" value={money(featuredJob.ballpark)} />
+                  <div className="flex flex-col justify-between gap-4 rounded-lg border border-paper/10 bg-void/40 p-3.5 sm:gap-5 sm:p-4 md:p-5">
+                    <div className="grid grid-cols-2 gap-3 md:grid-cols-1 md:gap-4">
+                      <Detail
+                        icon={CalendarDays}
+                        label="Event date"
+                        value={formatPortalDate(featuredJob.event_date)}
+                      />
+                      <Detail
+                        icon={Clock3}
+                        label="Project value"
+                        value={money(featuredJob.ballpark)}
+                      />
                     </div>
                     <Link to="/portal/$projectId" params={{ projectId: featuredJob.id }}>
                       <Button variant="paper" className="min-h-11 w-full">
@@ -220,13 +236,16 @@ function PortalHome() {
             <section>
               <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-blue-2">Your work</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-blue-2">
+                    Your work
+                  </p>
                   <h2 className="mt-1 text-2xl text-paper">All projects</h2>
                 </div>
                 <Button
                   type="button"
                   variant="line"
                   size="sm"
+                  className="min-h-11"
                   onClick={() => void loadJobs()}
                   disabled={loading}
                   aria-label="Refresh projects"
@@ -262,7 +281,8 @@ function ProjectCard({ job }: { job: JobRow }) {
         </div>
         <h3 className="mt-2 truncate text-xl text-paper">{job.title}</h3>
         <p className="mt-1 truncate text-sm text-mist">
-          {job.venue ? `${job.venue} · ` : ""}{formatPortalDate(job.event_date)}
+          {job.venue ? `${job.venue} · ` : ""}
+          {formatPortalDate(job.event_date)}
         </p>
         <ProjectProgress status={job.status} className="mt-4 max-w-md" />
       </div>
@@ -278,12 +298,14 @@ function ProjectCard({ job }: { job: JobRow }) {
 
 function SummaryCard({
   label,
+  shortLabel,
   value,
   detail,
   icon: Icon,
   tone,
 }: {
   label: string;
+  shortLabel: string;
   value: string;
   detail: string;
   icon: typeof FolderOpen;
@@ -296,15 +318,20 @@ function SummaryCard({
     neutral: "bg-paper/5 text-mist",
   }[tone];
   return (
-    <article className="rounded-xl border border-paper/10 bg-ink/70 p-4 md:p-5">
+    <article className="min-w-0 rounded-lg border border-paper/10 bg-ink/70 p-3 sm:rounded-xl sm:p-4 md:p-5">
       <div className="flex items-start justify-between gap-3">
-        <p className="text-xs font-medium uppercase tracking-[0.14em] text-mist">{label}</p>
-        <span className={cn("grid size-9 place-items-center rounded-lg", colors)}>
+        <p className="min-w-0 text-[9px] font-medium uppercase tracking-[0.08em] text-mist sm:text-xs sm:tracking-[0.14em]">
+          <span className="sm:hidden">{shortLabel}</span>
+          <span className="hidden sm:inline">{label}</span>
+        </p>
+        <span className={cn("hidden size-9 place-items-center rounded-lg sm:grid", colors)}>
           <Icon className="size-4" aria-hidden="true" />
         </span>
       </div>
-      <p className="mt-3 font-serif text-3xl tabular-nums text-paper">{value}</p>
-      <p className="mt-1 text-xs text-mist">{detail}</p>
+      <p className="mt-1 font-serif text-2xl tabular-nums text-paper sm:mt-3 sm:text-3xl">
+        {value}
+      </p>
+      <p className="mt-1 hidden text-xs text-mist sm:block">{detail}</p>
     </article>
   );
 }
@@ -321,7 +348,12 @@ function ProjectStatus({ status }: { status: string }) {
             ? "border-paper/10 bg-paper/5 text-mist"
             : "border-paper/10 bg-paper/5 text-mist";
   return (
-    <span className={cn("inline-flex rounded-full border px-2.5 py-1 text-[10px] font-medium capitalize tracking-[0.08em]", colors)}>
+    <span
+      className={cn(
+        "inline-flex rounded-full border px-2.5 py-1 text-[10px] font-medium capitalize tracking-[0.08em]",
+        colors,
+      )}
+    >
       {status.replaceAll("-", " ")}
     </span>
   );
@@ -339,24 +371,40 @@ function ProjectProgress({ status, className }: { status: string; className?: st
   const stage = current < 0 ? 0 : current;
   return (
     <div className={cn("min-w-0", className)} aria-label={`Project stage: ${status}`}>
+      <p className="mb-2 text-xs capitalize text-mist sm:hidden">Stage: {PROJECT_STEPS[stage]}</p>
       <div className="flex items-center" aria-hidden="true">
         {PROJECT_STEPS.map((step, index) => (
           <div key={step} className="flex min-w-0 flex-1 items-center last:flex-none">
-            <span className={cn("size-2.5 shrink-0 rounded-full", index <= stage ? "bg-blue-2" : "bg-paper/20")} />
+            <span
+              className={cn(
+                "size-2.5 shrink-0 rounded-full",
+                index <= stage ? "bg-blue-2" : "bg-paper/20",
+              )}
+            />
             {index < PROJECT_STEPS.length - 1 ? (
               <span className={cn("h-px flex-1", index < stage ? "bg-blue-2/80" : "bg-paper/15")} />
             ) : null}
           </div>
         ))}
       </div>
-      <div className="mt-2 flex justify-between gap-1 text-[9px] capitalize tracking-wide text-mist sm:text-[10px]">
-        {PROJECT_STEPS.map((step) => <span key={step}>{step}</span>)}
+      <div className="mt-2 hidden justify-between gap-1 text-[9px] capitalize tracking-wide text-mist sm:flex sm:text-[10px]">
+        {PROJECT_STEPS.map((step) => (
+          <span key={step}>{step}</span>
+        ))}
       </div>
     </div>
   );
 }
 
-function Detail({ icon: Icon, label, value }: { icon: typeof CalendarDays; label: string; value: string }) {
+function Detail({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof CalendarDays;
+  label: string;
+  value: string;
+}) {
   return (
     <div className="flex items-start gap-2.5">
       <Icon className="mt-0.5 size-4 shrink-0 text-blue-2" aria-hidden="true" />
@@ -377,7 +425,8 @@ function EmptyProjects() {
         </span>
         <p className="mt-4 text-2xl text-paper">Your workspace starts here.</p>
         <p className="mt-2 text-sm leading-relaxed text-mist">
-          Once a project is linked to your account, you’ll find its progress, approvals, invoices, and receipts here.
+          Once a project is linked to your account, you’ll find its progress, approvals, invoices,
+          and receipts here.
         </p>
         <Link to="/quote" className="mt-5 inline-block">
           <Button variant="primary" className="min-h-11">
@@ -392,7 +441,10 @@ function EmptyProjects() {
 
 function PortalLoading() {
   return (
-    <div className="mt-8 grid min-h-64 place-items-center rounded-xl border border-paper/10 bg-ink/50 p-8" role="status">
+    <div
+      className="mt-8 grid min-h-64 place-items-center rounded-xl border border-paper/10 bg-ink/50 p-8"
+      role="status"
+    >
       <div className="flex items-center gap-3 text-sm text-mist">
         <RefreshCw className="size-4 animate-spin text-blue-2" />
         Loading your projects…
@@ -423,5 +475,9 @@ function formatPortalDate(value: string | null) {
   if (!value) return "Date to be confirmed";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "Date to be confirmed";
-  return new Intl.DateTimeFormat("en-KE", { day: "numeric", month: "short", year: "numeric" }).format(date);
+  return new Intl.DateTimeFormat("en-KE", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(date);
 }

@@ -24,12 +24,12 @@ type QuoteLine = { label: string; amount: number };
 function isQuoteLine(value: unknown): value is QuoteLine {
   return Boolean(
     value &&
-      typeof value === "object" &&
-      "label" in value &&
-      typeof value.label === "string" &&
-      "amount" in value &&
-      typeof value.amount === "number" &&
-      Number.isSafeInteger(value.amount),
+    typeof value === "object" &&
+    "label" in value &&
+    typeof value.label === "string" &&
+    "amount" in value &&
+    typeof value.amount === "number" &&
+    Number.isSafeInteger(value.amount),
   );
 }
 
@@ -190,10 +190,9 @@ function BookPage() {
                   {data.job?.event_date ? (
                     <QuoteFact
                       label="Event date"
-                      value={new Date(`${data.job.event_date.slice(0, 10)}T00:00:00`).toLocaleDateString(
-                        "en-KE",
-                        { dateStyle: "medium" },
-                      )}
+                      value={new Date(
+                        `${data.job.event_date.slice(0, 10)}T00:00:00`,
+                      ).toLocaleDateString("en-KE", { dateStyle: "medium" })}
                     />
                   ) : null}
                 </div>
@@ -202,9 +201,7 @@ function BookPage() {
                     <details className="group">
                       <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-3 text-sm font-medium text-paper marker:hidden">
                         Estimate breakdown
-                        <span className="text-xs text-mist">
-                          {quoteLines.length} line items
-                        </span>
+                        <span className="text-xs text-mist">{quoteLines.length} line items</span>
                       </summary>
                       <ul className="mt-2 divide-y divide-paper/10">
                         {quoteLines.map((line, index) => (
@@ -302,7 +299,11 @@ function BookPage() {
                         }
                       }}
                     >
+                      <label htmlFor="booking-signature" className="text-sm font-medium text-paper">
+                        Full name as signature
+                      </label>
                       <Input
+                        id="booking-signature"
                         required
                         placeholder="Full name as signature"
                         value={name}
@@ -375,10 +376,9 @@ function BookPage() {
                             <div className="mt-3 flex flex-wrap justify-between gap-2 border-t border-paper/10 pt-3 text-xs text-mist">
                               <p>
                                 {milestone?.due_date
-                                  ? `Due ${new Date(`${milestone.due_date.slice(0, 10)}T00:00:00`).toLocaleDateString(
-                                      "en-KE",
-                                      { dateStyle: "medium" },
-                                    )}`
+                                  ? `Due ${new Date(
+                                      `${milestone.due_date.slice(0, 10)}T00:00:00`,
+                                    ).toLocaleDateString("en-KE", { dateStyle: "medium" })}`
                                   : "Due date as agreed"}
                               </p>
                               <p>
@@ -416,7 +416,7 @@ function BookPage() {
                     </div>
                   ) : depositInvoice && depositInvoice.status !== "paid" ? (
                     <Button
-                      className="mt-5"
+                      className="mt-5 min-h-11 w-full sm:w-auto"
                       disabled={!signed || busy || !paymentAvailable}
                       onClick={() => payLegacyInvoice("deposit")}
                     >
@@ -426,7 +426,7 @@ function BookPage() {
                     balanceInvoice.status !== "paid" &&
                     (!depositInvoice || depositInvoice.status === "paid") ? (
                     <Button
-                      className="mt-5"
+                      className="mt-5 min-h-11 w-full sm:w-auto"
                       disabled={busy || !paymentAvailable}
                       onClick={() => payLegacyInvoice("balance")}
                     >
@@ -532,11 +532,15 @@ function BookPage() {
 function Steps({ step }: { step: number }) {
   const labels = ["Quote", "Sign", "Payment plan", "Production"];
   return (
-    <ol className="mt-8 grid grid-cols-4 gap-2">
+    <ol aria-label="Booking progress" className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
       {labels.map((label, index) => (
-        <li key={label} className="text-center">
+        <li
+          key={label}
+          aria-current={index === step - 1 ? "step" : undefined}
+          className="text-center"
+        >
           <span className={`block h-1 rounded-full ${index < step ? "bg-blue" : "bg-paper/15"}`} />
-          <span className="mt-2 block text-[10px] uppercase tracking-[0.16em] text-mist">
+          <span className="mt-2 block text-[11px] uppercase tracking-[0.12em] text-mist">
             {label}
           </span>
         </li>
