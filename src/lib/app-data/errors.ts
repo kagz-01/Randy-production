@@ -25,7 +25,7 @@ const MESSAGE_RULES: readonly MessageRule[] = [
   {
     needles: ["not_connected", "failed_precondition"],
     kind: "not_connected",
-    message: "Connect this connector in Grok to load your data.",
+    message: "This data source isn't connected. Connect it in your account settings, then try again.",
   },
   {
     needles: ["scope_denied"],
@@ -57,14 +57,14 @@ export function classifyCallToolError(
   if (raw.includes("missing_connector_token")) {
     return {
       kind: "error",
-      message: "Open this app from Grok to load your data.",
+      message: "We couldn't securely connect to this data source. Open the app from your connected workspace, then try again.",
       detail,
     };
   }
   if (isLoginRequired(result)) {
     return {
       kind: "login",
-      message: "Continue with Grok to load your data.",
+      message: "Your session has expired. Sign in again to continue.",
       detail,
     };
   }

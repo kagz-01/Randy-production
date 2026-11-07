@@ -427,6 +427,11 @@ describe("classifyCallToolError", () => {
       errorMessage: "missing_connector_token: open this app through the edge gate",
     });
     assert.equal(state?.kind, "error");
+    assert.equal(
+      state?.message,
+      "We couldn't securely connect to this data source. Open the app from your connected workspace, then try again.",
+    );
+    assert.doesNotMatch(state?.message ?? "", /grok/i);
     assert.match(state?.detail ?? "", /missing_connector_token/);
   });
 
@@ -438,18 +443,23 @@ describe("classifyCallToolError", () => {
       errorMessage: "login required",
     });
     assert.equal(state?.kind, "login");
+    assert.equal(state?.message, "Your session has expired. Sign in again to continue.");
+    assert.doesNotMatch(state?.message ?? "", /grok/i);
     assert.equal(state?.detail, "login required");
   });
 
   it("classifies not_connected and failed_precondition", () => {
+    const notConnected = classifyCallToolError({
+      ok: false,
+      data: null,
+      errorMessage: "connector_not_connected: Notion",
+    });
+    assert.equal(notConnected?.kind, "not_connected");
     assert.equal(
-      classifyCallToolError({
-        ok: false,
-        data: null,
-        errorMessage: "connector_not_connected: Notion",
-      })?.kind,
-      "not_connected",
+      notConnected?.message,
+      "This data source isn't connected. Connect it in your account settings, then try again.",
     );
+    assert.doesNotMatch(notConnected?.message ?? "", /grok/i);
     assert.equal(
       classifyCallToolError({
         ok: false,
