@@ -818,7 +818,33 @@ function OverviewTab({
           }
         />
         {portfolio.length ? (
-          <div className="mt-4 overflow-x-auto">
+          <>
+            <ul className="mt-4 grid gap-3 xl:hidden">
+              {portfolio.map((job) => (
+                <li key={job.id} className="rounded-lg border border-paper/10 bg-void/35 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <Link
+                        to="/studio/pipeline"
+                        search={{ jobId: job.id }}
+                        className="font-medium text-paper hover:text-blue-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-2"
+                      >
+                        {job.title}
+                      </Link>
+                      <p className="mt-1 truncate text-xs text-mist">{job.client_name}</p>
+                    </div>
+                    <PortfolioStatus status={job.status} />
+                  </div>
+                  <div className="mt-3 flex flex-wrap items-end justify-between gap-2">
+                    <p className="text-xs text-mist">{formatEventDate(job.event_date)}</p>
+                    <p className="text-sm font-medium tabular-nums text-paper">
+                      {money(job.ballpark)}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-4 hidden overflow-x-auto xl:block">
             <table className="w-full min-w-[660px] border-collapse text-left">
               <thead>
                 <tr className="border-b border-paper/10 text-[10px] uppercase tracking-[0.16em] text-mist">
@@ -865,7 +891,8 @@ function OverviewTab({
                 ))}
               </tbody>
             </table>
-          </div>
+            </div>
+          </>
         ) : (
           <EmptyState
             title="No production records"
@@ -1450,7 +1477,24 @@ function PeopleTab({
           }
         />
         {crew.length ? (
-          <div className="mt-4 overflow-x-auto">
+          <>
+            <ul className="mt-4 grid gap-3 xl:hidden">
+              {crew.map((person) => (
+                <li key={person.id} className="rounded-lg border border-paper/10 bg-void/35 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate font-medium text-paper">{person.name}</p>
+                      <p className="mt-1 text-xs text-mist">{person.role}</p>
+                    </div>
+                    <RosterStatus status={person.status} />
+                  </div>
+                  <p className="mt-3 text-xs text-mist">
+                    Next call · {person.call_time ?? "Not assigned"}
+                  </p>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-4 hidden overflow-x-auto xl:block">
             <table className="w-full min-w-[600px] border-collapse text-left">
               <thead>
                 <tr className="border-b border-paper/10 text-[10px] uppercase tracking-[0.16em] text-mist">
@@ -1481,7 +1525,8 @@ function PeopleTab({
                 ))}
               </tbody>
             </table>
-          </div>
+            </div>
+          </>
         ) : (
           <EmptyState
             title="Roster is empty"
@@ -1560,7 +1605,26 @@ function FinanceTab({
           </Link>
         </div>
         {recentReceipts.length ? (
-          <div className="mt-4 overflow-x-auto">
+          <>
+            <ul className="mt-4 grid gap-3 xl:hidden">
+              {recentReceipts.map((receipt) => (
+                <li key={receipt.id} className="rounded-lg border border-paper/10 bg-void/35 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-medium text-paper">{receipt.receipt_no}</p>
+                      <p className="mt-1 truncate text-xs text-mist">{receipt.payer_name}</p>
+                    </div>
+                    <p className="shrink-0 text-sm font-medium tabular-nums text-paper">
+                      {money(receipt.amount)}
+                    </p>
+                  </div>
+                  <p className="mt-3 text-xs text-mist">
+                    {formatEventDate(receipt.issued_at)} · {receipt.payment_method}
+                  </p>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-4 hidden overflow-x-auto xl:block">
             <table className="w-full min-w-[620px] border-collapse text-left">
               <thead>
                 <tr className="border-b border-paper/10 text-[10px] uppercase tracking-[0.16em] text-mist">
@@ -1599,7 +1663,8 @@ function FinanceTab({
                 ))}
               </tbody>
             </table>
-          </div>
+            </div>
+          </>
         ) : (
           <EmptyState
             title="No receipts recorded"
