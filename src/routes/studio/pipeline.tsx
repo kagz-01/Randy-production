@@ -424,24 +424,24 @@ function JobForm({
     onChange({ ...draft, [key]: value });
 
   return (
-    <form onSubmit={onSubmit} className="mt-5 rounded-xl border border-blue/20 bg-blue/5 p-5">
+    <form onSubmit={onSubmit} className="mt-5 min-w-0 rounded-xl border border-blue/20 bg-blue/5 p-5">
       <h3 className="text-lg font-medium text-paper">{title}</h3>
-      <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        <label className="grid gap-1.5 text-xs text-mist">
+      <div className="mt-4 grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <label className="grid min-w-0 gap-1.5 text-xs text-mist">
           Production title
           <Input required maxLength={200} value={draft.title} onChange={(event) => patch("title", event.target.value)} />
         </label>
-        <label className="grid gap-1.5 text-xs text-mist">
+        <label className="grid min-w-0 gap-1.5 text-xs text-mist">
           Client name
           <Input required maxLength={200} value={draft.client_name} onChange={(event) => patch("client_name", event.target.value)} />
         </label>
-        <label className="grid gap-1.5 text-xs text-mist">
+        <label className="grid min-w-0 gap-1.5 text-xs text-mist">
           Client portal account
           <select
             value={draft.client_user_id}
             disabled={clientAccountLocked || clientAccountsError !== null}
             onChange={(event) => patch("client_user_id", event.target.value)}
-            className="min-h-11 rounded-md border border-paper/15 bg-void px-3 text-sm text-paper disabled:opacity-60"
+            className="min-h-11 w-full min-w-0 rounded-md border border-paper/15 bg-void px-3 text-sm text-paper disabled:opacity-60"
           >
             <option value="">Not linked</option>
             {draft.client_user_id && !clientAccounts.some((account) => account.user_id === draft.client_user_id) ? (
@@ -459,53 +459,53 @@ function JobForm({
               : clientAccountsError ?? "Only verified client accounts can be linked; you can also leave it unlinked."}
           </span>
         </label>
-        <label className="grid gap-1.5 text-xs text-mist">
+        <label className="grid min-w-0 gap-1.5 text-xs text-mist">
           Service
-          <select required value={draft.service} onChange={(event) => patch("service", event.target.value)} className="min-h-11 rounded-md border border-paper/15 bg-void px-3 text-sm text-paper">
+          <select required value={draft.service} onChange={(event) => patch("service", event.target.value)} className="min-h-11 w-full min-w-0 rounded-md border border-paper/15 bg-void px-3 text-sm text-paper">
             {!draft.service ? <option value="" disabled>Choose a service</option> : null}
             {draft.service && !SERVICES.some((service) => service.key === draft.service) ? <option value={draft.service}>{draft.service}</option> : null}
             {SERVICES.map((service) => <option key={service.key} value={service.key}>{service.label}</option>)}
           </select>
         </label>
-        <label className="grid gap-1.5 text-xs text-mist">
+        <label className="grid min-w-0 gap-1.5 text-xs text-mist">
           Event type
-          <select required value={draft.event_type} onChange={(event) => patch("event_type", event.target.value)} className="min-h-11 rounded-md border border-paper/15 bg-void px-3 text-sm text-paper">
+          <select required value={draft.event_type} onChange={(event) => patch("event_type", event.target.value)} className="min-h-11 w-full min-w-0 rounded-md border border-paper/15 bg-void px-3 text-sm text-paper">
             {!draft.event_type ? <option value="" disabled>Choose an event type</option> : null}
             {draft.event_type && !EVENT_TYPES.some((type) => type.key === draft.event_type) ? <option value={draft.event_type}>{draft.event_type}</option> : null}
             {EVENT_TYPES.map((type) => <option key={type.key} value={type.key}>{type.label}</option>)}
           </select>
         </label>
-        <label className="grid gap-1.5 text-xs text-mist">
+        <label className="grid min-w-0 gap-1.5 text-xs text-mist">
           Status
-          <select value={draft.status} onChange={(event) => patch("status", event.target.value)} className="min-h-11 rounded-md border border-paper/15 bg-void px-3 text-sm capitalize text-paper">
+          <select value={draft.status} onChange={(event) => patch("status", event.target.value)} className="min-h-11 w-full min-w-0 rounded-md border border-paper/15 bg-void px-3 text-sm capitalize text-paper">
             {COLS.map((column) => <option key={column.key} value={column.key}>{column.label}</option>)}
           </select>
         </label>
-        <label className="grid gap-1.5 text-xs text-mist">
+        <label className="grid min-w-0 gap-1.5 text-xs text-mist">
           Production tier
-          <select required value={draft.tier} onChange={(event) => patch("tier", event.target.value)} className="min-h-11 rounded-md border border-paper/15 bg-void px-3 text-sm text-paper">
+          <select required value={draft.tier} onChange={(event) => patch("tier", event.target.value)} className="min-h-11 w-full min-w-0 rounded-md border border-paper/15 bg-void px-3 text-sm text-paper">
             {!draft.tier ? <option value="" disabled>Choose a tier</option> : null}
             {draft.tier && !TIERS.some((tier) => tier.key === draft.tier) ? <option value={draft.tier}>{draft.tier}</option> : null}
             {TIERS.map((tier) => <option key={tier.key} value={tier.key}>{tier.label}</option>)}
           </select>
         </label>
-        <label className="grid gap-1.5 text-xs text-mist">
+        <label className="grid min-w-0 gap-1.5 text-xs text-mist">
           Event date
           <Input type="date" value={draft.event_date} onChange={(event) => patch("event_date", event.target.value)} />
         </label>
-        <label className="grid gap-1.5 text-xs text-mist">
+        <label className="grid min-w-0 gap-1.5 text-xs text-mist">
           Venue
           <Input maxLength={300} value={draft.venue} onChange={(event) => patch("venue", event.target.value)} placeholder="Not confirmed yet" />
         </label>
-        <label className="grid gap-1.5 text-xs text-mist">
+        <label className="grid min-w-0 gap-1.5 text-xs text-mist">
           Guest count
           <Input required type="number" min={0} max={100000} step={1} value={draft.guests} onChange={(event) => patch("guests", event.target.value)} />
         </label>
-        <label className="grid gap-1.5 text-xs text-mist sm:col-span-2 xl:col-span-1">
+        <label className="grid min-w-0 gap-1.5 text-xs text-mist sm:col-span-2 xl:col-span-1">
           Working budget (KES)
           <Input type="number" min={0} max={2000000000} step={1} value={draft.ballpark} onChange={(event) => patch("ballpark", event.target.value)} />
         </label>
-        <label className="grid gap-1.5 text-xs text-mist sm:col-span-2 xl:col-span-3">
+        <label className="grid min-w-0 gap-1.5 text-xs text-mist sm:col-span-2 xl:col-span-3">
           Production notes
           <textarea
             maxLength={10000}

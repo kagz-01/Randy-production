@@ -175,7 +175,7 @@ function StudioProfilePage() {
                   value={form.username}
                   onChange={(event) => setForm((current) => ({ ...current, username: event.target.value.toLowerCase() }))}
                   placeholder="yourname"
-                  className="min-w-0 flex-1 bg-transparent py-2 text-sm text-paper outline-none placeholder:text-mist/60"
+                  className="min-h-11 min-w-0 flex-1 bg-transparent py-2 text-sm text-paper outline-none placeholder:text-mist/60"
                 />
               </div>
               <span className="block text-[11px] text-mist">3–24 letters, numbers, dots, or underscores. Must be unique.</span>
