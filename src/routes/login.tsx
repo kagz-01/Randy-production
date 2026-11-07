@@ -222,7 +222,10 @@ function Login() {
         </div>
 
         <div className="mt-7 border-t border-[#39352e] pt-5 text-center">
-          <Link to="/" className="text-xs text-[#b8b2a7] transition-colors hover:text-paper">
+          <Link
+            to="/"
+            className="inline-flex min-h-11 items-center justify-center px-3 text-xs text-[#b8b2a7] transition-colors hover:text-paper"
+          >
             Return to Randy Production
           </Link>
         </div>
