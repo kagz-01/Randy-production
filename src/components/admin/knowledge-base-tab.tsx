@@ -265,12 +265,12 @@ function KnowledgeBaseTab() {
                   {legalApprovalEntryId === entry.id ? (
                     <div className="mt-3 rounded-md border border-amber-300/20 bg-amber-300/5 p-3">
                       <p className="text-xs font-medium text-amber-100">Legal reference approval</p>
-                      <label className="mt-2 flex items-start gap-2 text-xs leading-relaxed text-amber-100">
+                      <label className="mt-2 flex min-h-11 cursor-pointer items-start gap-3 py-2 text-xs leading-relaxed text-amber-100">
                         <input
                           type="checkbox"
                           checked={legalReviewConfirmed}
                           onChange={(event) => setLegalReviewConfirmed(event.target.checked)}
-                          className="mt-0.5 size-4 accent-blue"
+                          className="mt-0.5 size-5 shrink-0 accent-blue"
                         />
                         <span>
                           I verified the current consolidated text, confirmed local applicability, and obtained
@@ -394,13 +394,13 @@ function KnowledgeBaseTab() {
             </label>
           </div>
           {["project_learning", "vendor_learning"].includes(form.evidence_type) ? (
-            <label className="flex items-start gap-3 rounded-md border border-amber-300/20 bg-amber-300/5 p-3 text-xs leading-relaxed text-amber-100">
+            <label className="flex cursor-pointer items-start gap-3 rounded-md border border-amber-300/20 bg-amber-300/5 p-3 text-xs leading-relaxed text-amber-100">
               <input
                 type="checkbox"
                 required
                 checked={form.confirmAnonymized}
                 onChange={(event) => setForm({ ...form, confirmAnonymized: event.target.checked })}
-                className="mt-0.5 size-4 accent-blue"
+                className="mt-0.5 size-5 shrink-0 accent-blue"
               />
               <span>
                 I confirm this entry contains no identifiable client, vendor, or individual details.

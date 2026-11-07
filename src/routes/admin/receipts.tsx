@@ -402,12 +402,12 @@ function OfflinePaymentReviewCard({
         </div>
       ) : (
         <div className="mt-4 grid gap-3">
-          <label className="flex items-start gap-2 text-xs text-mist">
+          <label className="flex min-h-11 cursor-pointer items-start gap-3 py-2 text-xs text-mist">
             <input
               type="checkbox"
               checked={verified}
               onChange={(event) => setVerified(event.target.checked)}
-              className="mt-0.5 accent-blue-2"
+              className="mt-0.5 size-5 shrink-0 accent-blue-2"
             />
             I verified this payment against the actual M-Pesa, bank, or cash records.
           </label>
