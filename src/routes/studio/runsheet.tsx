@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Printer, RefreshCw, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { toast } from "sonner";
@@ -267,6 +267,11 @@ function RunSheetPage() {
           <p className="mt-2 text-sm text-mist">
             Move a job to Booked in Jobs before creating its show-day run sheet.
           </p>
+          <Link to="/studio/pipeline" search={{ jobId: undefined }} className="mt-4 inline-flex">
+            <Button type="button" className="min-h-11">
+              Open jobs board
+            </Button>
+          </Link>
         </section>
       ) : (
         <>

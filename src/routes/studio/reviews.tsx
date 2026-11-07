@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Check, MessageSquare, Plus, RefreshCw, Save, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { toast } from "sonner";
@@ -182,6 +182,11 @@ function ClientReviewsPage() {
           <p className="mt-2 text-sm text-mist">
             Create a production in Jobs before preparing a client review.
           </p>
+          <Link to="/studio/pipeline" search={{ jobId: undefined }} className="mt-4 inline-flex">
+            <Button type="button" className="min-h-11">
+              Open jobs board
+            </Button>
+          </Link>
         </section>
       ) : (
         <>
