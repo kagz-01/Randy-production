@@ -12,3 +12,13 @@ export function env(key: string): string | undefined {
 export function isWorkspacePreview(): boolean {
   return !env("GROK_PROJECT_ID");
 }
+
+export function isPreviewFixturesEnabled(): boolean {
+  return (
+    process.env.NODE_ENV === "development" &&
+    isWorkspacePreview() &&
+    env("VITE_AUTH_ENABLED") === "false" &&
+    !env("DATABASE_URL") &&
+    env("RANDY_PREVIEW_FIXTURES") === "1"
+  );
+}

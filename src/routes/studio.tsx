@@ -240,7 +240,7 @@ function StudioLayout() {
             ) : null}
           </header>
           <nav aria-label="Studio navigation" className="shell mt-3 lg:hidden">
-            <div className="-mx-1 flex gap-2 overflow-x-auto pb-2">
+            <div className="-mx-1 flex gap-2 overflow-x-auto pb-2 no-scrollbar">
               {[...WORKFLOWS, ...TOOLS].map((item) => {
                 const Icon = item.icon;
                 return (

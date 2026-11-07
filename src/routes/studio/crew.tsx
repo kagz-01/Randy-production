@@ -583,7 +583,7 @@ function CrewCard({
 }) {
   const isAssigned = Boolean(nextJob && person.assigned_job_id === nextJob.id);
   return (
-    <article className="rounded-lg border border-paper/10 bg-paper/[0.025] p-4">
+    <article className="min-w-0 rounded-lg border border-paper/10 bg-paper/[0.025] p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="truncate text-lg font-medium text-paper">{person.name}</h3>

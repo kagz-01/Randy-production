@@ -5,10 +5,12 @@ import { chromium } from "playwright";
 import { checkedOutputPath, checkedUrl } from "./browser-guard.mjs";
 import { computeBrandWarnings } from "./brand-check.mjs";
 import {
+  authEnabledFromEnvValue,
   authInvariantWarnings,
   buildAuthEnabled,
   compareAuthInvariant,
-  probeDevAuthEnabled,
+  isFixturePreviewEnv,
+  probeDevAppEnv,
 } from "./check-auth-invariant.mjs";
 import {
   baselineComparison,
@@ -143,12 +145,17 @@ try {
   const brandWarnings = computeBrandWarnings({ hasCanvas: viewports.desktop.hasCanvas });
   // Only a dev server answers /__app-env, so smoking the built output reads as
   // indeterminate — report a divergence, never the absence of an observation.
-  const authWarnings = authInvariantWarnings(
-    compareAuthInvariant({
-      devAuthEnabled: await probeDevAuthEnabled(url),
-      buildAuthEnabled: buildAuthEnabled(),
-    }),
-  );
+  const devAppEnv = await probeDevAppEnv(url);
+  const authWarnings = isFixturePreviewEnv(devAppEnv)
+    ? []
+    : authInvariantWarnings(
+        compareAuthInvariant({
+          devAuthEnabled: devAppEnv
+            ? authEnabledFromEnvValue(devAppEnv.VITE_AUTH_ENABLED)
+            : null,
+          buildAuthEnabled: buildAuthEnabled(),
+        }),
+      );
   const verdict = { url, viewports, brandWarnings, authWarnings, verdictFile: outJson };
   if (baselineRequested) {
     const { divergesFromBaseline, reasons } = compareAgainstBaseline(verdict);

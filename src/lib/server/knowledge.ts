@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { EVENT_TYPES, GUEST_BANDS, PACKAGES, VENUE_TYPES } from "@/data/catalog";
 import { optionalAuthMiddleware, authMiddleware } from "@/lib/auth/middleware";
 import { getSql } from "@/lib/db";
+import { isPreviewFixturesEnabled } from "@/lib/env.server";
 import {
   knowledgeSearchTerms,
   rankKnowledge,
@@ -176,7 +177,7 @@ export const getKnowledgeForMatch = createServerFn({ method: "POST" })
       limit 100
     `;
     const entries = rankKnowledge(rows, data);
-    const apiKey = process.env.XAI_API_KEY?.trim();
+    const apiKey = isPreviewFixturesEnabled() ? undefined : process.env.XAI_API_KEY?.trim();
     if (entries.length === 0) {
       return { entries, insight: null, aiStatus: "no_sources", aiMessage: "No approved source matched this brief yet." } satisfies KnowledgeAssistantResult;
     }

@@ -19,7 +19,9 @@
  *
  * `scripts/browser-smoke.mjs` runs the comparison on every smoke; run it
  * standalone against a live dev server with `npm run check:auth` (exit 0 agree,
- * 1 diverged, 2 could not observe). Callers comparing the flag should use
+ * 1 diverged, 2 could not observe). The explicitly isolated fixture preview
+ * intentionally turns sign-in off only for local development and is excluded
+ * from the build parity check. Callers comparing the flag should use
  * `compareAuthInvariant()` rather than re-deriving it.
  */
 import { APP_ENV_ROUTE } from "./app-env-plugin.mjs";
@@ -30,6 +32,13 @@ const DEFAULT_DEV_URL = "http://127.0.0.1:8080";
 /** The predicate `src/lib/auth/{client,server}.ts` apply to the flag. */
 export function authEnabledFromEnvValue(value) {
   return value !== "false";
+}
+
+export function isFixturePreviewEnv(env) {
+  return (
+    env?.VITE_RANDY_PREVIEW_FIXTURES === "true" &&
+    env.VITE_AUTH_ENABLED === "false"
+  );
 }
 
 /**
@@ -65,7 +74,7 @@ export function compareAuthInvariant({ devAuthEnabled, buildAuthEnabled }) {
  * `/__app-env` (no server, a built-output preview, an older workspace without
  * the plugin) is "could not observe".
  */
-export async function probeDevAuthEnabled(devUrl, fetchImpl = fetch) {
+export async function probeDevAppEnv(devUrl, fetchImpl = fetch) {
   let env;
   try {
     const response = await fetchImpl(new URL(APP_ENV_ROUTE, devUrl).href);
@@ -75,7 +84,12 @@ export async function probeDevAuthEnabled(devUrl, fetchImpl = fetch) {
     return null;
   }
   if (env === null || typeof env !== "object") return null;
-  return authEnabledFromEnvValue(env.VITE_AUTH_ENABLED);
+  return env;
+}
+
+export async function probeDevAuthEnabled(devUrl, fetchImpl = fetch) {
+  const env = await probeDevAppEnv(devUrl, fetchImpl);
+  return env ? authEnabledFromEnvValue(env.VITE_AUTH_ENABLED) : null;
 }
 
 /** The smoke-verdict warnings for a comparison: a real divergence only. */
@@ -92,8 +106,13 @@ export function buildAuthEnabled(root = projectRoot(), processEnv = process.env)
 async function main(argv) {
   const devUrlFlag = argv.indexOf("--dev-url");
   const devUrl = devUrlFlag === -1 ? DEFAULT_DEV_URL : argv[devUrlFlag + 1];
+  const devEnv = await probeDevAppEnv(devUrl);
+  if (isFixturePreviewEnv(devEnv)) {
+    console.log("[auth-invariant] skipped intentional local fixture preview; production sign-in remains enabled");
+    process.exit(0);
+  }
   const result = compareAuthInvariant({
-    devAuthEnabled: await probeDevAuthEnabled(devUrl),
+    devAuthEnabled: devEnv ? authEnabledFromEnvValue(devEnv.VITE_AUTH_ENABLED) : null,
     buildAuthEnabled: buildAuthEnabled(),
   });
   if (result.status === "ok") {

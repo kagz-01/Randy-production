@@ -107,12 +107,21 @@ function money(amount: number) {
   return currency.format(amount);
 }
 
+function isoTimestamp(value: string | Date | null) {
+  if (!value) return null;
+  return value instanceof Date ? value.toISOString() : value;
+}
+
 function mapInvite(invite: TeamInviteRow): TeamInvite {
-  const status: InviteStatus = invite.revoked_at
+  const createdAt = isoTimestamp(invite.created_at) ?? "";
+  const expiresAt = isoTimestamp(invite.expires_at);
+  const acceptedAt = isoTimestamp(invite.accepted_at);
+  const revokedAt = isoTimestamp(invite.revoked_at);
+  const status: InviteStatus = revokedAt
     ? "Revoked"
-    : invite.accepted_at
+    : acceptedAt
       ? "Ready to start"
-      : !invite.expires_at || new Date(invite.expires_at).getTime() <= Date.now()
+      : !expiresAt || new Date(expiresAt).getTime() <= Date.now()
         ? "Expired"
         : (invite.status as InviteStatus);
   return {
@@ -122,10 +131,10 @@ function mapInvite(invite: TeamInviteRow): TeamInvite {
     team: invite.team,
     status,
     email: invite.email,
-    date: invite.created_at.slice(0, 10),
-    expiresAt: invite.expires_at,
-    acceptedAt: invite.accepted_at,
-    revokedAt: invite.revoked_at,
+    date: createdAt.slice(0, 10),
+    expiresAt,
+    acceptedAt,
+    revokedAt,
   };
 }
 
@@ -1887,7 +1896,7 @@ function PaymentAgreementManager({ jobs }: { jobs: JobRow[] }) {
           <select
             value={selectedJobId}
             onChange={(event) => setSelectedJobId(event.target.value)}
-            className="min-h-11 rounded-md border border-paper/15 bg-void px-3 text-sm text-paper"
+            className="min-h-11 w-full min-w-0 rounded-md border border-paper/15 bg-void px-3 text-sm text-paper"
           >
             {linkedJobs.map((job) => (
               <option key={job.id} value={job.id}>

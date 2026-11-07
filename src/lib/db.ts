@@ -1,4 +1,6 @@
 import { pendingMigrations } from "../../scripts/migration-plan.mjs";
+import { isPreviewFixturesEnabled } from "./env.server";
+import { seedPreviewFixtures } from "./preview-fixtures.server";
 
 /** Which database backend is active. */
 export type DbSource = "neon" | "pglite";
@@ -40,6 +42,7 @@ const globalRef = globalThis as typeof globalThis & {
   __pgSqlPromise__?: Promise<Sql>;
   __pgliteInstance__?: Promise<import("@electric-sql/pglite").PGlite>;
   __pgliteMigrateChain__?: Promise<void>;
+  __previewFixturesPromise__?: Promise<void>;
 };
 
 /**
@@ -149,10 +152,18 @@ async function createPgliteSql(): Promise<Sql> {
   globalRef.__pgliteMigrateChain__ = pass;
   await pass;
 
-  return toSql(async <T>(text: string, params: unknown[]) => {
+  const sql = toSql(async <T>(text: string, params: unknown[]) => {
     const result = await pg.query<T>(text, params);
     return result.rows;
   });
+  if (isPreviewFixturesEnabled()) {
+    globalRef.__previewFixturesPromise__ ??= seedPreviewFixtures(sql).catch((error) => {
+      globalRef.__previewFixturesPromise__ = undefined;
+      throw error;
+    });
+    await globalRef.__previewFixturesPromise__;
+  }
+  return sql;
 }
 
 let sqlPromise: Promise<Sql> | null = null;

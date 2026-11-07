@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -70,6 +70,7 @@ const SECTIONS: { id: ProjectSection; label: string; icon: LucideIcon }[] = [
 
 function ProjectPortal() {
   const { projectId } = Route.useParams();
+  const pathname = useLocation({ select: (location) => location.pathname });
   const { user, isPending } = useCurrentUserState();
   const [section, setSection] = useState<ProjectSection>("overview");
   const [data, setData] = useState<ProjectData | null>(null);
@@ -215,6 +216,7 @@ function ProjectPortal() {
 
   if (isPending) return <div className="min-h-dvh bg-void" />;
   if (!user) return <RedirectToSignIn />;
+  if (pathname.startsWith(`/portal/${projectId}/receipts/`)) return <Outlet />;
 
   if (loading) {
     return (

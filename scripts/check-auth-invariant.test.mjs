@@ -10,9 +10,11 @@ import {
   authInvariantWarnings,
   buildAuthEnabled,
   compareAuthInvariant,
+  isFixturePreviewEnv,
+  probeDevAppEnv,
   probeDevAuthEnabled,
 } from "./check-auth-invariant.mjs";
-import { projectRoot } from "./with-app-env.mjs";
+import { projectRoot, readAppEnv } from "./with-app-env.mjs";
 
 /**
  * The JSON body `/__app-env` would serve. Do not start a real Vite server —
@@ -37,6 +39,17 @@ test("reads the value a live dev server resolved", async () => {
     await probeDevAuthEnabled("http://127.0.0.1:8080", appEnvFetch({ VITE_AUTH_ENABLED: "false" })),
     false,
   );
+});
+
+test("isolated fixture previews are explicitly recognized", async () => {
+  const fixtureEnv = { VITE_AUTH_ENABLED: "false", VITE_RANDY_PREVIEW_FIXTURES: "true" };
+  assert.deepEqual(
+    await probeDevAppEnv("http://127.0.0.1:8080", appEnvFetch(fixtureEnv)),
+    fixtureEnv,
+  );
+  assert.equal(isFixturePreviewEnv(fixtureEnv), true);
+  assert.equal(isFixturePreviewEnv({ VITE_AUTH_ENABLED: "false" }), false);
+  assert.equal(isFixturePreviewEnv({ VITE_RANDY_PREVIEW_FIXTURES: "true" }), false);
 });
 
 test("a server started without the flag reads as sign-in on", async () => {
@@ -91,8 +104,12 @@ test("only a divergence warns the smoke verdict", () => {
 });
 
 test("the build side resolves the template's shipped app-env", () => {
-  assert.equal(buildAuthEnabled(projectRoot(), {}), false);
+  assert.equal(
+    buildAuthEnabled(projectRoot(), {}),
+    authEnabledFromEnvValue(readAppEnv(projectRoot()).VITE_AUTH_ENABLED),
+  );
   assert.equal(buildAuthEnabled(projectRoot(), { VITE_AUTH_ENABLED: "true" }), true);
+  assert.equal(buildAuthEnabled(projectRoot(), { VITE_AUTH_ENABLED: "false" }), false);
 });
 
 test("the CLI reports rather than silently passing when run via a symlink", async () => {

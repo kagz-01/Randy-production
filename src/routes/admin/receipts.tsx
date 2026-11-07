@@ -173,7 +173,7 @@ function ReceiptsPage() {
         <div>
           <Link
             to="/admin"
-            className="text-[11px] uppercase tracking-[0.32em] text-blue-2 hover:text-paper"
+            className="inline-flex min-h-11 items-center text-[11px] uppercase tracking-[0.32em] text-blue-2 hover:text-paper"
           >
             Admin dashboard
           </Link>

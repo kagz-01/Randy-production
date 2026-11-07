@@ -37,7 +37,7 @@ function MarketingPage() {
   return (
     <main className="shell py-8">
       <section>
-        <h2 className="font-serif text-3xl">Case Forge</h2>
+        <h1 className="font-serif text-3xl">Case Forge</h1>
         <p className="mt-1 text-sm text-mist">
           Build shareable stories from the real work in the Randy Production catalog.
         </p>

@@ -281,7 +281,7 @@ function RunSheetPage() {
               <select
                 value={selectedJobId}
                 onChange={(event) => setSelectedJobId(event.target.value)}
-                className="min-h-11 rounded-md border border-paper/15 bg-void px-3 text-sm text-paper"
+                className="min-h-11 w-full min-w-0 rounded-md border border-paper/15 bg-void px-3 text-sm text-paper"
               >
                 {activeJobs.map((job) => (
                   <option key={job.id} value={job.id}>

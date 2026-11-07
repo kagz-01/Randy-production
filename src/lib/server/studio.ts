@@ -3,6 +3,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { authMiddleware, optionalAuthMiddleware } from "@/lib/auth/middleware";
 import { DEV_USER_ID } from "@/lib/auth/verify.server";
 import { getSql } from "@/lib/db";
+import { getPreviewRole } from "@/lib/preview-fixtures.server";
+import { isPreviewFixturesEnabled } from "@/lib/env.server";
 import { priceQuote, type QuoteInput } from "@/lib/pricing";
 import { confirmInvoicePayment, getPaymentProviderStatus } from "@/lib/payments/provider";
 import type { ServiceKey, VenueType } from "@/data/catalog";
@@ -221,11 +223,11 @@ export type TeamInviteRow = {
   team: string;
   status: string;
   invited_by: string | null;
-  created_at: string;
-  updated_at: string;
-  expires_at: string | null;
-  accepted_at: string | null;
-  revoked_at: string | null;
+  created_at: string | Date;
+  updated_at: string | Date;
+  expires_at: string | Date | null;
+  accepted_at: string | Date | null;
+  revoked_at: string | Date | null;
 };
 
 export type StudioMessageRow = {
@@ -270,11 +272,12 @@ const PROFILE_AVATAR_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 async function ensureProfile(userId: string, displayName?: string | null) {
   const sql = await getSql();
-  const isLocalPreviewAdmin =
+  const isLocalPreviewUser =
     userId === DEV_USER_ID &&
     process.env.NODE_ENV === "development" &&
     process.env.VITE_AUTH_ENABLED === "false" &&
     !process.env.DATABASE_URL?.trim();
+  const localPreviewRole = isPreviewFixturesEnabled() ? getPreviewRole() : "admin";
   const identities = await sql<{ name: string | null; email: string; emailVerified: boolean }>`
     select name, email, "emailVerified" from "user" where id = ${userId}
   `;
@@ -283,13 +286,17 @@ async function ensureProfile(userId: string, displayName?: string | null) {
     insert into profiles (user_id, display_name, role)
     values (
       ${userId},
-      ${displayName ?? (isLocalPreviewAdmin ? "Dev User" : (identity?.name ?? null))},
-      ${isLocalPreviewAdmin ? "admin" : "client"}
+      ${displayName ?? (isLocalPreviewUser ? "Dev User" : (identity?.name ?? null))},
+      ${isLocalPreviewUser ? localPreviewRole : "client"}
     )
     on conflict (user_id) do nothing
   `;
-  if (isLocalPreviewAdmin) {
-    await sql`update profiles set role = 'admin', display_name = coalesce(display_name, 'Dev User') where user_id = ${userId}`;
+  if (isLocalPreviewUser) {
+    await sql`
+      update profiles
+      set role = ${localPreviewRole}, display_name = coalesce(display_name, 'Dev User')
+      where user_id = ${userId}
+    `;
   } else {
     const adminEmail = process.env.STUDIO_ADMIN_EMAIL?.trim().toLowerCase();
     if (adminEmail && identity?.emailVerified && identity.email.toLowerCase() === adminEmail) {
@@ -679,6 +686,9 @@ export const payMilestoneInvoice = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .validator((input: { invoiceId: string }) => input)
   .handler(async ({ context, data }) => {
+    if (isPreviewFixturesEnabled()) {
+      throw new Error("Online payments are disabled in the fixture preview.");
+    }
     if (!data || typeof data.invoiceId !== "string" || !data.invoiceId.trim()) {
       throw new Error("Choose an invoice.");
     }
@@ -1190,6 +1200,12 @@ export const getMe = createServerFn({ method: "GET" })
 export const getPaymentAvailability = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .handler(async () => {
+    if (isPreviewFixturesEnabled()) {
+      return {
+        available: false,
+        message: "Online payments are disabled in the fixture preview. No real charge will be made.",
+      };
+    }
     const status = getPaymentProviderStatus();
     return {
       available: status.mode === "live" && status.ready,
@@ -1957,6 +1973,9 @@ export const payDeposit = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .validator((quoteId: string) => quoteId)
   .handler(async ({ context, data: quoteId }) => {
+    if (isPreviewFixturesEnabled()) {
+      throw new Error("Online payments are disabled in the fixture preview.");
+    }
     const sql = await getSql();
     const quotes =
       await sql<QuoteRow>`select * from quotes where id = ${quoteId} and user_id = ${context.userId}`;
@@ -1975,6 +1994,9 @@ export const payBalance = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .validator((input: { quoteId: string }) => input)
   .handler(async ({ context, data }) => {
+    if (isPreviewFixturesEnabled()) {
+      throw new Error("Online payments are disabled in the fixture preview.");
+    }
     const sql = await getSql();
     const quotes =
       await sql<QuoteRow>`select * from quotes where id = ${data.quoteId} and user_id = ${context.userId}`;
@@ -2344,7 +2366,7 @@ export const matchMood = createServerFn({ method: "POST" })
   .validator((input: { notes: string; imageName?: string }) => input)
   .handler(async ({ context, data }) => {
     await ensureProfile(context.userId);
-    const apiKey = process.env.XAI_API_KEY;
+    const apiKey = isPreviewFixturesEnabled() ? undefined : process.env.XAI_API_KEY;
     const fallback = {
       packageId: "pkg_floor_stage",
       summary: "A Floor Stage build: drape, lounge, mix, Pulse on the night.",
@@ -2407,7 +2429,7 @@ export const refineQuote = createServerFn({ method: "POST" })
   .validator((input: QuoteInput & { notes?: string }) => input)
   .handler(async ({ context, data }) => {
     const priced = priceQuote(data);
-    const apiKey = process.env.XAI_API_KEY;
+    const apiKey = isPreviewFixturesEnabled() ? undefined : process.env.XAI_API_KEY;
     if (!apiKey) {
       return {
         ok: true as const,

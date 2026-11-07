@@ -125,6 +125,11 @@ export function SiteNav() {
           <span className="hidden text-[10px] font-medium uppercase tracking-[0.28em] text-paper/85 sm:block">
             Randy Production
           </span>
+          {import.meta.env.VITE_RANDY_PREVIEW_FIXTURES === "true" ? (
+            <span className="rounded-full border border-amber-200/25 bg-amber-200/10 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-amber-100">
+              Fixture data
+            </span>
+          ) : null}
         </Link>
 
         {!isWorkspace ? (
