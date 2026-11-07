@@ -12,15 +12,20 @@ function MarketingPage() {
   const [tms, setTms] = useState<Awaited<ReturnType<typeof listTestimonials>>>([]);
   const [author, setAuthor] = useState("");
   const [body, setBody] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   async function refresh() {
+    setLoading(true);
     setLoadError(null);
     try {
       setTms(await listTestimonials());
     } catch (error) {
       console.error("[case-forge] Could not load testimonials", error);
       setLoadError("Testimonials could not be loaded. Please refresh and try again.");
+    } finally {
+      setLoading(false);
     }
   }
   useEffect(() => {
@@ -76,7 +81,23 @@ function MarketingPage() {
         <p className="mt-1 text-sm text-mist">
           Capture a client&apos;s words after a project is delivered.
         </p>
-        {loadError ? <p role="alert" className="mt-4 text-sm text-red-300">{loadError}</p> : null}
+        {loadError ? (
+          <div className="mt-4 rounded-lg border border-red/25 bg-red/5 p-4" role="alert">
+            <p className="text-sm text-red-200">{loadError}</p>
+            <Button
+              type="button"
+              variant="line"
+              className="mt-3 min-h-11"
+              onClick={() => void refresh()}
+              disabled={loading}
+            >
+              Try again
+            </Button>
+          </div>
+        ) : null}
+        {loading ? (
+          <p role="status" className="mt-4 text-sm text-mist">Loading testimonials…</p>
+        ) : null}
         <div className="mt-6 grid gap-3">
           {tms
             .filter((t) => t.body)
@@ -90,33 +111,50 @@ function MarketingPage() {
               </blockquote>
             ))}
         </div>
+        {!loading && !loadError && !tms.some((testimonial) => testimonial.body) ? (
+          <p className="mt-4 rounded-lg border border-paper/10 bg-ink/50 p-4 text-sm text-mist">
+            No testimonials have been captured yet.
+          </p>
+        ) : null}
         {pending[0] ? (
           <form
             className="glass mt-6 grid gap-3 rounded-lg p-5"
             onSubmit={async (e) => {
               e.preventDefault();
+              setSaving(true);
               try {
                 await captureTestimonial({ data: { id: pending[0].id, author, body } });
                 toast.success("Captured");
                 setAuthor("");
                 setBody("");
                 await refresh();
-              } catch {
+              } catch (error) {
+                console.error("[case-forge] Could not capture testimonial", error);
                 toast.error("Could not save");
+              } finally {
+                setSaving(false);
               }
             }}
           >
             <p className="text-[11px] uppercase tracking-[0.2em] text-blue-2">Request waiting</p>
-            <Input placeholder="Name" value={author} onChange={(e) => setAuthor(e.target.value)} />
+            <Input
+              required
+              className="min-h-11"
+              placeholder="Name"
+              value={author}
+              onChange={(e) => setAuthor(e.target.value)}
+            />
             <textarea
               required
               value={body}
               onChange={(e) => setBody(e.target.value)}
               rows={3}
-              className="w-full rounded-md bg-paper/5 p-3 text-sm outline-none shadow-[0_0_0_1px_rgb(243_241_234/0.12)]"
+              className="min-h-24 w-full rounded-md bg-paper/5 p-3 text-sm outline-none shadow-[0_0_0_1px_rgb(243_241_234/0.12)]"
               placeholder="One line. A number if you have it."
             />
-            <Button>File it</Button>
+            <Button type="submit" className="min-h-11" disabled={saving}>
+              {saving ? "Saving…" : "File it"}
+            </Button>
           </form>
         ) : null}
       </section>
