@@ -112,7 +112,7 @@ function Home() {
             <source src={HERO_VIDEO_URL} type="video/mp4" />
           </video>
           <div className="absolute inset-0 bg-linear-to-t from-void via-void/75 to-void/60" />
-          <div className="absolute inset-0 bg-linear-to-r from-void/55 via-void/15 to-transparent" />
+          <div className="absolute inset-0 bg-linear-to-r from-void/90 via-void/35 to-transparent" />
         </motion.div>
 
         <motion.div
