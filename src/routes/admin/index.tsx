@@ -465,6 +465,7 @@ function AdminDashboard() {
             type="button"
             variant="line"
             size="sm"
+            className="min-h-11"
             onClick={() => void loadDashboard()}
             disabled={loading}
             aria-label="Refresh admin dashboard"
@@ -477,6 +478,7 @@ function AdminDashboard() {
               type="button"
               variant="primary"
               size="sm"
+              className="min-h-11"
               onClick={() => document.getElementById("new-invite-name")?.focus()}
             >
               <UserPlus className="size-3.5" />
@@ -484,14 +486,14 @@ function AdminDashboard() {
             </Button>
           ) : activeTab === "finance" ? (
             <Link to="/admin/receipts">
-              <Button variant="primary" size="sm">
+              <Button variant="primary" size="sm" className="min-h-11">
                 <FileText className="size-3.5" />
                 Open receipts
               </Button>
             </Link>
           ) : activeTab === "operations" ? (
             <Link to="/studio/pipeline" search={{ jobId: undefined }}>
-              <Button variant="primary" size="sm">
+              <Button variant="primary" size="sm" className="min-h-11">
                 <BriefcaseBusiness className="size-3.5" />
                 Open pipeline
               </Button>
@@ -1022,14 +1024,14 @@ function PriorityQueue({
                 <Link
                   to="/studio/pipeline"
                   search={{ jobId: item.id }}
-                  className="inline-flex min-h-10 shrink-0 items-center gap-1 self-start rounded-md border border-paper/10 px-3 text-xs font-medium text-blue-2 transition-colors hover:bg-paper/5 hover:text-paper sm:self-auto"
+                  className="inline-flex min-h-11 shrink-0 items-center gap-1 self-start rounded-md border border-paper/10 px-3 text-xs font-medium text-blue-2 transition-colors hover:bg-paper/5 hover:text-paper sm:self-auto"
                 >
                   Open production <ChevronRight className="size-3.5" />
                 </Link>
               ) : item.kind === "crew" ? (
                 <Link
                   to="/studio/crew"
-                  className="inline-flex min-h-10 shrink-0 items-center gap-1 self-start rounded-md border border-paper/10 px-3 text-xs font-medium text-blue-2 transition-colors hover:bg-paper/5 hover:text-paper sm:self-auto"
+                  className="inline-flex min-h-11 shrink-0 items-center gap-1 self-start rounded-md border border-paper/10 px-3 text-xs font-medium text-blue-2 transition-colors hover:bg-paper/5 hover:text-paper sm:self-auto"
                 >
                   Open crew workspace <ChevronRight className="size-3.5" />
                 </Link>
@@ -1037,7 +1039,7 @@ function PriorityQueue({
                 <button
                   type="button"
                   onClick={item.kind === "people" ? onOpenPeople : onOpenFinance}
-                  className="inline-flex min-h-10 shrink-0 items-center gap-1 self-start rounded-md border border-paper/10 px-3 text-xs font-medium text-blue-2 transition-colors hover:bg-paper/5 hover:text-paper sm:self-auto"
+                  className="inline-flex min-h-11 shrink-0 items-center gap-1 self-start rounded-md border border-paper/10 px-3 text-xs font-medium text-blue-2 transition-colors hover:bg-paper/5 hover:text-paper sm:self-auto"
                 >
                   {item.kind === "people" ? "Open onboarding" : "Open closeouts"}
                   <ChevronRight className="size-3.5" />
@@ -1326,6 +1328,7 @@ function PeopleTab({
                 type="button"
                 variant="line"
                 size="sm"
+                className="min-h-11"
                 onClick={async () => {
                   try {
                     await navigator.clipboard.writeText(inviteLink);
@@ -1379,6 +1382,7 @@ function PeopleTab({
                         type="button"
                         variant="line"
                         size="sm"
+                        className="min-h-11"
                         disabled={updatingInviteId === invite.id}
                         onClick={() => onStatusChange(invite.id, "Waiting on docs")}
                       >
@@ -1390,6 +1394,7 @@ function PeopleTab({
                         type="button"
                         variant="primary"
                         size="sm"
+                        className="min-h-11"
                         disabled={updatingInviteId === invite.id}
                         onClick={() => onStatusChange(invite.id, "Ready to start")}
                       >
@@ -1404,6 +1409,7 @@ function PeopleTab({
                         type="button"
                         variant="line"
                         size="sm"
+                        className="min-h-11"
                         disabled={updatingInviteId === invite.id}
                         onClick={() => onRevoke(invite.id)}
                       >
@@ -1622,7 +1628,7 @@ function FinanceTab({
                     <Link
                       to="/studio/pipeline"
                       search={{ jobId: item.jobId }}
-                      className="inline-flex min-h-10 items-center gap-1 rounded-md border border-paper/10 px-3 text-xs font-medium text-blue-2 transition-colors hover:bg-paper/5 hover:text-paper"
+                      className="inline-flex min-h-11 items-center gap-1 rounded-md border border-paper/10 px-3 text-xs font-medium text-blue-2 transition-colors hover:bg-paper/5 hover:text-paper"
                     >
                       Open production <ChevronRight className="size-3.5" />
                     </Link>
@@ -1911,6 +1917,7 @@ function PaymentAgreementManager({ jobs }: { jobs: JobRow[] }) {
                             type="button"
                             variant="line"
                             size="sm"
+                            className="min-h-11"
                             disabled={issuingId !== null}
                             onClick={() => void issueInvoice(milestone.id)}
                           >
@@ -2004,7 +2011,7 @@ function PaymentAgreementManager({ jobs }: { jobs: JobRow[] }) {
                         type="button"
                         variant="line"
                         size="sm"
-                        className="sm:col-span-2 xl:col-span-4 sm:justify-self-end"
+                        className="min-h-11 sm:col-span-2 xl:col-span-4 sm:justify-self-end"
                         onClick={() =>
                           setDraftMilestones((items) =>
                             items.filter((_, itemIndex) => itemIndex !== index),
@@ -2023,6 +2030,7 @@ function PaymentAgreementManager({ jobs }: { jobs: JobRow[] }) {
                     type="button"
                     variant="line"
                     size="sm"
+                    className="min-h-11"
                     disabled={draftMilestones.length >= 12}
                     onClick={() =>
                       setDraftMilestones((items) => [...items, { ...EMPTY_MILESTONE }])
@@ -2158,7 +2166,7 @@ function PublicUpdatesTab({
                           disabled={disabled}
                           onClick={() => onToggle(job)}
                           className={cn(
-                            "inline-flex min-h-10 items-center rounded-full border px-3 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+                            "inline-flex min-h-11 items-center rounded-full border px-3 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
                             job.is_showcase
                               ? "border-blue/40 bg-blue/15 text-blue-2"
                               : "border-paper/15 text-mist hover:border-paper/35 hover:text-paper",

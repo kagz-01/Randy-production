@@ -299,6 +299,7 @@ function ReceiptsPage() {
                 <Button
                   variant="line"
                   size="sm"
+                  className="min-h-11"
                   onClick={async () => {
                     try {
                       await navigator.clipboard.writeText(
@@ -316,7 +317,7 @@ function ReceiptsPage() {
                   to="/portal/$projectId/receipts/$receiptId"
                   params={{ projectId: receipt.job_id, receiptId: receipt.id }}
                 >
-                  <Button variant="paper" size="sm">
+                  <Button variant="paper" size="sm" className="min-h-11">
                     Open digital receipt
                   </Button>
                 </Link>
@@ -392,7 +393,7 @@ function OfflinePaymentReviewCard({
           <Button
             type="button"
             variant="line"
-            className="min-h-10"
+            className="min-h-11"
             disabled={submitting}
             onClick={() => void onReview(report, "confirm", "")}
           >
@@ -425,7 +426,7 @@ function OfflinePaymentReviewCard({
             <Button
               type="button"
               variant="line"
-              className="min-h-10"
+              className="min-h-11"
               disabled={submitting || !reviewNote.trim()}
               onClick={() => void onReview(report, "reject", reviewNote.trim())}
             >
@@ -434,7 +435,7 @@ function OfflinePaymentReviewCard({
             <Button
               type="button"
               variant="primary"
-              className="min-h-10"
+              className="min-h-11"
               disabled={submitting || !verified}
               onClick={() => void onReview(report, "confirm", reviewNote.trim())}
             >
