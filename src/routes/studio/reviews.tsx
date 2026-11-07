@@ -158,6 +158,7 @@ function ClientReviewsPage() {
           type="button"
           variant="line"
           size="sm"
+          className="min-h-11"
           onClick={() => void refreshJobs()}
           disabled={loading}
         >
@@ -366,7 +367,7 @@ function DraftEditor({
               Status: {draft.status.replaceAll("_", " ")}
             </p>
           </div>
-          <Button type="button" variant="line" size="sm" disabled={busy} onClick={onDelete}>
+          <Button type="button" variant="line" size="sm" className="min-h-11" disabled={busy} onClick={onDelete}>
             <Trash2 className="size-3.5" />
             Remove
           </Button>
@@ -419,7 +420,7 @@ function DraftEditor({
         <Button
           type="submit"
           variant={draft.status === "changes_requested" ? "primary" : "line"}
-          className="mt-4 min-h-10"
+          className="mt-4 min-h-11"
           disabled={busy || !dirty}
         >
           <Save className="size-4" />

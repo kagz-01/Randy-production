@@ -288,7 +288,7 @@ function ProjectCard({ job }: { job: JobRow }) {
       </div>
       <div className="flex items-center justify-between gap-4 border-t border-paper/10 pt-3 sm:flex-col sm:items-end sm:border-0 sm:pt-0">
         <p className="text-lg tabular-nums text-paper">{money(job.ballpark)}</p>
-        <span className="inline-flex min-h-10 items-center gap-1 text-xs font-medium text-blue-2 group-hover:text-paper">
+        <span className="inline-flex min-h-11 items-center gap-1 text-xs font-medium text-blue-2 group-hover:text-paper">
           Project details <ChevronRight className="size-4" />
         </span>
       </div>

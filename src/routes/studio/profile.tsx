@@ -250,11 +250,11 @@ function StudioProfilePage() {
                   className="sr-only"
                   onChange={(event) => void chooseAvatar(event.currentTarget.files?.[0])}
                 />
-                <Button type="button" variant="line" size="sm" onClick={() => fileInput.current?.click()}>
+                <Button type="button" variant="line" size="sm" className="min-h-11" onClick={() => fileInput.current?.click()}>
                   Choose photo
                 </Button>
                 {avatarPreview ? (
-                  <button type="button" className="min-h-8 text-xs text-mist underline underline-offset-4 hover:text-paper" onClick={() => setAvatar(null)}>
+                  <button type="button" className="min-h-11 text-xs text-mist underline underline-offset-4 hover:text-paper" onClick={() => setAvatar(null)}>
                     Remove photo
                   </button>
                 ) : null}

@@ -231,6 +231,7 @@ function RunSheetPage() {
             type="button"
             variant="line"
             size="sm"
+            className="min-h-11"
             onClick={() => void refreshJobs()}
             disabled={loadingJobs}
           >
@@ -241,6 +242,7 @@ function RunSheetPage() {
             type="button"
             variant="line"
             size="sm"
+            className="min-h-11"
             onClick={() => window.print()}
             disabled={!selectedJob || !cues.length}
           >
@@ -357,7 +359,7 @@ function RunSheetPage() {
                               disabled={savingCueId === cue.id}
                               onClick={() => void changeCueStatus(cue, status)}
                               className={cn(
-                                "min-h-10 rounded-md border px-3 text-xs capitalize",
+                                "min-h-11 rounded-md border px-3 text-xs capitalize",
                                 cue.status === status
                                   ? "border-blue/40 bg-blue/10 text-blue-2"
                                   : "border-paper/10 text-mist hover:text-paper",
@@ -370,6 +372,7 @@ function RunSheetPage() {
                             type="button"
                             variant="line"
                             size="sm"
+                            className="min-h-11"
                             disabled={savingCueId === cue.id}
                             onClick={() => void saveCue(cue)}
                           >
@@ -379,6 +382,7 @@ function RunSheetPage() {
                             type="button"
                             variant="ghost"
                             size="sm"
+                            className="min-h-11 min-w-11"
                             disabled={savingCueId === cue.id}
                             aria-label={`Remove ${cue.title}`}
                             onClick={() => void removeCue(cue)}
