@@ -43,6 +43,25 @@ function StudioCollaboration() {
   const [error, setError] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
 
+  const refreshChannels = useCallback(async () => {
+    setLoading(true);
+    try {
+      const result = await listStudioChannels();
+      setChannels(result);
+      setChannelId((current) =>
+        current && result.some((channel) => channel.id === current)
+          ? current
+          : (result[0]?.id ?? null),
+      );
+      setError(null);
+    } catch (cause) {
+      console.error("[studio-collaboration] Could not load channels", cause);
+      setError("Channels could not be loaded. Refresh and try again.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const refreshMessages = useCallback(async (id: string) => {
     const result = await listStudioMessages({ data: { channelId: id } });
     setMessages([...result].reverse());
@@ -54,32 +73,17 @@ function StudioCollaboration() {
   }, []);
 
   useEffect(() => {
-    let active = true;
-    listStudioChannels()
-      .then((result) => {
-        if (!active) return;
-        setChannels(result);
-        setChannelId((current) => current ?? result[0]?.id ?? null);
-      })
-      .catch((cause) => {
-        console.error("[studio-collaboration] Could not load channels", cause);
-        if (active) setError("Channels could not be loaded. Refresh and try again.");
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
+    void refreshChannels();
+  }, [refreshChannels]);
 
   useEffect(() => {
     if (!channelId) return;
     let active = true;
-    const load = () => refreshMessages(channelId).catch((cause) => {
-      console.error("[studio-collaboration] Could not load messages", cause);
-      if (active) setError("Messages could not be refreshed.");
-    });
+    const load = () =>
+      refreshMessages(channelId).catch((cause) => {
+        console.error("[studio-collaboration] Could not load messages", cause);
+        if (active) setError("Messages could not be refreshed.");
+      });
     void load();
     const timer = window.setInterval(() => void load(), 8_000);
     return () => {
@@ -90,10 +94,11 @@ function StudioCollaboration() {
 
   useEffect(() => {
     let active = true;
-    const update = () => refreshPresence().catch((cause) => {
-      console.error("[studio-collaboration] Could not update presence", cause);
-      if (active) setError("Team presence could not be refreshed.");
-    });
+    const update = () =>
+      refreshPresence().catch((cause) => {
+        console.error("[studio-collaboration] Could not update presence", cause);
+        if (active) setError("Team presence could not be refreshed.");
+      });
     void update();
     const timer = window.setInterval(() => void update(), 30_000);
     return () => {
@@ -112,7 +117,10 @@ function StudioCollaboration() {
     }
     const dataUrl = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error("Could not read the file."));
+      reader.onload = () =>
+        typeof reader.result === "string"
+          ? resolve(reader.result)
+          : reject(new Error("Could not read the file."));
       reader.onerror = () => reject(reader.error ?? new Error("Could not read the file."));
       reader.readAsDataURL(file);
     }).catch((cause: unknown) => {
@@ -199,13 +207,20 @@ function StudioCollaboration() {
     <main className="shell pb-16">
       <header className="flex flex-wrap items-end justify-between gap-5 border-b border-paper/10 pb-6">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-blue-2">Private team workspace</p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-paper md:text-4xl">Studio floor</h1>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-blue-2">
+            Private team workspace
+          </p>
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-paper md:text-4xl">
+            Studio floor
+          </h1>
           <p className="mt-2 max-w-2xl text-sm text-mist">
             Coordinate event details, share files, and keep the production team in sync.
           </p>
         </div>
-        <div aria-label={`${online.length} teammates online`} className="flex items-center gap-2 text-xs text-mist">
+        <div
+          aria-label={`${online.length} teammates online`}
+          className="flex items-center gap-2 text-xs text-mist"
+        >
           <span className="size-2 rounded-full bg-emerald-400" aria-hidden="true" />
           {online.length} online
         </div>
@@ -213,7 +228,9 @@ function StudioCollaboration() {
 
       <div className="grid gap-5 pt-6 lg:grid-cols-[230px_minmax(0,1fr)_210px]">
         <aside className="rounded-xl border border-paper/10 bg-ink/75 p-3">
-          <h2 className="px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-mist">Channels</h2>
+          <h2 className="px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-mist">
+            Channels
+          </h2>
           {loading ? <p className="px-3 py-4 text-sm text-mist">Loading channels…</p> : null}
           <div className="grid gap-1">
             {channels.map((channel) => (
@@ -223,7 +240,9 @@ function StudioCollaboration() {
                 onClick={() => setChannelId(channel.id)}
                 aria-current={channel.id === channelId ? "page" : undefined}
                 className={`min-h-11 rounded-lg px-3 text-left text-sm transition-colors ${
-                  channel.id === channelId ? "bg-blue/15 text-paper" : "text-mist hover:bg-paper/5 hover:text-paper"
+                  channel.id === channelId
+                    ? "bg-blue/15 text-paper"
+                    : "text-mist hover:bg-paper/5 hover:text-paper"
                 }`}
               >
                 <span className="mr-2 text-blue-2">#</span>
@@ -239,24 +258,59 @@ function StudioCollaboration() {
         <section className="flex min-h-[65vh] flex-col overflow-hidden rounded-xl border border-paper/10 bg-ink/75">
           <div className="border-b border-paper/10 px-5 py-4">
             <h2 className="font-medium text-paper">{activeChannel?.title ?? "Studio floor"}</h2>
-            <p className="mt-1 text-xs text-mist">{activeChannel?.job_id ? "Event production channel" : "General team channel"}</p>
+            <p className="mt-1 text-xs text-mist">
+              {activeChannel?.job_id ? "Event production channel" : "General team channel"}
+            </p>
           </div>
-          {error ? <p role="alert" className="border-b border-red-300/15 bg-red-300/5 px-5 py-3 text-sm text-red-200">{error}</p> : null}
+          {error ? (
+            <div
+              role="alert"
+              className="flex flex-wrap items-center justify-between gap-3 border-b border-red-300/15 bg-red-300/5 px-5 py-3"
+            >
+              <p className="text-sm text-red-200">{error}</p>
+              <Button
+                type="button"
+                variant="line"
+                className="min-h-11"
+                onClick={() => {
+                  void refreshChannels();
+                  if (channelId) {
+                    void refreshMessages(channelId).catch((cause) => {
+                      console.error("[studio-collaboration] Could not refresh messages", cause);
+                      setError("Messages could not be refreshed.");
+                    });
+                    void refreshPresence().catch((cause) => {
+                      console.error("[studio-collaboration] Could not refresh presence", cause);
+                      setError("Team presence could not be refreshed.");
+                    });
+                  }
+                }}
+              >
+                Retry
+              </Button>
+            </div>
+          ) : null}
           <div className="flex-1 space-y-4 overflow-y-auto p-4 sm:p-5" aria-live="polite">
             {!messages.length && !loading ? (
               <div className="grid min-h-48 place-items-center text-center">
                 <div>
                   <p className="text-sm font-medium text-paper">Start the conversation</p>
-                  <p className="mt-1 text-xs text-mist">Share a production update or ask the team a question.</p>
+                  <p className="mt-1 text-xs text-mist">
+                    Share a production update or ask the team a question.
+                  </p>
                 </div>
               </div>
             ) : null}
             {messages.map((message) => {
-              const reactions = typeof message.reactions === "string"
-                ? (JSON.parse(message.reactions) as { emoji: string; count: number }[])
-                : message.reactions;
+              const reactions =
+                typeof message.reactions === "string"
+                  ? (JSON.parse(message.reactions) as { emoji: string; count: number }[])
+                  : message.reactions;
               return (
-                <article key={message.id} className="group rounded-lg border border-paper/[0.07] bg-paper/[0.025] p-3.5">
+                <article
+                  key={message.id}
+                  className="group rounded-lg border border-paper/[0.07] bg-paper/[0.025] p-3.5"
+                >
                   <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
                     <div className="flex min-w-0 items-center gap-2">
                       {message.sender_avatar_data_url ? (
@@ -270,26 +324,40 @@ function StudioCollaboration() {
                           {message.sender_name.charAt(0).toUpperCase()}
                         </span>
                       )}
-                      <p className="truncate text-sm font-medium text-paper">{message.sender_name}</p>
+                      <p className="truncate text-sm font-medium text-paper">
+                        {message.sender_name}
+                      </p>
                       {message.sender_username ? (
-                        <span className="truncate text-[10px] text-mist">@{message.sender_username}</span>
+                        <span className="truncate text-[10px] text-mist">
+                          @{message.sender_username}
+                        </span>
                       ) : null}
                     </div>
                     <time className="text-[10px] text-mist/75" dateTime={message.created_at}>
-                      {new Intl.DateTimeFormat("en-KE", { dateStyle: "medium", timeStyle: "short" }).format(new Date(message.created_at))}
+                      {new Intl.DateTimeFormat("en-KE", {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      }).format(new Date(message.created_at))}
                     </time>
                   </div>
                   {message.reply_body ? (
-                    <p className="mt-2 border-l-2 border-blue/40 pl-3 text-xs text-mist">Replying to: {message.reply_body}</p>
+                    <p className="mt-2 border-l-2 border-blue/40 pl-3 text-xs text-mist">
+                      Replying to: {message.reply_body}
+                    </p>
                   ) : null}
-                  {message.body ? <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-mist">{message.body}</p> : null}
+                  {message.body ? (
+                    <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-mist">
+                      {message.body}
+                    </p>
+                  ) : null}
                   {message.attachment_id && message.file_name ? (
                     <button
                       type="button"
                       onClick={() => void downloadFile(message.attachment_id!)}
-                      className="mt-3 inline-flex min-h-10 items-center rounded-md border border-paper/10 px-3 text-xs text-blue-2 hover:bg-paper/5"
+                      className="mt-3 inline-flex min-h-11 items-center rounded-md border border-paper/10 px-3 text-xs text-blue-2 hover:bg-paper/5"
                     >
-                      Download · {message.file_name} · {Math.ceil((message.byte_size ?? 0) / 1024)} KB
+                      Download · {message.file_name} · {Math.ceil((message.byte_size ?? 0) / 1024)}{" "}
+                      KB
                     </button>
                   ) : null}
                   <div className="mt-3 flex flex-wrap items-center gap-1.5">
@@ -298,18 +366,20 @@ function StudioCollaboration() {
                         key={reaction.emoji}
                         type="button"
                         onClick={() => void react(message.id, reaction.emoji)}
-                        className="min-h-8 rounded-full border border-paper/10 px-2.5 text-xs text-mist hover:border-blue/30 hover:text-paper"
+                        className="min-h-11 rounded-full border border-paper/10 px-3 text-xs text-mist hover:border-blue/30 hover:text-paper"
                         aria-label={`${reaction.emoji}, ${reaction.count} reactions`}
                       >
                         {reaction.emoji} {reaction.count}
                       </button>
                     ))}
-                    {REACTIONS.filter((emoji) => !reactions.some((reaction) => reaction.emoji === emoji)).map((emoji) => (
+                    {REACTIONS.filter(
+                      (emoji) => !reactions.some((reaction) => reaction.emoji === emoji),
+                    ).map((emoji) => (
                       <button
                         key={emoji}
                         type="button"
                         onClick={() => void react(message.id, emoji)}
-                        className="grid size-8 place-items-center rounded-full text-sm text-mist/70 opacity-60 transition-opacity hover:bg-paper/5 hover:text-paper group-hover:opacity-100 focus:opacity-100"
+                        className="grid size-11 place-items-center rounded-full text-sm text-mist/70 opacity-60 transition-opacity hover:bg-paper/5 hover:text-paper group-hover:opacity-100 focus:opacity-100"
                         aria-label={`React with ${emoji}`}
                       >
                         {emoji}
@@ -318,7 +388,7 @@ function StudioCollaboration() {
                     <button
                       type="button"
                       onClick={() => setReply(message)}
-                      className="ml-auto min-h-8 rounded-md px-2 text-xs text-mist hover:bg-paper/5 hover:text-paper"
+                      className="ml-auto min-h-11 rounded-md px-3 text-xs text-mist hover:bg-paper/5 hover:text-paper"
                     >
                       Reply
                     </button>
@@ -326,7 +396,7 @@ function StudioCollaboration() {
                       <button
                         type="button"
                         onClick={() => void removeMessage(message.id)}
-                        className="min-h-8 rounded-md px-2 text-xs text-mist hover:bg-red-400/10 hover:text-red-200"
+                        className="min-h-11 rounded-md px-3 text-xs text-mist hover:bg-red-400/10 hover:text-red-200"
                       >
                         Delete
                       </button>
@@ -339,18 +409,34 @@ function StudioCollaboration() {
           <form onSubmit={submitMessage} className="border-t border-paper/10 p-3.5 sm:p-4">
             {reply ? (
               <div className="mb-3 flex items-center justify-between gap-3 rounded-lg bg-paper/5 px-3 py-2 text-xs text-mist">
-                <span className="min-w-0 truncate">Replying to {reply.sender_name}: {reply.body || "attachment"}</span>
-                <button type="button" onClick={() => setReply(null)} className="shrink-0 text-paper underline">Cancel</button>
+                <span className="min-w-0 truncate">
+                  Replying to {reply.sender_name}: {reply.body || "attachment"}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setReply(null)}
+                  className="shrink-0 text-paper underline"
+                >
+                  Cancel
+                </button>
               </div>
             ) : null}
             {attachment ? (
               <div className="mb-3 flex items-center justify-between gap-3 text-xs text-mist">
                 <span className="truncate">Attached: {attachment.name}</span>
-                <button type="button" onClick={() => setAttachment(null)} className="shrink-0 text-paper underline">Remove</button>
+                <button
+                  type="button"
+                  onClick={() => setAttachment(null)}
+                  className="shrink-0 text-paper underline"
+                >
+                  Remove
+                </button>
               </div>
             ) : null}
             <div className="flex flex-wrap items-end gap-2">
-              <label className="sr-only" htmlFor="studio-message">Message</label>
+              <label className="sr-only" htmlFor="studio-message">
+                Message
+              </label>
               <textarea
                 id="studio-message"
                 value={body}
@@ -368,25 +454,46 @@ function StudioCollaboration() {
                 className="sr-only"
                 aria-label="Attach JPG, PNG, WebP, or PDF"
               />
-              <Button type="button" variant="line" onClick={() => fileInput.current?.click()} disabled={sending}>
+              <Button
+                type="button"
+                variant="line"
+                className="min-h-11"
+                onClick={() => fileInput.current?.click()}
+                disabled={sending}
+              >
                 Attach
               </Button>
-              <Button type="submit" disabled={sending || (!body.trim() && !attachment)}>
+              <Button
+                type="submit"
+                className="min-h-11"
+                disabled={sending || (!body.trim() && !attachment)}
+              >
                 {sending ? "Sending…" : "Send"}
               </Button>
             </div>
-            <p className="mt-2 text-[10px] text-mist/70">Up to 5,000 characters · JPG, PNG, WebP, and PDF up to 2 MB</p>
+            <p className="mt-2 text-[10px] text-mist/70">
+              Up to 5,000 characters · JPG, PNG, WebP, and PDF up to 2 MB
+            </p>
           </form>
         </section>
 
         <aside className="rounded-xl border border-paper/10 bg-ink/75 p-4">
-          <h2 className="text-[10px] font-semibold uppercase tracking-[0.16em] text-mist">On the floor</h2>
+          <h2 className="text-[10px] font-semibold uppercase tracking-[0.16em] text-mist">
+            On the floor
+          </h2>
           <p className="mt-2 text-xs text-mist">{online.length} teammates active now</p>
           <ul className="mt-4 space-y-3">
             {online.map((person) => (
-              <li key={person.user_id} className="flex min-w-0 items-center gap-2.5 text-sm text-paper">
+              <li
+                key={person.user_id}
+                className="flex min-w-0 items-center gap-2.5 text-sm text-paper"
+              >
                 {person.avatar_data_url ? (
-                  <img src={person.avatar_data_url} alt="" className="size-7 shrink-0 rounded-full object-cover" />
+                  <img
+                    src={person.avatar_data_url}
+                    alt=""
+                    className="size-7 shrink-0 rounded-full object-cover"
+                  />
                 ) : (
                   <span className="grid size-7 shrink-0 place-items-center rounded-full bg-paper/10 text-[10px] font-medium">
                     {(person.display_name ?? "S").charAt(0).toUpperCase()}
@@ -395,11 +502,15 @@ function StudioCollaboration() {
                 <span className="size-2 shrink-0 rounded-full bg-emerald-400" aria-hidden="true" />
                 <span className="min-w-0 truncate">
                   <span className="block truncate">{person.display_name ?? "Studio teammate"}</span>
-                  {person.username ? <span className="block truncate text-[10px] text-mist">@{person.username}</span> : null}
+                  {person.username ? (
+                    <span className="block truncate text-[10px] text-mist">@{person.username}</span>
+                  ) : null}
                 </span>
               </li>
             ))}
-            {!online.length ? <li className="text-xs text-mist">You’re the first one in right now.</li> : null}
+            {!online.length ? (
+              <li className="text-xs text-mist">You’re the first one in right now.</li>
+            ) : null}
           </ul>
         </aside>
       </div>
