@@ -264,7 +264,7 @@ function ProjectPortal() {
       <SiteNav />
       <main className="shell pb-20 pt-28">
         <div className="mb-5 flex flex-wrap items-center gap-2 text-xs text-mist">
-          <Link to="/portal" className="min-h-10 inline-flex items-center hover:text-paper">
+          <Link to="/portal" className="min-h-11 inline-flex items-center hover:text-paper">
             Your projects
           </Link>
           <ChevronRight className="size-3" aria-hidden="true" />
@@ -684,7 +684,7 @@ function DraftResponseCard({
           <Button
             type="button"
             variant="line"
-            className="min-h-10"
+            className="min-h-11"
             disabled={busy || !feedback.trim() || requestingChanges}
             onClick={async () => {
               setRequestingChanges(true);
@@ -871,7 +871,7 @@ function BillingSection({
                     to="/portal/$projectId/receipts/$receiptId"
                     params={{ projectId: job.id, receiptId: receipt.id }}
                   >
-                    <Button type="button" variant="line" size="sm" className="min-h-10">
+                    <Button type="button" variant="line" size="sm" className="min-h-11">
                       View receipt <ChevronRight className="size-3.5" />
                     </Button>
                   </Link>
@@ -1024,7 +1024,7 @@ function PaymentAgreementSection({
                     type="button"
                     variant="primary"
                     size="sm"
-                    className="min-h-10"
+                    className="min-h-11"
                     disabled={payingInvoiceId !== null}
                     onClick={() => void onPay(milestone.invoice_id!)}
                   >
@@ -1065,7 +1065,7 @@ function PaymentAgreementSection({
             <Button
               type="button"
               variant="line"
-              className="min-h-10"
+              className="min-h-11"
               disabled={responding || !feedback.trim()}
               onClick={() => void onRespond(agreement, "changes_requested", feedback.trim())}
             >
@@ -1074,7 +1074,7 @@ function PaymentAgreementSection({
             <Button
               type="button"
               variant="primary"
-              className="min-h-10"
+              className="min-h-11"
               disabled={responding}
               onClick={() => void onRespond(agreement, "accepted", "")}
             >
@@ -1186,7 +1186,7 @@ function OfflinePaymentReporter({
                 setPaymentMethod(value);
               }
             }}
-            className="min-h-10 rounded-md border border-paper/15 bg-ink px-3 text-sm text-paper"
+            className="min-h-11 rounded-md border border-paper/15 bg-ink px-3 text-sm text-paper"
           >
             <option value="mpesa">M-Pesa</option>
             <option value="bank_transfer">Bank transfer</option>
@@ -1201,7 +1201,7 @@ function OfflinePaymentReporter({
             max={today}
             value={paymentDate}
             onChange={(event) => setPaymentDate(event.target.value)}
-            className="min-h-10 rounded-md border border-paper/15 bg-ink px-3 text-sm text-paper"
+            className="min-h-11 rounded-md border border-paper/15 bg-ink px-3 text-sm text-paper"
           />
         </label>
         <label className="grid gap-1.5 text-xs text-mist sm:col-span-2">
@@ -1215,7 +1215,7 @@ function OfflinePaymentReporter({
             placeholder={
               paymentMethod === "cash" ? "Receipt or handover reference" : "e.g. M-Pesa code"
             }
-            className="min-h-10 rounded-md border border-paper/15 bg-ink px-3 text-sm text-paper placeholder:text-mist/60"
+            className="min-h-11 rounded-md border border-paper/15 bg-ink px-3 text-sm text-paper placeholder:text-mist/60"
           />
         </label>
         <label className="grid gap-1.5 text-xs text-mist sm:col-span-2">
@@ -1239,7 +1239,7 @@ function OfflinePaymentReporter({
           type="submit"
           variant="line"
           size="sm"
-          className="min-h-10"
+          className="min-h-11"
           disabled={submitting || transactionReference.trim().length < 4 || !paymentDate}
         >
           {submitting ? "Sending report…" : "Report payment"}

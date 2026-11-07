@@ -163,6 +163,7 @@ function CrewPage() {
               type="button"
               variant="line"
               size="sm"
+              className="min-h-11"
               onClick={() => void refresh()}
               disabled={loading}
               aria-label="Refresh crew workspace"
@@ -174,6 +175,7 @@ function CrewPage() {
               type="button"
               variant="primary"
               size="sm"
+              className="min-h-11"
               onClick={() => setActiveTab("call-sheet")}
               disabled={!nextJob || loading}
             >
@@ -435,7 +437,7 @@ function Roster({
               aria-pressed={filter === item.id}
               onClick={() => onFilterChange(item.id)}
               className={cn(
-                "min-h-10 shrink-0 rounded-full border px-3 text-xs transition-colors",
+                "min-h-11 shrink-0 rounded-full border px-3 text-xs transition-colors",
                 filter === item.id
                   ? "border-blue/40 bg-blue/10 text-blue-2"
                   : "border-paper/10 text-mist hover:bg-paper/5 hover:text-paper",
@@ -499,7 +501,7 @@ function CallSheet({
           <h2 className="mt-2 text-3xl text-paper md:text-4xl print:text-black">{job.title}</h2>
           <p className="mt-2 text-sm text-mist print:text-black">{job.client_name} · {job.status === "production" ? "In production" : "Booked"}</p>
         </div>
-        <Button type="button" variant="line" className="print:hidden" onClick={onPrint}>
+        <Button type="button" variant="line" className="min-h-11 print:hidden" onClick={onPrint}>
           <Printer className="size-4" />
           Print call sheet
         </Button>
@@ -512,31 +514,55 @@ function CallSheet({
       </div>
 
       {assignedCrew.length ? (
-        <div className="mt-6 overflow-x-auto">
-          <table className="w-full min-w-[560px] border-collapse text-left">
-            <thead>
-              <tr className="border-b border-paper/15 text-[10px] uppercase tracking-[0.16em] text-mist print:border-black/20 print:text-black">
-                <th scope="col" className="py-3 pr-4 font-medium">Crew member</th>
-                <th scope="col" className="py-3 pr-4 font-medium">Role</th>
-                <th scope="col" className="py-3 pr-4 font-medium">Call time</th>
-                <th scope="col" className="py-3 font-medium">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {assignedCrew
-                .slice()
-                .sort((a, b) => (a.call_time ?? "").localeCompare(b.call_time ?? ""))
-                .map((person) => (
-                  <tr key={person.id} className="border-b border-paper/5 last:border-0 print:border-black/10">
-                    <td className="py-3 pr-4 text-sm font-medium text-paper print:text-black">{person.name}</td>
-                    <td className="py-3 pr-4 text-sm text-mist print:text-black">{person.role}</td>
-                    <td className="py-3 pr-4 text-sm tabular-nums text-paper print:text-black">{person.call_time ?? "Pending"}</td>
-                    <td className="py-3"><CrewStatus status={person.status} /></td>
-                  </tr>
-                ))}
-            </tbody>
-          </table>
-        </div>
+        <>
+          <ul className="mt-6 grid gap-3 md:hidden print:hidden">
+            {assignedCrew
+              .slice()
+              .sort((a, b) => (a.call_time ?? "").localeCompare(b.call_time ?? ""))
+              .map((person) => (
+                <li
+                  key={person.id}
+                  className="rounded-lg border border-paper/10 bg-paper/[0.025] p-4"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-medium text-paper">{person.name}</p>
+                      <p className="mt-1 text-sm text-mist">{person.role}</p>
+                    </div>
+                    <CrewStatus status={person.status} />
+                  </div>
+                  <p className="mt-3 border-t border-paper/10 pt-3 text-sm tabular-nums text-paper">
+                    Call time · {person.call_time ?? "Pending"}
+                  </p>
+                </li>
+              ))}
+          </ul>
+          <div className="mt-6 hidden overflow-x-auto md:block print:block">
+            <table className="w-full min-w-[560px] border-collapse text-left">
+              <thead>
+                <tr className="border-b border-paper/15 text-[10px] uppercase tracking-[0.16em] text-mist print:border-black/20 print:text-black">
+                  <th scope="col" className="py-3 pr-4 font-medium">Crew member</th>
+                  <th scope="col" className="py-3 pr-4 font-medium">Role</th>
+                  <th scope="col" className="py-3 pr-4 font-medium">Call time</th>
+                  <th scope="col" className="py-3 font-medium">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {assignedCrew
+                  .slice()
+                  .sort((a, b) => (a.call_time ?? "").localeCompare(b.call_time ?? ""))
+                  .map((person) => (
+                    <tr key={person.id} className="border-b border-paper/5 last:border-0 print:border-black/10">
+                      <td className="py-3 pr-4 text-sm font-medium text-paper print:text-black">{person.name}</td>
+                      <td className="py-3 pr-4 text-sm text-mist print:text-black">{person.role}</td>
+                      <td className="py-3 pr-4 text-sm tabular-nums text-paper print:text-black">{person.call_time ?? "Pending"}</td>
+                      <td className="py-3"><CrewStatus status={person.status} /></td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       ) : (
         <EmptyState title="No crew assigned yet" body="Add members from the crew roster to complete this call sheet." icon={UsersRound} />
       )}
@@ -577,7 +603,7 @@ function CrewCard({
             size="sm"
             disabled={updating}
             onClick={onCall}
-            className="min-h-10"
+            className="min-h-11"
           >
             <UserRoundCheck className="size-3.5" />
             {updating ? "Adding…" : "Add to call"}
