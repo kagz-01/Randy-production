@@ -107,7 +107,16 @@ function StudioLayout() {
   }, [role, pulseRetry]);
 
   if (isPending || (user && role === null && !roleError)) {
-    return <div className="min-h-dvh bg-void" />;
+    return (
+      <div className="min-h-dvh bg-void">
+        <SiteNav />
+        <main className="shell pt-32">
+          <p role="status" className="text-sm text-mist">
+            Checking your Studio access…
+          </p>
+        </main>
+      </div>
+    );
   }
   if (!user) return invite ? <Navigate to="/login" search={{ invite }} /> : <RedirectToSignIn />;
 
@@ -240,6 +249,7 @@ function StudioLayout() {
             ) : null}
           </header>
           <nav aria-label="Studio navigation" className="shell mt-3 lg:hidden">
+            <p className="mb-1 text-right text-[10px] text-mist">Swipe to see all Studio pages</p>
             <div className="-mx-1 flex gap-2 overflow-x-auto pb-2 no-scrollbar">
               {[...WORKFLOWS, ...TOOLS].map((item) => {
                 const Icon = item.icon;

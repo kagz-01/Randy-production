@@ -100,7 +100,7 @@ function PortalHome() {
     sortedJobs[0] ??
     null;
 
-  if (isPending) return <div className="min-h-dvh bg-void" />;
+  if (isPending) return <PortalWorkspaceLoading message="Checking your account…" />;
   if (!user) return <RedirectToSignIn />;
   if (roleError) {
     return (
@@ -135,7 +135,7 @@ function PortalHome() {
       </div>
     );
   }
-  if (role === null) return <div className="min-h-dvh bg-void" />;
+  if (role === null) return <PortalWorkspaceLoading message="Loading your projects…" />;
 
   return (
     <div className="min-h-dvh bg-void">
@@ -425,21 +425,33 @@ function EmptyProjects() {
         </span>
         <p className="mt-4 text-2xl text-paper">Your workspace starts here.</p>
         <p className="mt-2 text-sm leading-relaxed text-mist">
-          Once a project is linked to your account, you’ll find its progress, approvals, invoices,
-          and receipts here.
+          Start a project using the button above. Its progress, approvals, invoices, and receipts
+          will all be tracked here.
         </p>
-        <Link to="/quote" className="mt-5 inline-block">
-          <Button variant="primary" className="min-h-11">
-            Tell us what you’re planning
-            <ChevronRight className="size-4" />
-          </Button>
-        </Link>
       </div>
     </section>
   );
 }
 
-function PortalLoading() {
+function PortalWorkspaceLoading({ message }: { message: string }) {
+  return (
+    <div className="min-h-dvh bg-void">
+      <SiteNav />
+      <main className="shell pb-20 pt-28">
+        <header className="border-b border-paper/10 pb-7">
+          <p className="eyebrow">Client workspace</p>
+          <h1 className="mt-2 text-4xl md:text-5xl">Your projects.</h1>
+          <p className="mt-3 max-w-2xl text-sm text-mist md:text-base">
+            A clear view of what’s moving, what needs you, and what’s next.
+          </p>
+        </header>
+        <PortalLoading message={message} />
+      </main>
+    </div>
+  );
+}
+
+function PortalLoading({ message = "Loading your projects…" }: { message?: string }) {
   return (
     <div
       className="mt-8 grid min-h-64 place-items-center rounded-xl border border-paper/10 bg-ink/50 p-8"
@@ -447,7 +459,7 @@ function PortalLoading() {
     >
       <div className="flex items-center gap-3 text-sm text-mist">
         <RefreshCw className="size-4 animate-spin text-blue-2" />
-        Loading your projects…
+        {message}
       </div>
     </div>
   );

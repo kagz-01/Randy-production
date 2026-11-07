@@ -3,21 +3,18 @@ import { useState, type FormEvent } from "react";
 import { AUTH_PROVIDERS, authClient, authEnabled, signIn } from "@/lib/auth/client";
 
 export const Route = createFileRoute("/login")({
-  validateSearch: (search: Record<string, unknown>): { invite?: string; returnTo?: "quote" } => ({
+  validateSearch: (search: Record<string, unknown>): { invite?: string } => ({
     ...(typeof search.invite === "string" ? { invite: search.invite } : {}),
-    ...(search.returnTo === "quote" ? { returnTo: "quote" } : {}),
   }),
   component: Login,
 });
 
 function Login() {
-  const { invite, returnTo } = Route.useSearch();
+  const { invite } = Route.useSearch();
   const googleProvider = AUTH_PROVIDERS[0];
   const callbackURL = invite
     ? `/studio?invite=${encodeURIComponent(invite)}`
-    : returnTo === "quote"
-      ? "/quote"
-      : "/portal";
+    : "/portal";
   const [mode, setMode] = useState<"signin" | "create">("signin");
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [signInError, setSignInError] = useState<string | null>(null);
@@ -93,9 +90,7 @@ function Login() {
           <p className="mt-2 max-w-xs text-sm leading-relaxed text-[#b8b2a7]">
             {invite
               ? "Continue with the Google account linked to your studio invitation."
-              : returnTo === "quote"
-                ? "Sign in to return to your saved quote and continue without re-entering your details."
-                : "Access your client workspace, projects, and production updates."}
+              : "Access your client workspace, projects, and production updates."}
           </p>
 
           {!invite ? (

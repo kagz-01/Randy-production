@@ -400,7 +400,7 @@ function QuotePage() {
         );
         return;
       }
-      nav({ to: "/login", search: { returnTo: "quote" } });
+      nav({ to: "/login" });
       return;
     }
 
