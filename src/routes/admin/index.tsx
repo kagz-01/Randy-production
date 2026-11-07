@@ -2369,55 +2369,85 @@ function OperationsTab({
           count={`${activeJobs.length} jobs`}
         />
         {activeJobs.length ? (
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full min-w-[700px] border-collapse text-left">
-              <thead>
-                <tr className="border-b border-paper/10 text-[10px] uppercase tracking-[0.16em] text-mist">
-                  <th scope="col" className="py-3 pr-4 font-medium">
-                    Production
-                  </th>
-                  <th scope="col" className="py-3 pr-4 font-medium">
-                    Client
-                  </th>
-                  <th scope="col" className="py-3 pr-4 font-medium">
-                    Date & venue
-                  </th>
-                  <th scope="col" className="py-3 pr-4 font-medium">
-                    Status
-                  </th>
-                  <th scope="col" className="py-3 text-right font-medium">
-                    Value
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {activeJobs.map((job) => (
-                  <tr key={job.id} className="border-b border-paper/5 last:border-0">
-                    <td className="py-3 pr-4 text-sm font-medium text-paper">
+          <>
+            <ul className="mt-4 grid gap-3 xl:hidden">
+              {activeJobs.map((job) => (
+                <li key={job.id} className="rounded-lg border border-paper/10 bg-void/35 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
                       <Link
                         to="/studio/pipeline"
                         search={{ jobId: job.id }}
-                        className="rounded-sm hover:text-blue-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-2"
+                        className="font-medium text-paper hover:text-blue-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-2"
                       >
                         {job.title}
                       </Link>
-                    </td>
-                    <td className="py-3 pr-4 text-sm text-mist">{job.client_name}</td>
-                    <td className="py-3 pr-4 text-sm text-mist">
+                      <p className="mt-1 truncate text-xs text-mist">{job.client_name}</p>
+                    </div>
+                    <JobStatus status={job.status} />
+                  </div>
+                  <div className="mt-3 flex flex-wrap items-end justify-between gap-2">
+                    <p className="text-xs text-mist">
                       {formatEventDate(job.event_date)}
-                      <span className="block text-xs">{job.venue ?? "Venue not set"}</span>
-                    </td>
-                    <td className="py-3 pr-4">
-                      <JobStatus status={job.status} />
-                    </td>
-                    <td className="py-3 text-right text-sm tabular-nums text-paper">
+                      <span className="block">{job.venue ?? "Venue not set"}</span>
+                    </p>
+                    <p className="text-sm font-medium tabular-nums text-paper">
                       {money(job.ballpark)}
-                    </td>
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-4 hidden overflow-x-auto xl:block">
+              <table className="w-full min-w-[700px] border-collapse text-left">
+                <thead>
+                  <tr className="border-b border-paper/10 text-[10px] uppercase tracking-[0.16em] text-mist">
+                    <th scope="col" className="py-3 pr-4 font-medium">
+                      Production
+                    </th>
+                    <th scope="col" className="py-3 pr-4 font-medium">
+                      Client
+                    </th>
+                    <th scope="col" className="py-3 pr-4 font-medium">
+                      Date & venue
+                    </th>
+                    <th scope="col" className="py-3 pr-4 font-medium">
+                      Status
+                    </th>
+                    <th scope="col" className="py-3 text-right font-medium">
+                      Value
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {activeJobs.map((job) => (
+                    <tr key={job.id} className="border-b border-paper/5 last:border-0">
+                      <td className="py-3 pr-4 text-sm font-medium text-paper">
+                        <Link
+                          to="/studio/pipeline"
+                          search={{ jobId: job.id }}
+                          className="rounded-sm hover:text-blue-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-2"
+                        >
+                          {job.title}
+                        </Link>
+                      </td>
+                      <td className="py-3 pr-4 text-sm text-mist">{job.client_name}</td>
+                      <td className="py-3 pr-4 text-sm text-mist">
+                        {formatEventDate(job.event_date)}
+                        <span className="block text-xs">{job.venue ?? "Venue not set"}</span>
+                      </td>
+                      <td className="py-3 pr-4">
+                        <JobStatus status={job.status} />
+                      </td>
+                      <td className="py-3 text-right text-sm tabular-nums text-paper">
+                        {money(job.ballpark)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         ) : (
           <EmptyState
             title="No booked productions"
