@@ -4,6 +4,7 @@ import { Toaster } from "sonner";
 import { AuthProvider } from "@/lib/auth/provider";
 import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import { AmbientOrbs } from "@/components/site/fx";
+import { InstallPrompt } from "@/components/install-prompt";
 import { NotFoundPage } from "@/lib/not-found-page";
 import appCss from "../styles.css?url";
 
@@ -31,10 +32,10 @@ export const Route = createRootRoute({
       { name: "theme-color", content: "#050506" },
     ],
     links: [
-      { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
+      { rel: "icon", type: "image/svg+xml", href: "/logo/favicon.svg" },
       { rel: "stylesheet", href: appCss },
       { rel: "manifest", href: "/__grok/manifest.webmanifest" },
-      { rel: "apple-touch-icon", href: "/__grok/icon-180.png" },
+      { rel: "apple-touch-icon", href: "/logo/apple-touch-icon.png" },
     ],
   }),
   component: RootDocument,
@@ -49,6 +50,7 @@ function RootDocument() {
       <body className="text-paper">
         <PreviewHostBridge />
         <AmbientOrbs />
+        <InstallPrompt />
         <div className="relative min-h-dvh">
           <AuthProvider>
             <Outlet />

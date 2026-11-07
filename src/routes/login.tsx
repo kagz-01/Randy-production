@@ -74,7 +74,7 @@ function Login() {
             className="group mb-7 inline-flex items-center gap-3"
           >
             <span className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-full border border-amber-300/35 bg-[#11100e] transition-colors group-hover:border-amber-200/70">
-              <img src="/logo.png" alt="" className="size-full object-cover" />
+              <img src="/logo/logo.png" alt="" className="size-full object-cover" />
             </span>
             <span className="text-left text-[11px] font-medium uppercase leading-tight tracking-[0.24em] text-paper">
               Randy

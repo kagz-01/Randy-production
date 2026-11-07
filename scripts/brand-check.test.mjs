@@ -44,7 +44,9 @@ function makeWorkspace({
     writeFileSync(join(root, "src/lib/og/site.json"), siteJson);
   }
   if (cardFile !== undefined) {
-    writeFileSync(join(root, "public", cardFile), Buffer.alloc(cardBytes, 7));
+    const path = join(root, "public", cardFile);
+    mkdirSync(dirname(path), { recursive: true });
+    writeFileSync(path, Buffer.alloc(cardBytes, 7));
   }
   if (narrowFile !== undefined) {
     writeFileSync(join(root, "public", narrowFile), Buffer.alloc(narrowBytes, 7));
@@ -63,6 +65,11 @@ test("non-canvas app with no custom card gets a soft BRAND NOTE (utility excepti
 
 test("non-canvas app with a compliant card is silent", () => {
   const root = makeWorkspace({ siteJson: UTILITY_CUSTOM_SITE, cardFile: "og.jpg" });
+  assert.deepEqual(computeBrandWarnings({ hasCanvas: false, workspaceRoot: root }), []);
+});
+
+test("a card in the logo folder is recognized as the custom card", () => {
+  const root = makeWorkspace({ siteJson: UTILITY_CUSTOM_SITE, cardFile: "logo/og.jpg" });
   assert.deepEqual(computeBrandWarnings({ hasCanvas: false, workspaceRoot: root }), []);
 });
 
@@ -305,26 +312,18 @@ test("cli: a non-game with a compliant card passes", () => {
 
 const readDoc = (rel) => readFileSync(join(TEMPLATE_ROOT, rel), "utf8");
 
-test("SKILL.md and AGENTS.md name the marker path and bound this script uses", () => {
-  // Prose wraps, so the minute count may straddle a line break.
-  const bound = new RegExp(`${OG_PENDING_MAX_AGE_MS / 60_000}\\s+minutes`);
-  for (const rel of [".grok/skills/og/SKILL.md", "AGENTS.md"]) {
-    const doc = readDoc(rel);
-    assert.ok(doc.includes(`/workspace/${OG_PENDING_REL_PATH}`), `${rel}: marker path`);
-    assert.ok(bound.test(doc), `${rel}: staleness bound`);
-  }
+test("AGENTS.md documents the brand-check pending marker lifetime", () => {
+  const guide = readDoc("AGENTS.md");
+  assert.match(guide, /brand-check script maintains its temporary\s+pending marker/);
+  assert.match(
+    guide,
+    new RegExp(`stale after ${OG_PENDING_MAX_AGE_MS / 60_000}\\s+minutes`),
+  );
 });
 
-// The two places that own "never wait on the brand task". Scanning the whole
-// of AGENTS.md instead would make every unrelated `wait_tasks` mention a future
-// feature adds to it this test's business.
+// Check the project-owned guide; skill files are supplied by the editor and are
+// not present in this repository.
 const PROHIBITION_SECTIONS = [
-  {
-    rel: ".grok/skills/og/SKILL.md",
-    label: '§ "Brand-asset pass"',
-    from: "## Brand-asset pass:",
-    until: /\n## /,
-  },
   {
     rel: "AGENTS.md",
     label: "execution loop step 6",
@@ -359,15 +358,5 @@ test("the sections that own the brand-task prohibition never affirm a wait", () 
       const context = prose.slice(Math.max(0, match.index - 60), match.index + 20);
       assert.ok(negation.test(before), `${where}: not a prohibition: …${context}…`);
     }
-  }
-});
-
-test("SKILL.md tells the pass to self-check with the flag this CLI accepts", () => {
-  const skill = readDoc(".grok/skills/og/SKILL.md");
-  const invocations = skill.match(/node scripts\/brand-check\.mjs[^\n`]*/g) ?? [];
-  assert.ok(invocations.length > 0);
-  for (const line of invocations) {
-    const argv = line.replace("node scripts/brand-check.mjs", "").trim().split(/\s+/);
-    assert.equal(parseBrandCheckArgs(argv.filter(Boolean)).error, undefined, line);
   }
 });

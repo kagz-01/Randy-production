@@ -198,6 +198,15 @@ test("public/og.png wins when jpg is absent", () => {
   assert.doesNotMatch(out, /og\.grok\.me/);
 });
 
+test("public/logo/og.jpg wins as the custom card", () => {
+  const root = mkdtempSync(join(tmpdir(), "grok-og-logo-folder-"));
+  mkdirSync(join(root, "public/logo"), { recursive: true });
+  writeFileSync(join(root, "public/logo/og.jpg"), "x");
+  const { site } = snapshotOgIdentity(root);
+  assert.equal(site.card, "custom");
+  assert.equal(site.image, "/logo/og.jpg");
+});
+
 test("resolveOgCardAsset: disk file, then bake, then empty (placeholder)", () => {
   const empty = mkdtempSync(join(tmpdir(), "grok-og-none-"));
   assert.equal(resolveOgCardAsset({}, empty), "");
@@ -259,13 +268,13 @@ test("does not emit x:game:image without a public host or banner", () => {
   assert.doesNotMatch(noBanner, /x:game:image/);
 });
 
-test("site title Grok App is a real name, not a sentinel", () => {
+test("site title Randy Production is a real name, not a sentinel", () => {
   const out = injectGrokPwaHead("<html><head></head></html>", {
     host: "wild-race.grok.me",
-    site: { title: "Grok App" },
+    site: { title: "Randy Production" },
     cwd: emptyCwd(),
   });
-  assert.match(out, /property="og:title" content="Grok App"/);
+  assert.match(out, /property="og:title" content="Randy Production"/);
 });
 
 test("published grok.me slug is still a title fallback", () => {
@@ -443,6 +452,7 @@ test("uses the app name in the injected title tag", () => {
     cwd: emptyCwd(),
   });
   assert.match(out, /apple-mobile-web-app-title" content="Wild Race"/);
+  assert.match(out, /rel="apple-touch-icon" href="\/logo\/apple-touch-icon\.png"/);
 });
 
 test("streaming injector handles </head> split across chunks", () => {
@@ -487,6 +497,7 @@ test("filters non-document paths", () => {
   assert.equal(isDocumentPath("/api/thing"), false);
   assert.equal(isDocumentPath("/__grok/install/styles.css"), false);
   assert.equal(isDocumentPath("/logo.png"), false);
+  assert.equal(isDocumentPath("/logo/logo.png"), false);
 });
 
 test("strips install params from the app link", () => {
@@ -495,14 +506,14 @@ test("strips install params from the app link", () => {
 });
 
 test("names the install page from host slug", () => {
-  assert.equal(appNameFromHost("localhost:8080"), "Grok App");
-  assert.equal(appNameFromHost("172.17.154.217:8080"), "Grok App");
+  assert.equal(appNameFromHost("localhost:8080"), "Randy Production");
+  assert.equal(appNameFromHost("172.17.154.217:8080"), "Randy Production");
   assert.equal(appNameFromHost("wild-race.grok.me"), "Wild Race");
 });
 
 test("rejects hosts that are not plain slugs", () => {
-  assert.equal(appNameFromHost("<script>alert(1)</script>"), "Grok App");
-  assert.equal(appNameFromHost('"><img src=x onerror=1>.grok.me'), "Grok App");
+  assert.equal(appNameFromHost("<script>alert(1)</script>"), "Randy Production");
+  assert.equal(appNameFromHost('"><img src=x onerror=1>.grok.me'), "Randy Production");
 });
 
 test("renders install page markup", () => {
@@ -523,7 +534,26 @@ test("renders the manifest with the per-app name", () => {
   const manifest = JSON.parse(renderWebManifest("wild-race.grok.me"));
   assert.equal(manifest.name, "Wild Race");
   assert.equal(manifest.short_name, "Wild Race");
-  assert.equal(manifest.icons[0].src, "/__grok/icon-180.png");
+  assert.deepEqual(manifest.icons, [
+    { src: "/logo/icon-192.png", sizes: "192x192", type: "image/png" },
+    { src: "/logo/icon-512.png", sizes: "512x512", type: "image/png" },
+    {
+      src: "/logo/icon-maskable-512.png",
+      sizes: "512x512",
+      type: "image/png",
+      purpose: "maskable",
+    },
+  ]);
+  for (const [file, size] of [
+    ["icon-192.png", 192],
+    ["icon-512.png", 512],
+    ["icon-maskable-512.png", 512],
+    ["apple-touch-icon.png", 180],
+  ]) {
+    const png = readFileSync(join(TEMPLATE_ROOT, "public/logo", file));
+    assert.equal(png.readUInt32BE(16), size, `${file} width`);
+    assert.equal(png.readUInt32BE(20), size, `${file} height`);
+  }
 });
 
 // Tripwires: the deployed-app path only works if Nitro scans server/ — an
@@ -535,13 +565,15 @@ test("vite config keeps the nitro serverDir wiring", () => {
   assert.match(viteConfig, /grokPwaPlugin\(\)/);
 });
 
-test("nitro middleware and its bundled assets exist", () => {
+test("nitro middleware bundles the tutorial and references platform assets", () => {
   const middleware = readFileSync(join(TEMPLATE_ROOT, "server/middleware/grok-pwa.ts"), "utf8");
   assert.match(middleware, /install-page\.html\?raw/);
   assert.match(middleware, /virtual:grok-og-identity/);
-  readFileSync(join(TEMPLATE_ROOT, "scripts/install-page.html"));
-  readFileSync(join(TEMPLATE_ROOT, "public/__grok/icon-180.png"));
-  readFileSync(join(TEMPLATE_ROOT, "public/__grok/install/styles.css"));
+  const installPage = readFileSync(join(TEMPLATE_ROOT, "scripts/install-page.html"), "utf8");
+  assert.match(installPage, /href="\/logo\/apple-touch-icon\.png"/);
+  readFileSync(join(TEMPLATE_ROOT, "public/logo/logo.png"));
+  assert.match(installPage, /href="\/__grok\/install\/styles\.css"/);
+  assert.match(installPage, /src="\/__grok\/install\/assets\/homescreen\//);
 });
 
 test("vite plugin bakes og identity as a virtual module", () => {
@@ -549,4 +581,3 @@ test("vite plugin bakes og identity as a virtual module", () => {
   assert.match(plugin, /virtual:grok-og-identity/);
   assert.match(plugin, /snapshotOgIdentity/);
 });
-

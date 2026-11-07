@@ -109,7 +109,7 @@ export function buildProposalSheet(input: ProposalSummaryInput): string {
   <body>
     <main class="sheet">
       <header class="letterhead">
-        <img class="logo" src="/logo.png" alt="Randy Production logo" />
+        <img class="logo" src="/logo/logo.png" alt="Randy Production logo" />
         <div class="business">
           <strong>Randy Production</strong>
           <p><a href="tel:+254743567565">+254 743 567 565</a> · <a href="mailto:hello@randyproduction.co.ke">hello@randyproduction.co.ke</a></p>

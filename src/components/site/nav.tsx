@@ -117,7 +117,7 @@ export function SiteNav() {
         <Link to="/" className="flex items-center gap-3 pl-0.5" onClick={() => setOpen(false)}>
           <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-[0.55rem] border border-paper/10 bg-paper/5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] sm:h-13 sm:w-13">
             <img
-              src="/logo.png"
+              src="/logo/logo.png"
               alt="Randy Production"
               className="logo-mark h-full w-full object-cover"
             />
@@ -487,7 +487,7 @@ export function SiteFooter() {
         <div className="max-w-xl">
           <div className="mb-4 flex items-center gap-3">
             <img
-              src="/logo.png"
+              src="/logo/logo.png"
               alt="Randy Production"
               className="logo-mark h-12 w-12 sm:h-14 sm:w-14"
             />

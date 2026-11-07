@@ -109,7 +109,7 @@ describe("priceQuote", () => {
     assert.match(sheet, /Garden \/ outdoor/);
     assert.match(sheet, /hello@wedding\.example/);
     assert.match(sheet, /\+254712345678/);
-    assert.match(sheet, /src="\/logo\.png"/);
+    assert.match(sheet, /src="\/logo\/logo\.png"/);
     assert.match(sheet, /\+254 743 567 565/);
     assert.match(sheet, /hello@randyproduction\.co\.ke/);
     assert.match(sheet, /Business address: details to be confirmed/);

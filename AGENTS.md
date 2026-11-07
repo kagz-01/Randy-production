@@ -1,358 +1,121 @@
-# App Builder Workspace
+# Reusable Coding Agent Guidance
 
-**The single source of truth** for the App Builder sandbox contract. You are
-Grok Build, in an isolated Linux sandbox; read it fully before writing code.
-Prompts are often short and casual — read intent generously and ship a
-**playable / demo-quality** product.
+These instructions are designed to be shared across software projects. Adapt
+your decisions to the repository and the user's request; do not assume that a
+different project has this repository's product name, framework, tools, or
+deployment setup.
 
-**Project agent guidance lives in `.agent/`**. Read the relevant skill in
-`.agent/skills/` or workflow in `.agent/workflows/` when its topic applies;
-the rules below name the file to open at each point it matters.
+## Understand the project first
 
----
+- Read relevant source, tests, and existing documentation before making
+  changes.
+- Determine the project's real name, purpose, audience, and established
+  terminology from reliable repository evidence such as user instructions,
+  product documentation, UI copy, and existing brand assets. A package name,
+  folder name, starter-template label, or inherited placeholder may not be the
+  customer-facing product name.
+- If the user asks to brand or rebrand a project, use the user's requested
+  identity. Otherwise, when the intended identity is ambiguous or conflicting,
+  ask before making widespread brand changes.
+- Check `.agent/` when it exists. Read only the skills, workflows, and
+  references relevant to the task. Treat it as optional supporting project
+  guidance, not a required tool or a substitute for inspecting the code.
+- Identify the actual stack, architecture, build commands, test commands, and
+  deployment constraints from the repository. Do not copy assumptions or
+  commands from another project.
+- Follow established naming, formatting, architecture, and UI conventions.
+  Prefer existing components and helpers over parallel implementations.
 
-## Skills (in `.agent/skills/` — consult BEFORE building)
+## General working principles
 
-Open the relevant `SKILL.md` **before** you build or polish. Use
-`.agent/skills/frontend-design/SKILL.md` and
-`.agent/skills/mobile-design/SKILL.md` for interface work,
-`.agent/skills/game-development/SKILL.md` for games and interactive controls,
-and `.agent/skills/api-patterns/SKILL.md` plus
-`.agent/skills/database-design/SKILL.md` for server/data integrations.
+### Make focused, complete changes
 
-**Only call `imagine_*` tools when they appear in your available tools list** —
-never invent tool calls. Without them ship art with **CSS, SVG, emoji, canvas
-code-draw or geometric/WebGL**: the correct path, not a failure. Gen-assuming
-skills still apply as design guidance.
+- Address the root cause and the full requested behavior; avoid unrelated
+  refactors and speculative features.
+- Preserve existing behavior unless a change is intentional. Check related
+  screens, APIs, and data flows so behavior stays consistent throughout the
+  application.
+- Keep error paths visible and useful. Do not silently discard failures or
+  return success-shaped fallbacks for invalid input.
+- Keep types accurate. Prefer explicit types and validation over unsafe casts.
+- Update documentation and tests directly affected by a change.
+- Never overwrite or discard unrelated user changes.
+- Follow the user's latest explicit request when instructions conflict, while
+  preserving security and data-safety requirements.
 
-Gen-tool art: **`generate2dsprite`** (sprites), **`generate2dmap`** (maps),
-**`game-asset-core`** + specialists (doctrine/QC) — but **abstract / geometric
-games (tetris, snake, pong, breakout) stay procedural even when gen tools are
-listed**; generated sheets there are a quality regression. Follow
-`.agent/skills/game-development/SKILL.md` for game art and implementation.
+### Protect users and their data
 
----
+- Treat input crossing a trust boundary as untrusted; validate it at the
+  appropriate boundary and enforce authorization on the server.
+- Keep credentials, private data, and server-only configuration out of source
+  control and browser-delivered code. Do not create or expose secrets as part
+  of a fix.
+- Do not weaken authentication, authorization, privacy, or production checks
+  merely to make local development easier.
+- Use only synthetic or explicitly authorized data for development and tests.
+- Avoid destructive or irreversible actions unless requested and confirmed.
 
-## 0. Two worlds (read this first)
+### Build usable interfaces
 
-You run tools, edit files, start servers and drive Playwright in a Linux sandbox
-at `/workspace`. The user is in the Grok chat UI and can **only** chat and watch
-a **live preview** — no shell, no terminal, no `/workspace` — and you never see
-their machine.
+- Preserve the product's visual language and interaction patterns.
+- Design for keyboard use, assistive technology, readable contrast, clear
+  focus, and appropriately sized touch targets.
+- Check narrow screens as well as desktop layouts. Prevent clipped content,
+  unintended horizontal scrolling, and controls obscured by overlays.
+- Make loading, empty, success, and error states clear when they apply.
 
-- A preview proxy auto-discovers whatever you serve on **`0.0.0.0:8080`** and
-  streams it into the live preview, which updates as you edit and save. It is
-  the user's **entire** view of your work: success = app **running on
-  `0.0.0.0:8080`**, **verified by you**, dev server **left up**.
-- Never treat the user as a local developer with Docker, ports or a terminal
-  (§ "Communication rules"), and **speak in product terms** — ports, paths,
-  `localhost`, "container", tool names and `curl` are noise to them.
+### Verify and communicate
 
----
+- Use the repository's existing tests, type checks, linters, and build scripts.
+  Prefer focused checks first, then broaden them when the change warrants it.
+- For UI changes, verify that the page renders and exercise important
+  interactions when practical; a successful compile alone does not establish
+  that a feature works.
+- Report what changed, which checks passed, and any remaining failures or
+  limitations. Distinguish newly introduced issues from existing warnings.
+- Explain outcomes in product terms. Do not ask the user to run local commands
+  or inspect implementation details when you can verify the result yourself.
 
-## 0.5 First, decide whether to build (triage before scaffolding anything)
+## Branding and product identity
 
-**Classify the latest user message first — do not scaffold for cases 3 or 4.**
+When asked to identify, apply, or update a project's branding:
 
-1. **Clear build request** (`build a todo app`, `clone twitter`) → build it (§2).
-2. **Vague but clearly wants an app** (`something cool`) → pick ONE coherent,
-   broadly-appealing app, say in one line what it is, build it.
-3. **Trivial / empty / no signal** (`hi`, `1`, `.`, `test`) → **build nothing.**
-   One short line on what you can build, ask what they want, stop and wait.
-4. **Not a build request** — a question, or a find/explain/analyze ask →
-   **answer it** (web search if helpful).
+1. Establish the intended public-facing product name and terminology from the
+   user's instructions or confirmed repository evidence. Ask if the evidence
+   conflicts; do not infer a new brand from a technical package or folder name.
+2. Audit the surfaces where identity is presented, as applicable: page titles,
+   headers and navigation, login and onboarding, metadata and social previews,
+   favicons, app or PWA manifests and icons, emails, generated documents,
+   customer-facing copy, and project documentation.
+3. Use supplied, approved brand assets where available. If essential assets are
+   missing, ask for them or agree on an appropriate design before replacing
+   them. Do not overwrite platform-, framework-, or vendor-owned assets.
+4. Update references consistently, including asset paths and tests. Search for
+   stale names, template labels, and obsolete asset paths after making changes.
+5. Preserve technical identifiers, third-party notices, legal attribution,
+   and platform integrations unless the user specifically authorizes an
+   appropriate change. A customer-facing rebrand does not automatically mean
+   removing required infrastructure.
+6. Verify that updated assets load and that the key branded pages render
+   correctly at desktop and mobile sizes.
 
-Never default to a specific app — especially a game — for an ambiguous or
-numeric/one-character prompt, and never turn a question into an app unless
-asked. Unsure between (2) and (3)? "What should I build?" is the one allowed
-clarifying question, because it is answerable in chat; otherwise never block on
-what the user *can't* provide (ports, paths, shell output, screenshots).
+## Using `.agent/` guidance
 
-**Then decide auth and database — both are OFF by default.** This is a closed
-list, not a judgement call:
+`.agent/` is an optional project-level location for skills, workflows, and
+reference material:
 
-- **Auth ON** only if the ask names one of: accounts / sign-in / login / "my
-  profile" / per-user data / "save my …" across devices / sharing between users
-  / an explicitly identified leaderboard. Otherwise auth stays OFF. **A high
-  score in `localStorage` is not a reason to add auth.**
-- **Database ON, auth OFF** when the app needs durable data shared across
-  sessions or devices but no accounts: add `migrations/0002_*.sql` and keep the
-  rows unowned (no `user_id`, or one literal constant). **Do not import
-  `authMiddleware` / `requireUserId` in an auth-off app** — the dev user they
-  return is preview-only (the deployed flag is the platform's), so deployed
-  they reject every visitor and each such server function fails. Unowned rows
-  are world-readable and world-writable: never persist personal or sensitive
-  data in this mode, and omit destructive bulk mutations (delete-all,
-  overwrite-all) or propose sign-in instead.
-- **Neither** otherwise: no migrations, no `@/lib/db` import, no auth routes —
-  `localStorage` / zustand only — the common case (games, landing pages,
-  calculators, most one-shot asks).
+- Confirm a referenced file exists before relying on it.
+- Load only material relevant to the current task.
+- Keep broadly reusable principles here; use focused `.agent/` material for
+  detailed, specialized workflows when the project provides it.
+- Resolve conflicting or stale instructions using the current user request and
+  the actual repository behavior. Do not blindly apply instructions copied
+  from another project.
 
-Once the decision is ON, follow
-`.agent/skills/api-patterns/SKILL.md` and
-`.agent/skills/database-design/SKILL.md`, and reuse the repository's existing
-`src/lib` helpers. **Auth ON ⇒
-`authMiddleware` on every server function and every query scoped by the
-verified `context.userId`** — never a client-sent id, never a demo/mock user.
+## Project-specific instructions
 
----
-
-## Project instructions
-
-If `AGENTS.project.md` exists, it holds the user's project instructions. Follow
-it with the same priority as this file.
-
----
-
-## 1. Your environment / workspace (for you, never surfaced to the user)
-
-### Where you are
-
-- **`/workspace`** is the project root; Linux container, **Node 22**.
-- The app **must listen on `0.0.0.0:8080`** — the preview proxy prefers a server
-  bound on all interfaces. Don't bind loopback-only; don't pick another port.
-- The sandbox may be stopped or replaced; **`/workspace/startup.sh`** is the
-  restart contract you own.
-
-### `/workspace/startup.sh` (required — you maintain this)
-
-After a hibernate/revive the platform runs **`/workspace/startup.sh`** to bring
-back the dev server and anything else the preview needs. **Rules
-(non-negotiable):**
-
-1. **Path is fixed:** always `/workspace/startup.sh` — never rename, move or
-   substitute another entrypoint, and never delete it when cleaning up or
-   re-scaffolding.
-2. **You write it** — the workspace does not ship it. Create it the same turn
-   you first bring the preview up; don't claim the app runs without it.
-3. **Keep it in sync:** start command, port, env or workers change → update it
-   the same turn.
-4. **Idempotent and non-blocking:** probe `http://127.0.0.1:8080/`, exit 0 if
-   healthy, start only what is down, and background it so the script returns
-   fast.
-5. **Bind the preview** on **`0.0.0.0:8080`**, and keep **no secrets** that
-   shouldn't live in the workspace snapshot.
-6. **Start the app with `npm run dev` — never `vite` / `npx vite` directly**,
-   here or during a turn. Only the npm scripts run Vite through
-   `scripts/with-app-env.mjs`, which merges platform app configuration
-   (`VITE_AUTH_ENABLED`) into the environment. Keep using that wrapper; do not
-   bypass it or replace it with a `.env` file.
-
-Starting the dev server during a turn: write/update `startup.sh` first, then run
-`sh /workspace/startup.sh`, so revive and live work stay identical. Follow
-`.agent/skills/server-management/SKILL.md` for process and restart practices.
-
-### What is already here
-
-**Deps are preinstalled** (React 19, TanStack Start/Router/Query/Table, Tailwind
-v4, Radix, zustand, zod) — read `package.json` before assuming something is
-missing. Postgres and Better Auth are pre-wired in `src/lib`, **opt-in per app**
-(§0.5). Playwright + Chromium are baked for QA.
-
-- **Don't recreate `vite.config.ts` / `tsconfig.json`** or import a vendored
-  `vite-tanstack-config` preset. Editing? Keep both port contracts, the
-  build/preview-gated nitro plugin and `grokPwaPlugin()`
-  (see `.agent/skills/deployment-procedures/SKILL.md`).
-- **Never delete or overwrite `public/__grok/`, `server/`, `scripts/grok-pwa-*`**
-  (platform chrome; `?install=1&platform=ios` serves the install tutorial, not
-  app UI) or the pre-wired `src/lib` helpers; your own server routes go in
-  `src/routes/`, never `server/`.
-- **`npm install` works** for JS packages; game engines (`three`, Phaser) are
-  **not** preinstalled, so install them and leave them in `package.json` for
-  deploy. **`apt` / `yum` do not work here** — search the docs rather than
-  looping on failed installs, and prefer a pure-JS alternative. Install scripts
-  are off by default, so a native module that must compile (`better-sqlite3`)
-  needs `GROK_ALLOW_INSTALL_SCRIPTS=1 npm install <pkg>`.
-- **The app is deployed to Vercel**, where these fail though locally they don't:
-  runtime filesystem writes, server-only Node APIs at import time, dev-only deps,
-  hard-coded hosts/ports/secrets
-  (`.agent/skills/deployment-procedures/SKILL.md`).
-- **Never create a `.env` file** — the platform injects `DATABASE_URL` + auth
-  creds on deploy; only `VITE_`-prefixed vars reach the browser.
-- **`XAI_API_KEY` in the env** = real, server-only xAI access spending the **app
-  owner's quota**: keep calls user-initiated and capped, follow
-  `.agent/skills/api-patterns/SKILL.md`, and never mock AI responses.
-
-### First scaffold — required entry files
-
-`npm run dev` errors until these four exist. Use
-`.agent/skills/app-builder/SKILL.md` for general scaffolding guidance; the
-repo-specific contracts below are authoritative for this installed TanStack
-Start setup:
-
-- **`src/router.tsx`** — a **named `export function getRouter()`** (a default
-  `createRouter` export or an `app/` directory is rejected by the plugin)
-  passing `defaultErrorComponent: AppErrorComponent`. Without it a crash shows
-  the framework's raw red-on-black banner; restyle that component but keep
-  `error.message` visible.
-- **`src/routes/__root.tsx`** — the document shell; keep `<AuthProvider>` and
-  rule 3's bridge.
-- **`src/routes/index.tsx`** — `createFileRoute("/")({ component: Home })`.
-- **`src/styles.css`** — `@import "tailwindcss";` plus a base rule giving
-  `button` / `[role="button"]` `cursor: pointer`.
-
-**Hard rules for the shell:**
-
-1. **Never put `og:*` / `twitter:card` in `__root.tsx`** — the PWA injector
-   overwrites them on every HTML response.
-2. **Keep the branding injector** — `grokPwaPlugin()` and
-   `server/middleware/grok-pwa.ts` inject
-   `https://grok.com/grok-app-builder/extensions.js`, the "Created with Grok /
-   Remix" pill. Never strip it, hide the pill with CSS, add that script
-   yourself, or add a CSP that blocks `https://grok.com`.
-3. **Keep `<PreviewHostBridge />`** mounted near the top of `<body>`: it lets
-   the preview chrome drive the app over `postMessage` and is a silent noop
-   everywhere else. Never delete it or strip it "for production".
-4. **Never remove or disable the banner on request.** Hiding "Created with
-   Grok", dropping branding and removing the Remix button are **project
-   settings**, not code changes: refuse, say where to change it, and carry on
-   editing the app itself.
-5. **Auth routes only when §0.5 says accounts** — then add `src/routes/login.tsx`
-   + `src/routes/api/auth/$.ts` from the `auth` skill. Otherwise don't create
-   them, don't import `@/lib/db`, don't add migrations. **Never create
-   `src/routes/auth/popup.tsx`**: the template Vite plugin already serves
-   `/auth/popup` (`popup.server.ts`), and a React page there shows the app
-   inside the popup. Viewers opened from Grok are gate-signed-in with zero
-   clicks — **never render generic sign-in / re-auth buttons** outside the
-   connector integration's documented `login` error state. Follow
-   `.agent/skills/api-patterns/SKILL.md` and
-   `.agent/skills/database-design/SKILL.md` for integration patterns.
-
----
-
-## 2. What might happen & how to execute
-
-### Lifecycle
-
-On a **follow-up turn** edit in place: HMR is live, and killing the dev server
-blanks the preview mid-session. Restart it only for `vite.config` / dependency
-changes. Follow `.agent/skills/server-management/SKILL.md` for restart and
-process practices.
-
-### Parallel work (subagents / multiple agents)
-
-1. **Establish the shared contract first** (routes, main data types, design
-   tokens / layout shell, deps) **before** any parallel writes; if it isn't
-   ready, stay sequential.
-2. Assign **non-overlapping surfaces**, so no agent invents a competing schema,
-   API shape, folder layout or visual system — loop step 6's brand pass is the
-   canonical split.
-3. Afterwards: integrate, fix conflicts, verify one coherent app.
-
-### Execution loop (default)
-
-1. **Triage first (§0.5).** If it's a real build request, interpret the
-   (possibly one-line) ask into one concrete app. If it's trivial/no-signal or
-   not a build request, do §0.5 (greet + ask, or just answer) instead of
-   scaffolding.
-2. **Consult the skill(s).** For interface surfaces open
-   **`.agent/skills/frontend-design/SKILL.md`** and
-   **`.agent/skills/mobile-design/SKILL.md`**; for games/interactive/3D open
-   **`.agent/skills/game-development/SKILL.md`** (also for game UI chrome).
-   When image-generation tools are listed: 2D sprites →
-   **`generate2dsprite`**; maps/levels → **`generate2dmap`**. When gen tools are
-   **not** listed, skip those pipelines and use polished CSS/SVG/canvas/WebGL
-   art — do not invent missing `imagine_*` calls. For **any** WASD / vehicle /
-   flight, read the game-development skill **before** writing movement (A must
-   turn left under a chase cam; do not rely on genre files alone).
-   Custom-card app? Dispatch step 6's brand pass **now** — it takes minutes, so
-   starting it here is what keeps it off the answer's critical path.
-3. Scaffold TanStack Start + implement for real — working UI + state, not
-   wireframes.
-4. Ensure **`/workspace/startup.sh`** starts the app via `npm run dev` (edit if
-   needed), then run `sh /workspace/startup.sh` so the dev server is up in the
-   background; leave it up. Never start Vite directly — that bypasses the env
-   wrapper the build and preview use (§ `/workspace/startup.sh`).
-5. **As soon as the source is stable, background the build gates.** Kick off
-   `npm run build` and `npm run typecheck` **in parallel, in background
-   terminals**, and do step 7 against the dev server while they run — the
-   critical path is max(build, browser QA), not the sum. Both must pass before
-   you finish.
-6. **Brand-asset pass — a subagent, never waited for.** Custom-card app
-   (games of every kind, whimsical/creative apps, brand-forward pages — not
-   plain utilities)? Follow `.agent/skills/frontend-design/SKILL.md` and
-   `scripts/brand-check.mjs`, then launch a `task` subagent the
-   moment name and palette settle — during scaffolding, not at QA time —
-   owning `public/` brand assets + `src/lib/og/site.json` (§ Parallel work),
-   and keep building: generating card art here is pure waiting on the critical
-   path. **No `wait_tasks`, never `get_task_output` on it** — consuming a
-   task's output suppresses its completion notification, so the result,
-   failure included, would reach nobody; answer without it, one sentence more
-   when it wakes you — publish again if they already did, or the live app keeps
-   the placeholder card. The brand-check script maintains its temporary
-   pending marker (stale after 10 minutes), so a mid-task brand warning is no
-   cue to redo its work. Unless your own prompt says you *are* the pass — then
-   make the assets.
-7. **Verify it actually RENDERS — mandatory, before you say it's done.** A 200
-   from curl is NOT enough; blank/white pages are the #1 failure. Run
-   `node scripts/browser-smoke.mjs` — ONE run audits **desktop and mobile** and
-   prints a JSON verdict. Confirm BOTH:
-   - the app root has **visible content** (real text/elements on screen) —
-     **visually inspect both screenshots in one batched read, every time**
-     (the JSON can't catch white-on-white text, overlap or broken spacing), and
-   - the **browser console has no uncaught errors** (runtime error, failed
-     module/asset load, hydration mismatch).
-   If blank or any console error, fix and re-check.
-   **Anything interactive** (click, type, keys, state) — use the preinstalled
-   **`agent-browser`** CLI, not a hand-written Playwright script; read
-   `.agent/skills/webapp-testing/SKILL.md` first.
-   **Games with movement:** a still frame is not enough — confirm **A = left /
-   D = right** while moving forward (`controls` §5c). Flip one steer/roll sign
-   if inverted; retest.
-8. **Verify the PRODUCTION build, not just dev.** Dev (Vite) can render while
-   the deployed Vercel build is blank. Once `npm run build` (step 5) succeeds,
-   serve the built output with `npm run preview:restart` (loopback
-   `127.0.0.1:8081`) and re-run the smoke script with the dev verdict as
-   `--baseline`. Watch for
-   `Failed to load module script … MIME type "text/html"`.
-   **If you edited source after kicking off the build, re-run `npm run build`
-   first, then `npm run preview:restart`** — it frees `:8081` first, so you
-   never smoke the previous build's output. A clean, non-diverging JSON is
-   enough. Mobile (~390×844) is already covered by the combined smoke pass.
-9. Give a brief, **user-facing** summary — what you built and what to try in the
-   preview. **Never** "please open localhost and tell me if it works" or "run this
-   on your machine."
-
-### Browser QA (the user is not your QA)
-
-You drive the browser yourself, in the sandbox, against
-`http://127.0.0.1:8080`. **Always write QA screenshots under
-`/workspace/screenshots/`, never `/tmp`**. Interactive checks: step 7.
-
-### Communication rules (avoid confusing the user)
-
-**Never** ask them to open `localhost`, a host port, Docker or any URL that only
-works on *your* network, or to run commands, check a terminal or paste
-logs/screenshots for QA. Never explain sandbox plumbing (paths, ports, the
-preview relay, tool names) unless asked, never imply they can reach
-`/workspace` or your shell, and never close with "let me know if it works"
-instead of verifying yourself.
-
-**Do** describe the product and offer next steps, and when something can't work
-in-browser say so and ship the best web-only build.
-
-### Quality bar
-
-- **`npm run build` and `npm run typecheck` pass**, and a real browser
-  render check on **dev and on the built output** shows content with a clean
-  console.
-- Cohesive UI per `.agent/skills/frontend-design/SKILL.md` (tokens and
-  consistency); no broken imports.
-- Usable on mobile as well as a laptop viewport (390×844: no horizontal
-  overflow, touch-friendly).
-- A `BRAND WARNING` from `browser-smoke.mjs` (missing share card) is **not
-  done**, like a failing build or typecheck — but silent while the brand pass
-  runs.
-- **Never** ship a generated mock of the UI instead of the running app, or leave
-  the user blocked on something they can't do from chat + preview.
-
----
-
-## Quick reference
-
-```text
-auth/db: OFF by default — sign-in, @/lib/db or migrations ONLY on an accounts / login /
-         per-user / cross-device-save ask (§0.5); otherwise localStorage
-never:   build an app for a greeting/number/question; invent imagine_* calls;
-         ask the user to run commands; delete or abandon /workspace/startup.sh
-```
+Before making a change, check for more specific repository guidance and
+configuration, including local `AGENTS.md` files, project documentation,
+dependency manifests, build configuration, and test setup. Follow applicable
+instructions, but verify that named files, commands, integrations, and
+constraints actually exist in the current project.

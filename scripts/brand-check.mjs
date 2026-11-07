@@ -7,7 +7,7 @@
  *
  * Games must also set type=x:game in src/lib/og/site.json so the platform
  * injector emits og:type for X game-card unfurls, and public/x-banner.jpg for
- * the 50:11 X feed card. A card file is enough for bake to emit /og.jpg, but
+ * the 50:11 X feed card. A card file is enough for bake to emit its public path, but
  * brand-check still requires site.json `"card": "custom"` so the agent-facing
  * contract stays explicit.
  *
@@ -89,6 +89,8 @@ function brandWarningsOnDisk({
   const sitePath = join(workspaceRoot, OG_SITE_REL_PATH);
   const site = readOgSite(workspaceRoot);
   const cardPath = [
+    join(workspaceRoot, "public/logo/og.jpg"),
+    join(workspaceRoot, "public/logo/og.png"),
     join(workspaceRoot, "public/og.jpg"),
     join(workspaceRoot, "public/og.png"),
   ].find(existsSync);
@@ -99,7 +101,7 @@ function brandWarningsOnDisk({
       warnings.push(
         `BRAND WARNING: ${cardPath} is over 600 KB — link scrapers (X card previews included) `
           + "time out or skip images this heavy, so the card silently fails to unfurl. "
-          + `Re-encode as JPEG (public/og.jpg, ffmpeg -q:v 4) per ${skillPath}.`,
+          + `Re-encode as JPEG (public/logo/og.jpg, ffmpeg -q:v 4) per ${skillPath}.`,
       );
     }
     if (!siteHasCustomCard(site)) {
@@ -111,7 +113,7 @@ function brandWarningsOnDisk({
     }
   } else if (hasCanvas) {
     warnings.push(
-      `BRAND WARNING: this looks like a game/canvas app but ${workspaceRoot}/public/og.jpg `
+      `BRAND WARNING: this looks like a game/canvas app but ${workspaceRoot}/public/logo/og.jpg `
         + "is missing. Games and visually rich apps must ship a custom 1200x630 share card "
         + "built from the app's own art — the default og.grok.me placeholder card is not "
         + `acceptable for them. You are not done: open ${skillPath} and finish the `
@@ -119,7 +121,7 @@ function brandWarningsOnDisk({
     );
   } else if (cardRequired) {
     warnings.push(
-      `BRAND WARNING: ${workspaceRoot}/public/og.jpg is missing and this pass exists to `
+      `BRAND WARNING: ${workspaceRoot}/public/logo/og.jpg is missing and this pass exists to `
         + "produce it. Generate the 1200x630 card from the app's own art and hand it over "
         + `per ${skillPath}. If no image-generation tool is available in this session, `
         + "report that instead of reporting a pass — the app keeps the og.grok.me "
@@ -127,7 +129,7 @@ function brandWarningsOnDisk({
     );
   } else {
     warnings.push(
-      "BRAND NOTE: no custom public/og.jpg — the platform will serve the og.grok.me placeholder. "
+      "BRAND NOTE: no custom public/logo/og.jpg — the platform will serve the og.grok.me placeholder. "
         + "Custom cards are the default for games of every kind (DOM board/word games included), "
         + "whimsical apps, creative tools, and brand-forward pages — only plain utilities "
         + "(converters, CRUD trackers, admin dashboards) keep the placeholder. If this app "
