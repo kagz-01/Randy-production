@@ -155,18 +155,18 @@ function KnowledgeBaseTab() {
                 {activeEntries.length} active · {activeEntries.filter((entry) => entry.status === "draft").length} awaiting review
               </p>
             </div>
-            <Button type="button" variant="line" size="sm" onClick={() => setForm(EMPTY_FORM())}>
+            <Button type="button" variant="line" size="sm" className="min-h-11" onClick={() => setForm(EMPTY_FORM())}>
               <Plus className="size-3.5" aria-hidden />
               New entry
             </Button>
           </div>
 
           {loading ? (
-            <p className="mt-5 text-sm text-mist">Loading knowledge entries…</p>
+            <p className="mt-5 text-sm text-mist" role="status">Loading knowledge entries…</p>
           ) : error ? (
             <div className="mt-5 rounded-lg border border-red-300/20 bg-red-300/5 p-4">
               <p role="alert" className="text-sm text-red-200">{error}</p>
-              <Button type="button" className="mt-3" variant="line" size="sm" onClick={() => void loadEntries()}>
+              <Button type="button" className="mt-3 min-h-11" variant="line" size="sm" onClick={() => void loadEntries()}>
                 Try again
               </Button>
             </div>
@@ -213,7 +213,7 @@ function KnowledgeBaseTab() {
                       ) : null}
                     </div>
                     <div className="flex shrink-0 flex-wrap gap-2 sm:justify-end">
-                      <Button type="button" variant="line" size="sm" onClick={() => editEntry(entry)}>
+                      <Button type="button" variant="line" size="sm" className="min-h-11" onClick={() => editEntry(entry)}>
                         Edit
                       </Button>
                       {entry.status === "draft" ? (
@@ -221,6 +221,7 @@ function KnowledgeBaseTab() {
                           type="button"
                           variant="primary"
                           size="sm"
+                          className="min-h-11"
                           disabled={busyEntryId === entry.id}
                           onClick={() => {
                             if (entry.evidence_type === "legislation") {
@@ -240,6 +241,7 @@ function KnowledgeBaseTab() {
                             type="button"
                             variant="line"
                             size="sm"
+                            className="min-h-11"
                             disabled={busyEntryId === entry.id}
                             onClick={() => void changeStatus(entry, "draft")}
                           >
@@ -249,6 +251,7 @@ function KnowledgeBaseTab() {
                             type="button"
                             variant="line"
                             size="sm"
+                            className="min-h-11"
                             disabled={busyEntryId === entry.id}
                             aria-label={`Archive ${entry.title}`}
                             onClick={() => void changeStatus(entry, "archived")}
@@ -278,6 +281,7 @@ function KnowledgeBaseTab() {
                         <Button
                           type="button"
                           size="sm"
+                          className="min-h-11"
                           disabled={!legalReviewConfirmed || busyEntryId === entry.id}
                           onClick={() => void changeStatus(entry, "approved", true)}
                         >
@@ -287,6 +291,7 @@ function KnowledgeBaseTab() {
                           type="button"
                           variant="line"
                           size="sm"
+                          className="min-h-11"
                           onClick={() => {
                             setLegalApprovalEntryId(null);
                             setLegalReviewConfirmed(false);
@@ -311,7 +316,7 @@ function KnowledgeBaseTab() {
                 {archivedEntries.map((entry) => (
                   <li key={entry.id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
                     <span className="text-paper">{entry.title}</span>
-                    <Button type="button" variant="line" size="sm" disabled={busyEntryId === entry.id} onClick={() => void changeStatus(entry, "draft")}>
+                    <Button type="button" variant="line" size="sm" className="min-h-11" disabled={busyEntryId === entry.id} onClick={() => void changeStatus(entry, "draft")}>
                       Restore as draft
                     </Button>
                   </li>
@@ -330,7 +335,7 @@ function KnowledgeBaseTab() {
           </div>
           <label className="block text-xs font-medium text-mist">
             Entry title
-            <Input required maxLength={160} className="mt-1" value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} />
+            <Input required maxLength={160} className="mt-1 min-h-11" value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} />
           </label>
           <label className="block text-xs font-medium text-mist">
             Knowledge or planning guidance
@@ -346,20 +351,20 @@ function KnowledgeBaseTab() {
           </label>
           <label className="block text-xs font-medium text-mist">
             Search tags <span className="font-normal">(comma-separated)</span>
-            <Input maxLength={600} className="mt-1" value={form.tags} onChange={(event) => setForm({ ...form, tags: event.target.value })} placeholder="outdoor, weather, garden" />
+            <Input maxLength={600} className="mt-1 min-h-11" value={form.tags} onChange={(event) => setForm({ ...form, tags: event.target.value })} placeholder="outdoor, weather, garden" />
           </label>
           <label className="block text-xs font-medium text-mist">
             Source name
-            <Input required maxLength={200} className="mt-1" value={form.source_name} onChange={(event) => setForm({ ...form, source_name: event.target.value })} />
+            <Input required maxLength={200} className="mt-1 min-h-11" value={form.source_name} onChange={(event) => setForm({ ...form, source_name: event.target.value })} />
           </label>
           <label className="block text-xs font-medium text-mist">
             Source URL <span className="font-normal">(HTTPS; required for public external guidance)</span>
-            <Input type="url" className="mt-1" value={form.source_url} onChange={(event) => setForm({ ...form, source_url: event.target.value })} placeholder="https://…" />
+            <Input type="url" className="mt-1 min-h-11" value={form.source_url} onChange={(event) => setForm({ ...form, source_url: event.target.value })} placeholder="https://…" />
           </label>
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block text-xs font-medium text-mist">
               Jurisdiction
-              <Input required maxLength={120} className="mt-1" value={form.jurisdiction} onChange={(event) => setForm({ ...form, jurisdiction: event.target.value })} />
+              <Input required maxLength={120} className="mt-1 min-h-11" value={form.jurisdiction} onChange={(event) => setForm({ ...form, jurisdiction: event.target.value })} />
             </label>
             <label className="block text-xs font-medium text-mist">
               Evidence type
@@ -381,11 +386,11 @@ function KnowledgeBaseTab() {
             </label>
             <label className="block text-xs font-medium text-mist">
               Last checked
-              <Input required type="date" className="mt-1" value={form.source_checked_at} onChange={(event) => setForm({ ...form, source_checked_at: event.target.value })} />
+              <Input required type="date" className="mt-1 min-h-11" value={form.source_checked_at} onChange={(event) => setForm({ ...form, source_checked_at: event.target.value })} />
             </label>
             <label className="block text-xs font-medium text-mist">
               Publication date <span className="font-normal">(if known)</span>
-              <Input type="date" className="mt-1" value={form.source_published_at} onChange={(event) => setForm({ ...form, source_published_at: event.target.value })} />
+              <Input type="date" className="mt-1 min-h-11" value={form.source_published_at} onChange={(event) => setForm({ ...form, source_published_at: event.target.value })} />
             </label>
           </div>
           {["project_learning", "vendor_learning"].includes(form.evidence_type) ? (
@@ -404,12 +409,12 @@ function KnowledgeBaseTab() {
             </label>
           ) : null}
           <div className="flex flex-wrap gap-2 border-t border-paper/10 pt-4">
-            <Button type="submit" disabled={saving} className="min-h-10">
+            <Button type="submit" disabled={saving} className="min-h-11">
               <Save className="size-4" aria-hidden />
               {saving ? "Saving…" : form.id ? "Save as draft" : "Add as draft"}
             </Button>
             {form.id ? (
-              <Button type="button" variant="line" onClick={() => setForm(EMPTY_FORM())}>
+              <Button type="button" variant="line" className="min-h-11" onClick={() => setForm(EMPTY_FORM())}>
                 Cancel edit
               </Button>
             ) : null}
