@@ -553,7 +553,7 @@ function QuoteFact({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0 rounded-md border border-paper/10 bg-void/35 p-3">
       <p className="text-[9px] uppercase tracking-[0.16em] text-mist">{label}</p>
-      <p className="mt-1 break-words text-sm text-paper">{value}</p>
+      <p className="mt-1 wrap-break-word text-sm text-paper">{value}</p>
     </div>
   );
 }

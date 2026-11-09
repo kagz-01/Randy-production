@@ -213,7 +213,7 @@ function Field({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-md border border-paper/10 bg-void/40 p-3 print:border-gray-200 print:bg-white">
       <p className="text-[10px] uppercase tracking-[0.18em] text-mist print:text-gray-600">{label}</p>
-      <p className="mt-1 break-words text-sm text-paper print:text-black">{value}</p>
+      <p className="mt-1 wrap-break-word text-sm text-paper print:text-black">{value}</p>
     </div>
   );
 }

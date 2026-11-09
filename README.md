@@ -188,10 +188,12 @@ to the current Client Portal or Admin destinations.
 
 ## Data and integrations
 
-- **Database:** PostgreSQL via Neon when `DATABASE_URL` is configured.
-  Development without a database URL uses an embedded, in-memory PostgreSQL
-  database. In-memory data is for local development and is lost when that
-  process restarts.
+- **Database:** Supabase PostgreSQL via `DATABASE_URL` in deployed
+  environments. Use Supabase's shared transaction pooler for Vercel serverless
+  requests. Database migrations use `DATABASE_MIGRATION_URL` when configured,
+  preferably the Supabase direct connection string. Development without a
+  database URL uses embedded, in-memory PGlite; that data is lost when the
+  process restarts and must not be used for production.
 - **Schema:** `migrations/schema.sql` is the canonical baseline. Incremental
   migrations live in `migrations/`.
 - **Authentication:** Better Auth manages the app's own sessions. Production
@@ -250,23 +252,33 @@ npm run build:dev
 npm run preview
 ```
 
-`npm run build` performs the production build and applies pending migrations
-when `DATABASE_URL` is set. Run it only with the intended deployment database
-configured. `npm run db:bootstrap` is for an empty database only and refuses to
-bootstrap a non-empty schema.
+`npm run build` performs the production build and applies pending migrations.
+On Vercel, configure `DATABASE_URL` and `DATABASE_MIGRATION_URL`; deployments
+without a persistent database URL fail instead of silently using per-instance
+memory. `DATABASE_URL` should use the Supabase transaction pooler for runtime
+serverless queries. `DATABASE_MIGRATION_URL` should use the Supabase direct
+connection for migrations when the build environment can reach it. Run builds
+only with the intended deployment database configured.
+`npm run db:bootstrap` is for an empty database only and refuses to bootstrap
+a non-empty schema.
 
 ## Configuration and deployment
 
-The production deployment uses Vercel. Keep secrets in the deployment's
-server-side environment settings. Do not commit credentials, place them in
-browser-visible `VITE_` variables, or copy secret values into this README.
+The production deployment uses Vercel, Supabase PostgreSQL, Cloudflare DNS, and
+Resend for transactional email. Keep secrets in Vercel's server-side
+environment settings. Do not commit credentials, place them in browser-visible
+`VITE_` variables, or copy secret values into this README. For direct traffic
+to Vercel through Cloudflare DNS, use the exact records Vercel displays and
+leave the Cloudflare records DNS-only (proxy disabled). See
+[Google sign-in and domain setup](./docs/google-auth-setup.md).
 
 Common server-side configuration:
 
 | Variable | Purpose |
 | --- | --- |
-| `DATABASE_URL` | PostgreSQL connection. Required for persistent production data. |
-| `BETTER_AUTH_URL` | Canonical public app URL used by authentication. |
+| `DATABASE_URL` | Supabase transaction-pooler PostgreSQL connection for app/serverless runtime. |
+| `DATABASE_MIGRATION_URL` | Supabase direct PostgreSQL connection for build-time schema migrations. Falls back to `DATABASE_URL` if unset. |
+| `BETTER_AUTH_URL` | Canonical public app URL used by authentication; use the verified custom domain when configured. |
 | `BETTER_AUTH_SECRET` | Secret used to protect authentication sessions. |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google OAuth credentials. |
 | `RESEND_API_KEY`, `RESEND_FROM_EMAIL` | Optional passwordless sign-in email delivery. |
@@ -275,10 +287,16 @@ Common server-side configuration:
 | `PAYMENT_PROVIDER`, `PAYMENT_PROVIDER_URL`, `PAYMENT_PROVIDER_API_KEY` | Trusted payment adapter configuration. |
 | `PAYMENT_CURRENCY` | Payment currency; defaults to `KES`. |
 
-The exact authentication setup and callback URLs are documented in
+The authentication, Cloudflare DNS, and callback URL setup are documented in
 [docs/google-auth-setup.md](./docs/google-auth-setup.md). Configure production
 authentication, database access, email, and payment settings in the deployment
 environment before enabling the corresponding features.
+
+For a custom domain, add the domain to the Vercel project first, then configure
+the exact DNS records Vercel provides in Cloudflare. Use DNS-only records for
+direct Vercel traffic. Update `BETTER_AUTH_URL` and the Google OAuth authorized
+origin/callback to the canonical HTTPS domain. Resend's domain-verification
+records should also be copied from Resend into Cloudflare DNS.
 
 ## Project layout
 

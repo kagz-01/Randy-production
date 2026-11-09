@@ -114,7 +114,7 @@ function StudioHome() {
               {loading ? (
                 <div className="space-y-2" aria-label="Loading production actions" aria-busy="true">
                   {[0, 1, 2].map((item) => (
-                    <div key={item} className="h-[88px] animate-pulse rounded-lg border border-paper/10 bg-paper/[0.025]" />
+                    <div key={item} className="h-[88px] animate-pulse rounded-lg border border-paper/10 bg-paper/2.5" />
                   ))}
                 </div>
               ) : actionItems.length ? (
@@ -130,7 +130,7 @@ function StudioHome() {
                   ) : null}
                 </div>
               ) : (
-                <div className="rounded-lg border border-paper/10 bg-paper/[0.025] p-5">
+                <div className="rounded-lg border border-paper/10 bg-paper/2.5 p-5">
                   <div className="flex items-start gap-3">
                     <Check className="mt-0.5 size-4 text-emerald-300" aria-hidden="true" />
                     <div>
@@ -156,7 +156,7 @@ function StudioHome() {
                 </div>
 
                 {loading ? (
-                  <div className="mt-5 h-32 animate-pulse rounded-lg bg-paper/[0.04]" />
+                  <div className="mt-5 h-32 animate-pulse rounded-lg bg-paper/4" />
                 ) : nextEvent ? (
                   <>
                     <h2 id="desk-next-show-title" className="mt-4 font-serif text-3xl leading-tight text-paper">
@@ -226,7 +226,7 @@ function ActionRow({ item }: { item: StudioActionItem }) {
     <Link
       to="/studio/pipeline"
       search={{ jobId: item.job.id }}
-      className="group flex min-h-20 items-center justify-between gap-3 py-3 transition-colors hover:bg-paper/[0.025]"
+      className="group flex min-h-20 items-center justify-between gap-3 py-3 transition-colors hover:bg-paper/2.5"
     >
       <div className="flex min-w-0 items-start gap-3">
         <span className={cn("mt-1 grid size-8 shrink-0 place-items-center rounded-lg", urgent ? "bg-amber-300/10 text-amber-200" : "bg-paper/5 text-mist")}>

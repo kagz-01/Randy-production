@@ -3,7 +3,7 @@ import { isPreviewFixturesEnabled } from "./env.server";
 import { seedPreviewFixtures } from "./preview-fixtures.server";
 
 /** Which database backend is active. */
-export type DbSource = "neon" | "pglite";
+export type DbSource = "postgres" | "pglite";
 
 // An empty/whitespace DATABASE_URL (an easy misconfig in deploy UIs) must mean
 // "unset" — otherwise production would silently run on the PGLite fallback.
@@ -11,15 +11,21 @@ const rawDatabaseUrl = typeof process !== "undefined" ? process.env.DATABASE_URL
 const databaseUrl = rawDatabaseUrl && rawDatabaseUrl.trim() ? rawDatabaseUrl : undefined;
 
 /**
- * Active backend: real **Neon** when `DATABASE_URL` is set (deployed / configured
- * sandbox), otherwise a local embedded **PGLite** (Postgres compiled to WASM) so
- * the app has a working database even with nothing configured — the live preview
- * included. Swap in Neon later by just setting `DATABASE_URL`; no code changes.
+ * Active backend: managed PostgreSQL when `DATABASE_URL` is set, otherwise a
+ * local embedded **PGLite** (Postgres compiled to WASM) for development and
+ * workspace preview. Vercel must never fall back to per-instance storage.
  */
-export const dbSource: DbSource = databaseUrl ? "neon" : "pglite";
+if (process.env.VERCEL === "1" && !databaseUrl) {
+  throw new Error(
+    "[db] DATABASE_URL is required on Vercel. Configure the Supabase pooled Postgres URL; " +
+      "serverless instances cannot use the in-memory PGLite fallback.",
+  );
+}
+
+export const dbSource: DbSource = databaseUrl ? "postgres" : "pglite";
 
 /**
- * Minimal shared SQL surface, satisfied by both Neon and PGLite. Both the
+ * Minimal shared SQL surface, satisfied by PostgreSQL and PGLite. Both the
  * tagged-template and `.query()` forms resolve to an array of row objects:
  *
  *   const sql = await getSql();
@@ -32,7 +38,7 @@ export interface Sql {
 }
 
 /**
- * The Neon pool and PGLite instance live on globalThis so dev HMR does not
+ * The Postgres pool and PGLite instance live on globalThis so dev HMR does not
  * create duplicates. The PGLite SQL facade stays module-local so a refreshed
  * module checks for newly added migrations; migration passes are serialized on
  * a global chain. A failed initialization clears its slot so the next call can
@@ -80,15 +86,21 @@ function toSql(run: Run): Sql {
   return sql;
 }
 
-function createNeonSql(): Promise<Sql> {
+function createPostgresSql(): Promise<Sql> {
   globalRef.__pgSqlPromise__ ??= (async () => {
-    // Regular Postgres driver: node-postgres (`pg`) — works directly with Neon's
-    // pooled endpoint. One pool per process; warm serverless instances reuse it.
+    // Supabase's transaction pooler is intended for serverless workloads. Keep
+    // each Vercel function's local pool small; the Supavisor pooler handles
+    // multiplexing across function instances.
     const { Pool, types } = await import("pg");
     types.setTypeParser(OID_INT8, Number);
     types.setTypeParser(OID_DATE, identity);
     types.setTypeParser(OID_INTERVAL, identity);
-    const pool = new Pool({ connectionString: databaseUrl });
+    const pool = new Pool({
+      connectionString: databaseUrl,
+      max: 1,
+      connectionTimeoutMillis: 10_000,
+      idleTimeoutMillis: 10_000,
+    });
     return toSql(async <T>(text: string, params: unknown[]) => {
       const res = await pool.query(text, params);
       return res.rows as T[];
@@ -101,7 +113,7 @@ function createNeonSql(): Promise<Sql> {
 }
 
 async function createPgliteSql(): Promise<Sql> {
-  // Embedded Postgres, imported on demand so it never loads on the Neon path.
+  // Embedded Postgres, imported on demand so it never loads on the managed path.
   // One in-memory instance per process, shared across HMR module instances, so
   // data survives source edits (it resets on dev-server restart).
   globalRef.__pgliteInstance__ ??= (async () => {
@@ -175,18 +187,19 @@ async function createSql(): Promise<Sql> {
         "or a server route loader, never from client code.",
     );
   }
-  return dbSource === "neon" ? createNeonSql() : createPgliteSql();
+  return dbSource === "postgres" ? createPostgresSql() : createPgliteSql();
 }
 
 /**
- * Get the shared, **server-only** SQL client. Neon when `DATABASE_URL` is set,
- * otherwise the local PGLite fallback. Memoized — safe to call per request.
+ * Get the shared, **server-only** SQL client. Managed Postgres when
+ * `DATABASE_URL` is set, otherwise the local PGLite fallback. Memoized — safe
+ * to call per request.
  *
  * The canonical schema and incremental SQL files from `migrations/*.sql` are
  * auto-applied before the first query on both backends.
  */
 export function getSql(): Promise<Sql> {
-  if (dbSource === "neon") {
+  if (dbSource === "postgres") {
     globalRef.__pgSqlPromise__ ??= createSql().catch((err) => {
       globalRef.__pgSqlPromise__ = undefined;
       throw err;
@@ -204,7 +217,7 @@ export function getSql(): Promise<Sql> {
 /**
  * The shared PGLite instance (preview only), with the schema baseline applied.
  * Lets Better Auth persist to the SAME embedded DB as app data in preview (via a
- * Kysely dialect). Throws when `DATABASE_URL` is set (that path uses Neon).
+ * Kysely dialect). Throws when `DATABASE_URL` is set (that path uses Postgres).
  */
 export async function getPglite(): Promise<import("@electric-sql/pglite").PGlite> {
   if (dbSource !== "pglite") {
@@ -222,7 +235,7 @@ export async function getPglite(): Promise<import("@electric-sql/pglite").PGlite
  * - **PGLite** (preview / no `DATABASE_URL`): open the in-memory DB and apply
  *   `migrations/schema.sql` plus any incremental SQL files. Concurrent callers
  *   share one promise.
- * - **Neon**: no-op (pool is created lazily on first query).
+ * - **Managed Postgres**: no-op (pool is created lazily on first query).
  *
  * Vite `configureServer` awaits this at dev startup; production imports of this
  * module kick it off immediately (see bottom of file).

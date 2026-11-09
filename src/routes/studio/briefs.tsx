@@ -215,7 +215,7 @@ function BriefsPage() {
                     <li key={item.label} className="flex items-start justify-between gap-3 py-3">
                       <div>
                         <p className="text-sm text-paper">{item.label}</p>
-                        <p className="mt-1 break-words text-xs text-mist">{item.value}</p>
+                        <p className="mt-1 wrap-break-word text-xs text-mist">{item.value}</p>
                       </div>
                       <span className={item.complete ? "text-xs text-emerald-200" : "text-xs text-amber-200"}>
                         {item.complete ? "Recorded" : "Missing"}

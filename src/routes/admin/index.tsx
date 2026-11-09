@@ -547,7 +547,7 @@ function AdminDashboard() {
                   onClick={() => setActiveTab(tab.id)}
                   onKeyDown={(event) => onTabKeyDown(event, index)}
                   className={cn(
-                    "flex min-h-11 w-full min-w-0 items-center gap-2 rounded-lg border px-3 text-left text-xs font-medium leading-tight transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-2 sm:gap-3 sm:text-sm lg:w-full",
+                    "flex min-h-11 w-full min-w-0 items-center gap-2 rounded-lg border px-3 text-left text-xs font-medium leading-tight transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-2 sm:gap-3 sm:text-sm lg:w-full",
                     selected
                       ? "border-blue/25 bg-blue/10 text-paper"
                       : "border-transparent text-mist hover:border-paper/10 hover:bg-paper/5 hover:text-paper",
@@ -577,7 +577,7 @@ function AdminDashboard() {
           role="tabpanel"
           aria-labelledby={`admin-tab-${activeTab}`}
           tabIndex={0}
-          className="min-w-0 outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-2"
+          className="min-w-0 outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-2"
         >
           {loading ? (
             <DashboardLoading label={`Loading ${activeTabInfo.label.toLowerCase()}…`} />
@@ -779,7 +779,7 @@ function OverviewTab({
                       className={cn(
                         "w-full max-w-10 rounded-t-sm transition-[height] duration-500",
                         month.amount > 0
-                          ? "bg-blue shadow-[0_0_20px_rgb(47_107_255_/_0.18)]"
+                          ? "bg-blue shadow-[0_0_20px_rgb(47_107_255/0.18)]"
                           : "bg-paper/5",
                       )}
                       style={{ height: `${height}%` }}
@@ -836,7 +836,7 @@ function OverviewTab({
                       <Link
                         to="/studio/pipeline"
                         search={{ jobId: job.id }}
-                        className="font-medium text-paper hover:text-blue-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-2"
+                        className="font-medium text-paper hover:text-blue-2 focus-visible:outline-2 focus-visible:outline-blue-2"
                       >
                         {job.title}
                       </Link>
@@ -854,7 +854,7 @@ function OverviewTab({
               ))}
             </ul>
             <div className="mt-4 hidden overflow-x-auto xl:block">
-            <table className="w-full min-w-[660px] border-collapse text-left">
+            <table className="w-full min-w-165 border-collapse text-left">
               <thead>
                 <tr className="border-b border-paper/10 text-[10px] uppercase tracking-[0.16em] text-mist">
                   <th scope="col" className="py-3 pr-4 font-medium">
@@ -881,7 +881,7 @@ function OverviewTab({
                       <Link
                         to="/studio/pipeline"
                         search={{ jobId: job.id }}
-                        className="rounded-sm hover:text-blue-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-2"
+                        className="rounded-sm hover:text-blue-2 focus-visible:outline-2 focus-visible:outline-blue-2"
                       >
                         {job.title}
                       </Link>
@@ -1235,14 +1235,14 @@ function ScoreRing({ score, label }: { score: number; label: string }) {
   const safeScore = Math.max(0, Math.min(100, score));
   return (
     <div
-      className="grid size-[76px] shrink-0 place-items-center rounded-full"
+      className="grid size-19 shrink-0 place-items-center rounded-full"
       style={{
         background: `conic-gradient(#7ea2ff ${safeScore}%, rgb(243 241 234 / 0.1) ${safeScore}% 100%)`,
       }}
       role="img"
       aria-label={`${label}: ${safeScore}%`}
     >
-      <div className="grid size-[60px] place-items-center rounded-full bg-ink text-center">
+      <div className="grid size-15 place-items-center rounded-full bg-ink text-center">
         <span className="text-sm font-semibold tabular-nums text-paper">{safeScore}%</span>
       </div>
     </div>
@@ -1504,7 +1504,7 @@ function PeopleTab({
               ))}
             </ul>
             <div className="mt-4 hidden overflow-x-auto xl:block">
-            <table className="w-full min-w-[600px] border-collapse text-left">
+            <table className="w-full min-w-150 border-collapse text-left">
               <thead>
                 <tr className="border-b border-paper/10 text-[10px] uppercase tracking-[0.16em] text-mist">
                   <th scope="col" className="py-3 pr-4 font-medium">
@@ -1634,7 +1634,7 @@ function FinanceTab({
               ))}
             </ul>
             <div className="mt-4 hidden overflow-x-auto xl:block">
-            <table className="w-full min-w-[620px] border-collapse text-left">
+            <table className="w-full min-w-155 border-collapse text-left">
               <thead>
                 <tr className="border-b border-paper/10 text-[10px] uppercase tracking-[0.16em] text-mist">
                   <th scope="col" className="py-3 pr-4 font-medium">
@@ -2240,7 +2240,7 @@ function PublicUpdatesTab({
               })}
             </ul>
             <div className="mt-4 hidden overflow-x-auto xl:block">
-              <table className="w-full min-w-[700px] border-collapse text-left">
+              <table className="w-full min-w-175 border-collapse text-left">
                 <thead>
                   <tr className="border-b border-paper/10 text-[10px] uppercase tracking-[0.16em] text-mist">
                     <th scope="col" className="py-3 pr-4 font-medium">
@@ -2411,7 +2411,7 @@ function OperationsTab({
                     <Link
                       to="/studio/pipeline"
                       search={{ jobId: job.id }}
-                      className="truncate text-sm font-medium text-paper hover:text-blue-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-2"
+                      className="truncate text-sm font-medium text-paper hover:text-blue-2 focus-visible:outline-2 focus-visible:outline-blue-2"
                     >
                       {job.title}
                     </Link>
@@ -2452,7 +2452,7 @@ function OperationsTab({
                       <Link
                         to="/studio/pipeline"
                         search={{ jobId: job.id }}
-                        className="font-medium text-paper hover:text-blue-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-2"
+                        className="font-medium text-paper hover:text-blue-2 focus-visible:outline-2 focus-visible:outline-blue-2"
                       >
                         {job.title}
                       </Link>
@@ -2473,7 +2473,7 @@ function OperationsTab({
               ))}
             </ul>
             <div className="mt-4 hidden overflow-x-auto xl:block">
-              <table className="w-full min-w-[700px] border-collapse text-left">
+              <table className="w-full min-w-175 border-collapse text-left">
                 <thead>
                   <tr className="border-b border-paper/10 text-[10px] uppercase tracking-[0.16em] text-mist">
                     <th scope="col" className="py-3 pr-4 font-medium">
@@ -2500,7 +2500,7 @@ function OperationsTab({
                         <Link
                           to="/studio/pipeline"
                           search={{ jobId: job.id }}
-                          className="rounded-sm hover:text-blue-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-2"
+                          className="rounded-sm hover:text-blue-2 focus-visible:outline-2 focus-visible:outline-blue-2"
                         >
                           {job.title}
                         </Link>
@@ -2561,7 +2561,7 @@ function MetricCard({
           <Icon className="size-4" aria-hidden="true" />
         </span>
       </div>
-      <p className="mt-4 break-words font-serif text-3xl leading-tight tabular-nums text-paper md:text-4xl">
+      <p className="mt-4 wrap-break-word font-serif text-3xl leading-tight tabular-nums text-paper md:text-4xl">
         {value}
       </p>
       <p className="mt-2 text-xs leading-relaxed text-mist">{detail}</p>

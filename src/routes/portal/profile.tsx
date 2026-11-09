@@ -97,7 +97,7 @@ function ClientProfile() {
         ) : (
           <section className="mt-7 max-w-2xl rounded-xl border border-paper/10 bg-ink/75 p-5 sm:p-7">
             <div className="flex items-start gap-4">
-              <span className="grid size-12 shrink-0 place-items-center rounded-full border border-paper/15 bg-paper/[0.06] text-lg font-semibold text-paper">
+              <span className="grid size-12 shrink-0 place-items-center rounded-full border border-paper/15 bg-paper/6 text-lg font-semibold text-paper">
                 R
               </span>
               <div className="min-w-0">
@@ -112,7 +112,7 @@ function ClientProfile() {
                   <UserRound className="size-4" />
                   Name
                 </dt>
-                <dd className="mt-2 break-words text-sm text-paper">{displayName}</dd>
+                <dd className="mt-2 wrap-break-word text-sm text-paper">{displayName}</dd>
               </div>
               <div className="rounded-lg bg-paper/[0.035] p-4">
                 <dt className="flex items-center gap-2 text-xs font-medium text-mist">

@@ -535,7 +535,7 @@ function QuotePage() {
             className={`mt-4 rounded-lg border p-4 text-sm leading-relaxed ${
               plannerHandoffNotice === "loaded"
                 ? "border-blue-2/20 bg-blue/5 text-paper/85"
-                : "border-amber-200/20 bg-amber-200/[0.05] text-amber-50/85"
+                : "border-amber-200/20 bg-amber-200/5 text-amber-50/85"
             }`}
           >
             {plannerHandoffNotice === "loaded"
@@ -554,7 +554,7 @@ function QuotePage() {
         {draftRestoreError ? (
           <p
             role="alert"
-            className="mt-4 rounded-lg border border-amber-200/20 bg-amber-200/[0.05] p-4 text-sm leading-relaxed text-amber-50/85"
+            className="mt-4 rounded-lg border border-amber-200/20 bg-amber-200/5 p-4 text-sm leading-relaxed text-amber-50/85"
           >
             A saved quote could not be restored. Your estimate is available; please check the
             selections and contact details before continuing.
@@ -596,10 +596,10 @@ function QuotePage() {
                         aria-pressed={active}
                         onClick={() => setEventGroupLabel(group.label)}
                         className={cn(
-                          "min-h-14 rounded-md border px-3 py-2 text-left text-xs font-medium leading-snug transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-2 sm:min-h-12",
+                          "min-h-14 rounded-md border px-3 py-2 text-left text-xs font-medium leading-snug transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-2 sm:min-h-12",
                           active
                             ? "border-blue-2/50 bg-blue/10 text-paper"
-                            : "border-paper/10 bg-paper/[0.025] text-mist hover:border-paper/25 hover:text-paper",
+                            : "border-paper/10 bg-paper/2.5 text-mist hover:border-paper/25 hover:text-paper",
                         )}
                       >
                         {group.label}
@@ -629,10 +629,10 @@ function QuotePage() {
                           aria-pressed={active}
                           onClick={() => setEventType(event.key)}
                           className={cn(
-                            "group flex min-h-[76px] items-start justify-between gap-3 rounded-lg border p-4 text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-2",
+                            "group flex min-h-19 items-start justify-between gap-3 rounded-lg border p-4 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-2",
                             active
                               ? "border-blue-2/60 bg-blue/10"
-                              : "border-paper/10 bg-paper/[0.025] hover:border-paper/25 hover:bg-paper/[0.045]",
+                              : "border-paper/10 bg-paper/2.5 hover:border-paper/25 hover:bg-paper/4.5",
                           )}
                         >
                           <span>
@@ -728,10 +728,10 @@ function QuotePage() {
                         aria-pressed={active}
                         onClick={() => setTier(item.key)}
                         className={cn(
-                          "min-h-36 rounded-lg border p-4 text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-2",
+                          "min-h-36 rounded-lg border p-4 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-2",
                           active
                             ? "border-blue-2/60 bg-blue/10"
-                            : "border-paper/10 bg-paper/[0.025] hover:border-paper/25",
+                            : "border-paper/10 bg-paper/2.5 hover:border-paper/25",
                         )}
                       >
                         <span className="flex items-center justify-between gap-2">
@@ -768,10 +768,10 @@ function QuotePage() {
                         aria-pressed={active}
                         onClick={() => toggleService(addon.key)}
                         className={cn(
-                          "flex min-h-[72px] items-center gap-3 rounded-lg border p-4 text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-2",
+                          "flex min-h-18 items-center gap-3 rounded-lg border p-4 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-2",
                           active
                             ? "border-blue-2/50 bg-blue/8"
-                            : "border-paper/10 bg-paper/[0.025] hover:border-paper/25",
+                            : "border-paper/10 bg-paper/2.5 hover:border-paper/25",
                         )}
                       >
                         <span
@@ -1089,11 +1089,11 @@ function Choice({
       aria-pressed={active}
       onClick={onClick}
       className={cn(
-        "flex min-h-11 w-full flex-col justify-center rounded-md border px-3 py-2 text-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-2",
+        "flex min-h-11 w-full flex-col justify-center rounded-md border px-3 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-2",
         alignment === "left" ? "items-start text-left" : "items-center text-center",
         active
           ? "border-blue-2/60 bg-blue/10 text-paper"
-          : "border-paper/10 bg-paper/[0.025] text-mist hover:border-paper/25 hover:text-paper",
+          : "border-paper/10 bg-paper/2.5 text-mist hover:border-paper/25 hover:text-paper",
       )}
     >
       <span>{children}</span>

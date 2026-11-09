@@ -121,7 +121,7 @@ export function InstallPrompt() {
   return (
     <aside
       aria-label="Install Randy Production"
-      className="fixed inset-x-0 bottom-0 z-[100] px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:hidden"
+      className="fixed inset-x-0 bottom-0 z-100 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:hidden"
     >
       <div className="mx-auto max-w-lg rounded-2xl border border-paper/15 bg-ink/95 p-4 shadow-[0_16px_50px_rgb(0_0_0/0.55)] backdrop-blur-xl">
         <div className="flex items-start gap-3">
@@ -145,7 +145,7 @@ export function InstallPrompt() {
         </div>
 
         {showSteps ? (
-          <div className="mt-3 rounded-xl border border-paper/10 bg-paper/[0.04] p-3 text-xs leading-relaxed text-paper/85">
+          <div className="mt-3 rounded-xl border border-paper/10 bg-paper/4 p-3 text-xs leading-relaxed text-paper/85">
             {isIos ? (
               <p className="flex items-start gap-2">
                 <Share2 aria-hidden="true" size={16} className="mt-0.5 shrink-0 text-blue-2" />

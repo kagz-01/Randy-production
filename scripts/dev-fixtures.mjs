@@ -8,6 +8,7 @@ if (!["admin", "staff", "client"].includes(role)) {
 
 for (const key of [
   "DATABASE_URL",
+  "DATABASE_MIGRATION_URL",
   "XAI_API_KEY",
   "PAYMENT_PROVIDER_URL",
   "PAYMENT_PROVIDER_API_KEY",

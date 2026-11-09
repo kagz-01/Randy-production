@@ -93,7 +93,7 @@ export function UserButton({
       to={to}
       aria-label="Open Randy Production profile"
       title="Randy Production profile"
-      className="grid size-11 place-items-center rounded-full border border-paper/15 bg-paper/[0.06] text-sm font-semibold text-paper outline-offset-2 transition-colors hover:bg-paper/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-2"
+      className="grid size-11 place-items-center rounded-full border border-paper/15 bg-paper/6 text-sm font-semibold text-paper outline-offset-2 transition-colors hover:bg-paper/10 focus-visible:outline-2 focus-visible:outline-blue-2"
     >
       <span aria-hidden="true">R</span>
     </Link>

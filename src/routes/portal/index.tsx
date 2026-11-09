@@ -193,7 +193,7 @@ function PortalHome() {
             </section>
 
             {featuredJob ? (
-              <section className="overflow-hidden rounded-xl border border-blue/20 bg-[linear-gradient(120deg,rgb(47_107_255_/_0.12),transparent_58%)]">
+              <section className="overflow-hidden rounded-xl border border-blue/20 bg-[linear-gradient(120deg,rgb(47_107_255/0.12),transparent_58%)]">
                 <div className="grid gap-4 p-4 sm:gap-6 sm:p-5 md:grid-cols-[minmax(0,1.35fr)_minmax(220px,0.65fr)] md:p-7">
                   <div>
                     <div className="flex flex-wrap items-center gap-2">

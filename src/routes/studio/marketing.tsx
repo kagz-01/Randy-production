@@ -51,7 +51,7 @@ function MarketingPage() {
                 params={{ slug: work.id }}
                 className="group overflow-hidden rounded-lg border border-paper/10 bg-ink/60 transition-colors hover:border-blue/40"
               >
-                <div className="aspect-[16/9] overflow-hidden bg-void">
+                <div className="aspect-video overflow-hidden bg-void">
                   <img
                     src={work.image}
                     alt={`${work.title} — ${work.event}`}

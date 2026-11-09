@@ -276,7 +276,8 @@ async function ensureProfile(userId: string, displayName?: string | null) {
     userId === DEV_USER_ID &&
     process.env.NODE_ENV === "development" &&
     process.env.VITE_AUTH_ENABLED === "false" &&
-    !process.env.DATABASE_URL?.trim();
+    !process.env.DATABASE_URL?.trim() &&
+    !process.env.DATABASE_MIGRATION_URL?.trim();
   const localPreviewRole = isPreviewFixturesEnabled() ? getPreviewRole() : "admin";
   const identities = await sql<{ name: string | null; email: string; emailVerified: boolean }>`
     select name, email, "emailVerified" from "user" where id = ${userId}

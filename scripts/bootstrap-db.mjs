@@ -4,9 +4,10 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import pg from "pg";
 
-const databaseUrl = process.env.DATABASE_URL?.trim();
+const databaseUrl =
+  process.env.DATABASE_MIGRATION_URL?.trim() || process.env.DATABASE_URL?.trim();
 if (!databaseUrl) {
-  console.error("[bootstrap] DATABASE_URL is required.");
+  console.error("[bootstrap] DATABASE_MIGRATION_URL or DATABASE_URL is required.");
   process.exit(1);
 }
 

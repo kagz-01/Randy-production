@@ -522,7 +522,7 @@ function CallSheet({
               .map((person) => (
                 <li
                   key={person.id}
-                  className="rounded-lg border border-paper/10 bg-paper/[0.025] p-4"
+                  className="rounded-lg border border-paper/10 bg-paper/2.5 p-4"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -538,7 +538,7 @@ function CallSheet({
               ))}
           </ul>
           <div className="mt-6 hidden overflow-x-auto md:block print:block">
-            <table className="w-full min-w-[560px] border-collapse text-left">
+            <table className="w-full min-w-140 border-collapse text-left">
               <thead>
                 <tr className="border-b border-paper/15 text-[10px] uppercase tracking-[0.16em] text-mist print:border-black/20 print:text-black">
                   <th scope="col" className="py-3 pr-4 font-medium">Crew member</th>
@@ -583,7 +583,7 @@ function CrewCard({
 }) {
   const isAssigned = Boolean(nextJob && person.assigned_job_id === nextJob.id);
   return (
-    <article className="min-w-0 rounded-lg border border-paper/10 bg-paper/[0.025] p-4">
+    <article className="min-w-0 rounded-lg border border-paper/10 bg-paper/2.5 p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="truncate text-lg font-medium text-paper">{person.name}</h3>
@@ -641,7 +641,7 @@ function MetricCard({
           <Icon className="size-4" aria-hidden="true" />
         </span>
       </div>
-      <p className="mt-4 break-words font-serif text-3xl leading-tight tabular-nums text-paper md:text-4xl">{value}</p>
+      <p className="mt-4 wrap-break-word font-serif text-3xl leading-tight tabular-nums text-paper md:text-4xl">{value}</p>
       <p className="mt-2 text-xs leading-relaxed text-mist">{detail}</p>
     </article>
   );
@@ -671,9 +671,9 @@ function SectionHeading({
 
 function Detail({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-paper/10 bg-paper/[0.025] p-3">
+    <div className="rounded-lg border border-paper/10 bg-paper/2.5 p-3">
       <p className="text-[10px] uppercase tracking-[0.16em] text-mist">{label}</p>
-      <p className="mt-2 break-words text-sm text-paper">{value}</p>
+      <p className="mt-2 wrap-break-word text-sm text-paper">{value}</p>
     </div>
   );
 }

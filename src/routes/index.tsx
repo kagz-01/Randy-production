@@ -90,7 +90,7 @@ function Home() {
 
       <section
         ref={heroRef}
-        className="relative z-1 min-h-[520px] overflow-hidden md:h-[75dvh] md:min-h-140 md:max-h-[680px] lg:min-h-150"
+        className="relative z-1 min-h-130 overflow-hidden md:h-[75dvh] md:min-h-140 md:max-h-170 lg:min-h-150"
       >
         <motion.div
           style={prefersReducedMotion ? undefined : { y, scale }}
@@ -117,7 +117,7 @@ function Home() {
 
         <motion.div
           style={prefersReducedMotion ? undefined : { opacity }}
-          className="shell relative z-10 flex min-h-[520px] flex-col justify-end pb-8 md:h-full md:min-h-0 md:pb-14 lg:pb-16"
+          className="shell relative z-10 flex min-h-130 flex-col justify-end pb-8 md:h-full md:min-h-0 md:pb-14 lg:pb-16"
         >
           <p className="reveal eyebrow mb-3 md:mb-4">{PILLAR_LINE}</p>
           <h1 className="hero-title max-w-[10.5ch] sm:max-w-[12ch] md:max-w-[13ch]">
@@ -159,7 +159,7 @@ function Home() {
           <p className="eyebrow">Your next step</p>
           <h2
             id="start-heading"
-            className="mt-3 font-serif text-3xl tracking-[-0.05em] text-paper md:text-5xl"
+            className="mt-3 font-serif text-3xl tracking-tighter text-paper md:text-5xl"
           >
             Start with what you know.
           </h2>
@@ -266,7 +266,7 @@ function Home() {
             {STORY.map((s, i) => (
               <li key={s.step}>
                 <Reveal delay={i * 0.07} className="h-full">
-                  <GlassCard className="h-full min-h-[180px] p-4 md:min-h-[220px] md:p-5">
+                  <GlassCard className="h-full min-h-45 p-4 md:min-h-55 md:p-5">
                     <p className="text-[9px] uppercase tracking-[0.2em] text-blue-2">{s.step}</p>
                     <h3 className="mt-3 text-lg leading-tight text-paper md:text-[1.65rem]">
                       {s.title}

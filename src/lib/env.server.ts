@@ -19,6 +19,7 @@ export function isPreviewFixturesEnabled(): boolean {
     isWorkspacePreview() &&
     env("VITE_AUTH_ENABLED") === "false" &&
     !env("DATABASE_URL") &&
+    !env("DATABASE_MIGRATION_URL") &&
     env("RANDY_PREVIEW_FIXTURES") === "1"
   );
 }

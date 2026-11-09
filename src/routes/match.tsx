@@ -159,10 +159,10 @@ function MatchPage() {
                         setGuests(band.key);
                         clearRecommendation();
                       }}
-                      className={`min-h-11 rounded-md border px-3 text-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-2 ${
+                      className={`min-h-11 rounded-md border px-3 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-2 ${
                         guests === band.key
                           ? "border-blue-2/60 bg-blue/10 text-paper"
-                          : "border-paper/10 bg-paper/[0.025] text-mist hover:border-paper/25 hover:text-paper"
+                          : "border-paper/10 bg-paper/2.5 text-mist hover:border-paper/25 hover:text-paper"
                       }`}
                     >
                       {band.label}
@@ -207,10 +207,10 @@ function MatchPage() {
                         setFocus(option.key);
                         clearRecommendation();
                       }}
-                      className={`min-h-[72px] rounded-md border p-3 text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-2 ${
+                      className={`min-h-18 rounded-md border p-3 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-2 ${
                         focus === option.key
                           ? "border-blue-2/60 bg-blue/10"
-                          : "border-paper/10 bg-paper/[0.025] hover:border-paper/25"
+                          : "border-paper/10 bg-paper/2.5 hover:border-paper/25"
                       }`}
                     >
                       <span className="flex items-center justify-between gap-2 text-sm font-medium text-paper">

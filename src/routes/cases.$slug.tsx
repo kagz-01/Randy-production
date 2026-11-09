@@ -177,7 +177,7 @@ function CasePage() {
                   {storyTags.map((tag) => (
                     <span
                       key={tag}
-                      className="rounded-full border border-paper/15 bg-paper/[0.02] px-3 py-1.5"
+                      className="rounded-full border border-paper/15 bg-paper/2 px-3 py-1.5"
                     >
                       {tag}
                     </span>

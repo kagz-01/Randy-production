@@ -282,13 +282,13 @@ function ProjectPortal() {
                 </p>
                 <ProjectStatus status={job.status} />
               </div>
-              <h1 className="mt-2 break-words text-4xl text-paper md:text-5xl">{job.title}</h1>
+              <h1 className="mt-2 wrap-break-word text-4xl text-paper md:text-5xl">{job.title}</h1>
               <p className="mt-3 text-sm text-mist">
                 {job.venue ? `${job.venue} · ` : ""}
                 {formatProjectDate(job.event_date)}
               </p>
             </div>
-            <div className="grid gap-3 sm:grid-cols-3 xl:min-w-[460px]">
+            <div className="grid gap-3 sm:grid-cols-3 xl:min-w-115">
               <HeaderFact label="Project value" value={money(job.ballpark)} icon={WalletCards} />
               <HeaderFact label="Paid" value={money(paidTotal)} icon={CheckCheck} />
               <HeaderFact
@@ -476,7 +476,7 @@ function ProjectOverview({
         <div className="rounded-xl border border-paper/10 bg-ink/70 p-5 md:p-6">
           <SectionHeading eyebrow="Your team" title="What happens next" />
           {job.status === "cancelled" ? (
-            <p className="mt-5 rounded-lg border border-paper/10 bg-paper/[0.025] p-4 text-sm text-mist">
+            <p className="mt-5 rounded-lg border border-paper/10 bg-paper/2.5 p-4 text-sm text-mist">
               This project was cancelled. Contact the production team if you have questions.
             </p>
           ) : (
@@ -496,7 +496,7 @@ function ProjectOverview({
                   <li key={step.label} className="relative flex gap-3 pb-5 last:pb-0">
                     {index < 3 ? (
                       <span
-                        className="absolute left-[9px] top-5 h-full w-px bg-paper/10"
+                        className="absolute left-2.25 top-5 h-full w-px bg-paper/10"
                         aria-hidden="true"
                       />
                     ) : null}
@@ -1279,7 +1279,7 @@ function TimelineSection({ job, cues }: { job: JobRow; cues: CueRow[] }) {
                 <li key={cue.id} className="relative flex gap-4 pb-6 last:pb-0">
                   {index < cues.length - 1 ? (
                     <span
-                      className="absolute left-[11px] top-6 h-full w-px bg-paper/10"
+                      className="absolute left-2.75 top-6 h-full w-px bg-paper/10"
                       aria-hidden="true"
                     />
                   ) : null}
@@ -1304,7 +1304,7 @@ function TimelineSection({ job, cues }: { job: JobRow; cues: CueRow[] }) {
                       />
                     )}
                   </span>
-                  <div className="min-w-0 flex-1 rounded-lg border border-paper/10 bg-paper/[0.025] p-4">
+                  <div className="min-w-0 flex-1 rounded-lg border border-paper/10 bg-paper/2.5 p-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="text-sm font-medium text-paper">{cue.title}</p>
                       <span
@@ -1353,7 +1353,7 @@ function HeaderFact({
   icon: LucideIcon;
 }) {
   return (
-    <div className="rounded-lg border border-paper/10 bg-paper/[0.025] p-3">
+    <div className="rounded-lg border border-paper/10 bg-paper/2.5 p-3">
       <div className="flex items-center gap-2 text-mist">
         <Icon className="size-3.5" aria-hidden="true" />
         <p className="text-[10px] uppercase tracking-[0.12em]">{label}</p>

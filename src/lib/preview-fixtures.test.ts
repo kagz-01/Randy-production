@@ -7,6 +7,7 @@ const keys = [
   "NODE_ENV",
   "GROK_PROJECT_ID",
   "DATABASE_URL",
+  "DATABASE_MIGRATION_URL",
   "VITE_AUTH_ENABLED",
   "RANDY_PREVIEW_FIXTURES",
   "RANDY_PREVIEW_ROLE",
@@ -26,6 +27,7 @@ describe("isolated preview fixtures", () => {
     process.env.NODE_ENV = "development";
     delete process.env.GROK_PROJECT_ID;
     delete process.env.DATABASE_URL;
+    delete process.env.DATABASE_MIGRATION_URL;
     process.env.VITE_AUTH_ENABLED = "false";
     process.env.RANDY_PREVIEW_FIXTURES = "1";
     assert.equal(isPreviewFixturesEnabled(), true);
@@ -33,6 +35,10 @@ describe("isolated preview fixtures", () => {
     process.env.DATABASE_URL = "postgres://configured.example.invalid/db";
     assert.equal(isPreviewFixturesEnabled(), false);
     delete process.env.DATABASE_URL;
+
+    process.env.DATABASE_MIGRATION_URL = "postgres://configured.example.invalid/migrations";
+    assert.equal(isPreviewFixturesEnabled(), false);
+    delete process.env.DATABASE_MIGRATION_URL;
 
     process.env.GROK_PROJECT_ID = "deployed-project";
     assert.equal(isPreviewFixturesEnabled(), false);

@@ -343,7 +343,7 @@ function EventPlannerPage() {
                   type="button"
                   onClick={placeFocalPoint}
                   aria-label={`Add ${selectedFocalPoint.label} to the room concept. Tap or click, or press Enter, to place it.`}
-                  className="group relative block aspect-[16/10] w-full cursor-crosshair overflow-hidden bg-[#10141a] text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-blue-2"
+                  className="group relative block aspect-[16/10] w-full cursor-crosshair overflow-hidden bg-[#10141a] text-left focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-blue-2"
                 >
                   <img
                     src={uploadUrl ?? INSPIRATION_IMAGE}
@@ -449,10 +449,10 @@ function EventPlannerPage() {
                           aria-pressed={plan.moodId === mood.id}
                           onClick={() => updatePlan("moodId", mood.id as EventPlanMoodId)}
                           className={cn(
-                            "min-h-11 rounded-md border px-3 py-2 text-left text-xs transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-2",
+                            "min-h-11 rounded-md border px-3 py-2 text-left text-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-2",
                             plan.moodId === mood.id
                               ? "border-blue-2/60 bg-blue/10 text-paper"
-                              : "border-paper/10 bg-paper/[0.025] text-mist hover:border-paper/25 hover:text-paper",
+                              : "border-paper/10 bg-paper/2.5 text-mist hover:border-paper/25 hover:text-paper",
                           )}
                         >
                           {mood.label}

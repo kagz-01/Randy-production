@@ -344,7 +344,7 @@ function PipelinePage() {
         {COLS.map((col) => {
           const cards = jobs.filter((j) => j.status === col.key);
           return (
-            <section key={col.key} className="w-[260px] shrink-0 xl:w-[calc((100%-4rem)/5)]">
+            <section key={col.key} className="w-65 shrink-0 xl:w-[calc((100%-4rem)/5)]">
               <header className="mb-3 flex items-baseline justify-between">
                 <h2 className="text-[11px] uppercase tracking-[0.2em] text-mist">{col.label}</h2>
                 <span className="tabular-nums text-xs text-blue-2">{cards.length}</span>
@@ -542,7 +542,7 @@ function Detail({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-md border border-paper/10 bg-ink/50 p-3">
       <p className="text-[10px] uppercase tracking-[0.18em] text-mist">{label}</p>
-      <p className="mt-1 break-words text-sm text-paper">{value}</p>
+      <p className="mt-1 wrap-break-word text-sm text-paper">{value}</p>
     </div>
   );
 }

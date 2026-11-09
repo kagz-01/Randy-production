@@ -133,12 +133,12 @@ export function SiteNav() {
         </Link>
 
         {!isWorkspace ? (
-          <nav className="hidden items-center gap-1 rounded-full border border-paper/5 bg-paper/[0.015] px-1 py-1 lg:flex">
+          <nav className="hidden items-center gap-1 rounded-full border border-paper/5 bg-paper/1.5 px-1 py-1 lg:flex">
             {LINKS.map((l) => (
               <Link
                 key={l.to}
                 to={l.to}
-                className="rounded-full px-3 py-2.5 text-[10px] font-medium uppercase tracking-[0.18em] text-mist transition-all duration-200 hover:bg-paper/[0.04] hover:text-paper"
+                className="rounded-full px-3 py-2.5 text-[10px] font-medium uppercase tracking-[0.18em] text-mist transition-all duration-200 hover:bg-paper/4 hover:text-paper"
                 activeProps={{
                   className:
                     "bg-paper/[0.045] text-paper shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]",
@@ -152,7 +152,7 @@ export function SiteNav() {
               <Link
                 to="/live/$projectId"
                 params={{ projectId: pulse.id }}
-                className="rounded-full px-3 py-2.5 text-[10px] font-medium uppercase tracking-[0.18em] text-mist transition-all duration-200 hover:bg-paper/[0.04] hover:text-paper"
+                className="rounded-full px-3 py-2.5 text-[10px] font-medium uppercase tracking-[0.18em] text-mist transition-all duration-200 hover:bg-paper/4 hover:text-paper"
                 activeProps={{
                   className:
                     "bg-paper/[0.045] text-paper shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]",
@@ -245,7 +245,7 @@ export function SiteNav() {
                           "flex min-h-11 w-full items-center justify-between rounded-lg px-3 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-2",
                           link.to === "/quote"
                             ? "mt-1 border border-blue-2/25 bg-blue-2/10 font-medium text-paper hover:bg-blue-2/15"
-                            : "text-paper/80 hover:bg-paper/[0.06] hover:text-paper",
+                            : "text-paper/80 hover:bg-paper/6 hover:text-paper",
                         )}
                         activeProps={{ className: "bg-paper/[0.08] text-paper" }}
                         activeOptions={{ exact: link.to === "/" }}
@@ -265,7 +265,7 @@ export function SiteNav() {
                 to="/live/$projectId"
                 params={{ projectId: pulse.id }}
                 onClick={() => setOpen(false)}
-                className="flex min-h-11 w-full items-center justify-between rounded-lg px-3 text-sm text-paper/80 transition-colors hover:bg-paper/[0.06] hover:text-paper focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-2"
+                className="flex min-h-11 w-full items-center justify-between rounded-lg px-3 text-sm text-paper/80 transition-colors hover:bg-paper/6 hover:text-paper focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-2"
               >
                 Pulse
                 <span aria-hidden className="text-mist/60">
@@ -281,7 +281,7 @@ export function SiteNav() {
                 <Link
                   to="/studio"
                   onClick={() => setOpen(false)}
-                  className="flex min-h-11 w-full items-center justify-between rounded-lg px-3 text-sm text-paper/80 transition-colors hover:bg-paper/[0.06] hover:text-paper focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-2"
+                  className="flex min-h-11 w-full items-center justify-between rounded-lg px-3 text-sm text-paper/80 transition-colors hover:bg-paper/6 hover:text-paper focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-2"
                   activeProps={{ className: "bg-paper/[0.08] text-paper" }}
                   activeOptions={{ exact: true }}
                 >
@@ -302,7 +302,7 @@ export function SiteNav() {
                     key={to}
                     to={to}
                     onClick={() => setOpen(false)}
-                    className="flex min-h-11 w-full items-center justify-between rounded-lg px-3 text-sm text-paper/80 transition-colors hover:bg-paper/[0.06] hover:text-paper focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-2"
+                    className="flex min-h-11 w-full items-center justify-between rounded-lg px-3 text-sm text-paper/80 transition-colors hover:bg-paper/6 hover:text-paper focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-2"
                     activeProps={{ className: "bg-paper/[0.08] text-paper" }}
                   >
                     {label}
@@ -319,7 +319,7 @@ export function SiteNav() {
                     key={tool.to}
                     to={tool.to}
                     onClick={() => setOpen(false)}
-                    className="flex min-h-11 w-full items-center justify-between rounded-lg px-3 text-sm text-paper/80 transition-colors hover:bg-paper/[0.06] hover:text-paper focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-2"
+                    className="flex min-h-11 w-full items-center justify-between rounded-lg px-3 text-sm text-paper/80 transition-colors hover:bg-paper/6 hover:text-paper focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-2"
                     activeProps={{ className: "bg-paper/[0.08] text-paper" }}
                   >
                     {tool.label}
@@ -336,7 +336,7 @@ export function SiteNav() {
                     <Link
                       to="/admin"
                       onClick={() => setOpen(false)}
-                      className="flex min-h-11 w-full items-center justify-between rounded-lg px-3 text-sm text-paper/80 transition-colors hover:bg-paper/[0.06] hover:text-paper"
+                      className="flex min-h-11 w-full items-center justify-between rounded-lg px-3 text-sm text-paper/80 transition-colors hover:bg-paper/6 hover:text-paper"
                     >
                       Admin workspace
                       <span aria-hidden className="text-mist/60">
@@ -351,7 +351,7 @@ export function SiteNav() {
                 <Link
                   to="/"
                   onClick={() => setOpen(false)}
-                  className="flex min-h-11 w-full items-center justify-between rounded-lg px-3 text-sm text-paper/80 transition-colors hover:bg-paper/[0.06] hover:text-paper"
+                  className="flex min-h-11 w-full items-center justify-between rounded-lg px-3 text-sm text-paper/80 transition-colors hover:bg-paper/6 hover:text-paper"
                 >
                   Public website
                   <span aria-hidden className="text-mist/60">
@@ -368,7 +368,7 @@ export function SiteNav() {
                 <Link
                   to="/admin"
                   onClick={() => setOpen(false)}
-                  className="flex min-h-11 w-full items-center justify-between rounded-lg px-3 text-sm text-paper/80 transition-colors hover:bg-paper/[0.06] hover:text-paper"
+                  className="flex min-h-11 w-full items-center justify-between rounded-lg px-3 text-sm text-paper/80 transition-colors hover:bg-paper/6 hover:text-paper"
                 >
                   Admin dashboard
                   <span aria-hidden className="text-mist/60">
@@ -378,7 +378,7 @@ export function SiteNav() {
                 <Link
                   to="/admin/receipts"
                   onClick={() => setOpen(false)}
-                  className="flex min-h-11 w-full items-center justify-between rounded-lg px-3 text-sm text-paper/80 transition-colors hover:bg-paper/[0.06] hover:text-paper"
+                  className="flex min-h-11 w-full items-center justify-between rounded-lg px-3 text-sm text-paper/80 transition-colors hover:bg-paper/6 hover:text-paper"
                 >
                   Finance &amp; receipts
                   <span aria-hidden className="text-mist/60">
@@ -388,7 +388,7 @@ export function SiteNav() {
                 <Link
                   to="/studio"
                   onClick={() => setOpen(false)}
-                  className="flex min-h-11 w-full items-center justify-between rounded-lg px-3 text-sm text-paper/80 transition-colors hover:bg-paper/[0.06] hover:text-paper"
+                  className="flex min-h-11 w-full items-center justify-between rounded-lg px-3 text-sm text-paper/80 transition-colors hover:bg-paper/6 hover:text-paper"
                 >
                   Studio workspace
                   <span aria-hidden className="text-mist/60">
@@ -398,7 +398,7 @@ export function SiteNav() {
                 <Link
                   to="/"
                   onClick={() => setOpen(false)}
-                  className="flex min-h-11 w-full items-center justify-between rounded-lg px-3 text-sm text-paper/80 transition-colors hover:bg-paper/[0.06] hover:text-paper"
+                  className="flex min-h-11 w-full items-center justify-between rounded-lg px-3 text-sm text-paper/80 transition-colors hover:bg-paper/6 hover:text-paper"
                 >
                   Public website
                   <span aria-hidden className="text-mist/60">
@@ -415,7 +415,7 @@ export function SiteNav() {
                 <Link
                   to="/portal"
                   onClick={() => setOpen(false)}
-                  className="flex min-h-11 w-full items-center justify-between rounded-lg px-3 text-sm text-paper/80 transition-colors hover:bg-paper/[0.06] hover:text-paper focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-2"
+                  className="flex min-h-11 w-full items-center justify-between rounded-lg px-3 text-sm text-paper/80 transition-colors hover:bg-paper/6 hover:text-paper focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-2"
                   activeProps={{ className: "bg-paper/[0.08] text-paper" }}
                   activeOptions={{ exact: true }}
                 >
@@ -427,7 +427,7 @@ export function SiteNav() {
                 <Link
                   to="/"
                   onClick={() => setOpen(false)}
-                  className="flex min-h-11 w-full items-center justify-between rounded-lg px-3 text-sm text-paper/80 transition-colors hover:bg-paper/[0.06] hover:text-paper focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-2"
+                  className="flex min-h-11 w-full items-center justify-between rounded-lg px-3 text-sm text-paper/80 transition-colors hover:bg-paper/6 hover:text-paper focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-2"
                 >
                   Public website
                   <span aria-hidden className="text-mist/60">
@@ -440,7 +440,7 @@ export function SiteNav() {
               <Link
                 to={workspaceNavigation.workspacePath}
                 onClick={() => setOpen(false)}
-                className="mt-2 flex min-h-11 w-full items-center justify-between rounded-lg border-t border-paper/10 px-3 pt-3 text-sm font-medium text-paper transition-colors hover:bg-paper/[0.06] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-2"
+                className="mt-2 flex min-h-11 w-full items-center justify-between rounded-lg border-t border-paper/10 px-3 pt-3 text-sm font-medium text-paper transition-colors hover:bg-paper/6 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-2"
               >
                 Open {workspaceNavigation.workspaceLabel}
                 <span aria-hidden className="text-mist/60">
@@ -452,7 +452,7 @@ export function SiteNav() {
               <Link
                 to="/login"
                 onClick={() => setOpen(false)}
-                className="mt-2 flex min-h-11 w-full items-center justify-between rounded-lg border-t border-paper/10 px-3 pt-2 text-sm font-medium text-paper transition-colors hover:bg-paper/[0.06] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-2"
+                className="mt-2 flex min-h-11 w-full items-center justify-between rounded-lg border-t border-paper/10 px-3 pt-2 text-sm font-medium text-paper transition-colors hover:bg-paper/6 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-2"
               >
                 Sign in or create an account
                 <span aria-hidden className="text-mist/60">
@@ -477,7 +477,7 @@ export function SiteNav() {
                     →
                   </span>
                 </Link>
-                <SignOutButton className="mt-2 min-h-11 w-full rounded-lg text-left text-paper/70 hover:bg-paper/[0.06] hover:text-paper" />
+                <SignOutButton className="mt-2 min-h-11 w-full rounded-lg text-left text-paper/70 hover:bg-paper/6 hover:text-paper" />
               </div>
             ) : null}
           </div>
@@ -523,7 +523,7 @@ export function SiteFooter() {
               <Link
                 key={item.to}
                 to={item.to}
-                className="rounded-full border border-paper/10 bg-paper/[0.02] px-3 py-2 text-[9px] uppercase tracking-[0.18em] text-mist transition-all duration-200 hover:border-paper/15 hover:text-paper"
+                className="rounded-full border border-paper/10 bg-paper/2 px-3 py-2 text-[9px] uppercase tracking-[0.18em] text-mist transition-all duration-200 hover:border-paper/15 hover:text-paper"
               >
                 {item.label}
               </Link>

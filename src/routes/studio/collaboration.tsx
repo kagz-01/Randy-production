@@ -309,7 +309,7 @@ function StudioCollaboration() {
               return (
                 <article
                   key={message.id}
-                  className="group rounded-lg border border-paper/[0.07] bg-paper/[0.025] p-3.5"
+                  className="group rounded-lg border border-paper/[0.07] bg-paper/2.5 p-3.5"
                 >
                   <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
                     <div className="flex min-w-0 items-center gap-2">
@@ -346,7 +346,7 @@ function StudioCollaboration() {
                     </p>
                   ) : null}
                   {message.body ? (
-                    <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-mist">
+                    <p className="mt-2 whitespace-pre-wrap wrap-break-word text-sm leading-relaxed text-mist">
                       {message.body}
                     </p>
                   ) : null}
